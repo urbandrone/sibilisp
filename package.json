@@ -1,0 +1,24 @@
+{
+  "name": "sibilisp",
+  "version": "0.0.1",
+  "description": "A LISP like language to JavaScript transpiler, based on Sibilant",
+  "main": "sibilisp.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "lisp",
+    "sibilant",
+    "javascript",
+    "transpiler",
+    "open-source",
+    "mit",
+    "cli"
+  ],
+  "author": "David Hofmann <the.urban.drone@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "fs-extra": "^9.0.0",
+    "sibilant": "^0.5.5"
+  }
+}

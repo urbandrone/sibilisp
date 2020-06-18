@@ -1,0 +1,203 @@
+;;;; Sibilize Prelude
+;;;; ================
+
+(namespace prelude)
+
+;;; LANGUAGE
+(macro gensym (a)
+			 ; generates a generic symbol
+			 `(generate-symbol @(or a "gensym")))
+
+;; be lispier!
+(macro progn (...body)
+			 `(apply ^do ...@body))
+
+(macro getf (target ...props)
+			 `(get @target ...@props))
+
+(macro setf (target ...props-and-value)
+			 `(set @target ...@props-and-value))
+
+
+
+(macro defconst (...pairs)
+			 ; allow ES2015 constant definitions
+			 (as-statement ["const "
+										 (pipe pairs
+													 destructure
+													 (map
+														(lambda (p) [(first p) " = " (second p)]))
+													 (interleave ";\nconst "))
+										 ]))
+
+(macro defvar (...pairs)
+			 ; allow ES2015 let definitions
+			 (as-statement ["let "
+										 (pipe pairs
+													 destructure
+													 (map
+														(lambda (p) [(first p) " = " (second p)]))
+													 (interleave ",\n    "))
+										 ]))
+
+(macro defun (name args ...body)
+			 ; function creation utility
+			 `(defconst @name (lambda @args ...@body)))
+
+
+
+;;; ====== ES2015+ MODULE SYSTEM ======
+(macro uses (path ...as)
+  ["import { "
+    (pipe as
+          (map
+            (lambda (a)
+              (if (= "[" a.token)
+                  [(first a.contents) " as " (last a.contents)]
+                  a)))
+          (interleave ", "))
+    " } from " path])
+
+(macro uses-module (path alias alias-b)
+  ["import "
+    (if (and (node? alias) (= 'as alias.token))
+          ["* as " alias-b]
+          alias) " from " path])
+
+
+
+(macro provides (a)
+  ["export " (transpile a)])
+
+(macro provides-module (...as)
+  (as-statement
+    ["export default {\n  "
+      (pipe as
+            (map
+              (lambda (a)
+                (if (= "[" a.token)
+                      [(last a.contents) ": " (first a.contents)]
+                      [a ": " a])))
+            (interleave ",\n  "))
+      "\n}"]))
+
+
+;;; ====== CONDITIONALS ======
+(macro cond (...branches)
+			 ; contitionals. transpiles to a sequence of ternary operators
+			 (map branches
+						(lambda (a)
+							(if (= "(" a.token)
+									  [(first a.contents) "\n  ? " (last a.contents)]
+									(= "else" a.token)
+									  []
+									a))))
+
+;;; ====== OPERATORS ======
+(macro eq? (a b)
+			 ; use loose == operator
+			 [(transpile a) " == " (transpile b)])
+
+(macro eqv? (a b)
+			 ; use strict == operator
+			 [(transpile a) " === " (transpile b)])
+
+;;; ====== TYPES ======
+(delete-macro list?)
+(macro list? (...values)
+			 ; make better list? macro than core sibilant provides
+			 `(and ...@(map values (lambda (v)
+															 `(.isArray Array @v)))))
+
+(alias-macro undefined? void?) ; less typing :)
+(alias-macro function? lambda?) ; more consistend
+
+(macro nan? (...values)
+			 ; checks multiple values for equality with NaN
+			 `(and ...@(map values (lambda (v)
+															 `(and (= (typeof @v) 'number)
+																		 (isNaN @v))))))
+
+
+(macro nothing? (...values)
+			 ; checks multiple values for equality with null or undefined
+			 `(and ...@(map values (lambda (v)
+															 `(or (eq? null @v)
+																		(nan? @v))))))
+
+(delete-macro exists?)
+(macro something? (...values)
+			 ; checks multiple values for non-equality with null or undefind
+			 `(not (nothing? ...@values)))
+
+
+
+(macro is-a (a ctor)
+			 ; machtes a value agains a given type constructor
+			 `(and (something? a)
+						 (eqv? (getf a 'constructor) ctor)))
+
+
+(macro date? (...values)
+			 ; tests if given values are dates
+			 `(and ...@(map values (lambda (v)
+															 `(is-a @v Date)))))
+
+(macro regex? (...values)
+			 ; tests if given values are regular expressions
+			 `(and ...@(map values (lambda (v)
+															 `(is-a @v RegExp)))))
+
+(delete-macro number?)
+(macro number? (...values)
+			 ; tests if given values are numbers and not NaN
+			 `(and ...@(map values (lambda (v)
+															 `(and (eqv? (typeof @v) "number")
+																		 (not (nan? @v)))))))
+
+(delete-macro hash?)
+(macro hash? (...values)
+			 ; tests if given values are objects
+			 `(and ...@(map values (lambda (v)
+															 `(is-a @v Object)))))
+
+(delete-macro list?)
+(macro list? (...values)
+			 ; tests if given values are arrays
+			 `(and ...@(map values (lambda (v)
+															 `(is-a @v Array)))))
+
+(macro future? (...values)
+			 ; tests if given values are promises
+			 `(and ...@(map values (lambda (v)
+															 `(is-a @v Promise)))))
+
+(macro dict? (...values)
+			 ; tests if given values are maps
+			 `(and ...@(map values (lambda (v)
+															 `(is-a @v Map)))))
+
+;; NOTE
+;; we won't support the native Set datatype. that is by
+;; intention, because Sets in JavaScript are more or
+;; less useless, except for creating a union
+
+
+(macro void ()
+			 ["void 0"])
+
+(macro nil ()
+			 `())
+
+(macro date (...args)
+			 `(new Date ...@args))
+
+(macro future (cbs ...body)
+			 `(new Promise (lambda (@(interleave ", " cbs.contents))
+											 ...@body)))
+
+(macro dict (...key-vals)
+			 (var kvs (bulk-map key-vals
+													(lambda (key val)
+														`(list key val))))
+			 `(new Map (list ...@kvs)))

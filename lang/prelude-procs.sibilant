@@ -1,0 +1,33 @@
+(import-namespace prelude)
+(include "./prelude-macros.sibilant")
+
+
+
+;;; ====== FUNCTIONS ======
+(defun set-arity (num func)
+	(cond [(< num 1) (lambda () (func))]
+				[(< num 2) (lambda (a) (.apply func null arguments))]
+				[(< num 3) (lambda (a b) (.apply func null arguments))]
+				[(< num 4) (lambda (a b c) (.apply func null arguments))]
+				[(< num 5) (lambda (a b c d) (.apply func null arguments))]
+				[(< num 6) (lambda (a b c d e) (.apply func null arguments))]
+				[(< num 7) (lambda (a b c d e f) (.apply func null arguments))]
+				[(< num 8) (lambda (a b c d e f g) (.apply func null arguments))]
+				[(< num 9) (lambda (a b c d e f g h) (.apply func null arguments))]
+				[(< num 10) (lambda (a b c d e f g h i) (.apply func null arguments))]
+				[(< num 11) (lambda (a b c d e f g h i j) (.apply func null arguments))]
+				[(< num 12) (lambda (a b c d e f g h i j k) (.apply func null arguments))]
+				[(< num 13) (lambda (a b c d e f g h i j k l) (.apply func null arguments))]
+				[(< num 14) (lambda (a b c d e f g h i j k l m) (.apply func null arguments))]
+				[(< num 15) (lambda (a b c d e f g h i j k l m n) (.apply func null arguments))]
+				[(< num 16) (lambda (a b c d e f g h i j k l m n o) (.apply func null arguments))]
+				:else func))
+
+(defun curry (func)
+	(defvar init-args (rest arguments))
+	(set-arity (- (length func) (length init-args))
+						 (lambda (...rargs)
+							 (defvar args (.concat init-args rargs))
+							 (if (>= (length args) (length func))
+									 (.apply func null args)
+									 (.apply curry null (.concat (list func) args))))))
