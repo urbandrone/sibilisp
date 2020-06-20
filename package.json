@@ -17,8 +17,12 @@
   ],
   "author": "David Hofmann <the.urban.drone@gmail.com>",
   "license": "MIT",
+  "bin": {
+    "sibilisp": "bin/cli.js"
+  },
   "dependencies": {
     "fs-extra": "^9.0.0",
     "sibilant": "^0.5.5"
-  }
+  },
+  "repository": "https://github.com/urbandrone/sibilisp"
 }
