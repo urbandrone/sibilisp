@@ -2,21 +2,16 @@
 ;;;; ================
 
 (namespace prelude)
+(import-namespace core)
+
+(delete-macro last)
+(macro last (ls)
+			 `(get @ls (- (length @ls) 1)))
 
 ;;; LANGUAGE
 (macro gensym (a)
 			 ; generates a generic symbol
 			 `(generate-symbol @(or a "gensym")))
-
-;; be lispier!
-(macro progn (...body)
-			 `(apply ^do ...@body))
-
-(macro getf (target ...props)
-			 `(get @target ...@props))
-
-(macro setf (target ...props-and-value)
-			 `(set @target ...@props-and-value))
 
 
 
@@ -44,54 +39,68 @@
 			 ; function creation utility
 			 `(defconst @name (lambda @args ...@body)))
 
+(macro defprop (target ...pairs)
+			 (var ps (bulk-map pairs
+												 (lambda (l r)
+													 `(hash @l (hash enumerable true
+																					 writable false
+																					 configurable false
+																					 value @r)))))
+			 `(.define-properties Object @target @(.reduce ps
+																										 (lambda (acc p)
+																											 (.assign Object acc p))
+																										 (hash))))
+
 
 
 ;;; ====== ES2015+ MODULE SYSTEM ======
-(macro uses (path ...as)
-  ["import { "
-    (pipe as
-          (map
-            (lambda (a)
-              (if (= "[" a.token)
-                  [(first a.contents) " as " (last a.contents)]
-                  a)))
-          (interleave ", "))
-    " } from " path])
+(macro use (path ...as)
+			 ["import { "
+			 (pipe as
+						 (map
+							(lambda (a)
+								(if (= "[" a.token)
+										[(first a.contents) " as " (last a.contents)]
+										a)))
+						 (interleave ", "))
+			 " } from " path])
 
-(macro uses-module (path alias alias-b)
-  ["import "
-    (if (and (node? alias) (= 'as alias.token))
-          ["* as " alias-b]
-          alias) " from " path])
+(macro use-all (path alias alias-b)
+			 ["import "
+			 (if (and (node? alias) (= 'as alias.token))
+					 ["* as " alias-b]
+					 alias) " from " path])
 
 
 
-(macro provides (a)
-  ["export " (transpile a)])
+(macro provide (a)
+			 ["export " (transpile a)])
 
-(macro provides-module (...as)
-  (as-statement
-    ["export default {\n  "
-      (pipe as
-            (map
-              (lambda (a)
-                (if (= "[" a.token)
-                      [(last a.contents) ": " (first a.contents)]
-                      [a ": " a])))
-            (interleave ",\n  "))
-      "\n}"]))
+(macro provide-all (...as)
+			 (as-statement
+				["export default {\n  "
+				(pipe as
+							(map
+							 (lambda (a)
+								 (if (= "[" a.token)
+										 [(last a.contents) ": " (first a.contents)]
+										 [a ": " a])))
+							(interleave ",\n  "))
+				"\n}"]))
 
 
 ;;; ====== CONDITIONALS ======
 (macro cond (...branches)
 			 ; contitionals. transpiles to a sequence of ternary operators
+			 (var in-else false)
 			 (map branches
 						(lambda (a)
-							(if (= "(" a.token)
-									  [(first a.contents) "\n  ? " (last a.contents)]
+							(if (and (= "(" a.token) (not in-else))
+									  [(first a.contents) "\n  ? " (second a.contents) "\n  : "]
 									(= "else" a.token)
-									  []
-									a))))
+									(do (assign in-else true)
+											(list))
+									(transpile a)))))
 
 ;;; ====== OPERATORS ======
 (macro eq? (a b)
@@ -109,8 +118,7 @@
 			 `(and ...@(map values (lambda (v)
 															 `(.isArray Array @v)))))
 
-(alias-macro undefined? void?) ; less typing :)
-(alias-macro function? lambda?) ; more consistend
+(alias-macro undefined? void?) ; consistency with void macro
 
 (macro nan? (...values)
 			 ; checks multiple values for equality with NaN
@@ -125,7 +133,6 @@
 															 `(or (eq? null @v)
 																		(nan? @v))))))
 
-(delete-macro exists?)
 (macro something? (...values)
 			 ; checks multiple values for non-equality with null or undefind
 			 `(not (nothing? ...@values)))
@@ -134,8 +141,8 @@
 
 (macro is-a (a ctor)
 			 ; machtes a value agains a given type constructor
-			 `(and (something? a)
-						 (eqv? (getf a 'constructor) ctor)))
+			 `(and (something? @a)
+						 (eqv? (get @a 'constructor) @ctor)))
 
 
 (macro date? (...values)
@@ -184,20 +191,60 @@
 
 
 (macro void ()
+			 ; transpiles to undefined
 			 ["void 0"])
 
 (macro nil ()
+			 ; equivalent of null
 			 `())
 
 (macro date (...args)
+			 ; creates new Date objects
 			 `(new Date ...@args))
 
 (macro future (cbs ...body)
+			 ; creates Promise objects
 			 `(new Promise (lambda (@(interleave ", " cbs.contents))
 											 ...@body)))
 
 (macro dict (...key-vals)
+			 ; creates Map objects
 			 (var kvs (bulk-map key-vals
 													(lambda (key val)
 														`(list key val))))
 			 `(new Map (list ...@kvs)))
+
+
+
+;; ====== RECURSION ======
+(macro trampoline-fn (name args ...body)
+			 ["function " name
+			 "(" (interleave ", " args.contents)  ") {"
+			 (indent (apply ^do body))
+			 "}"])
+
+(macro trampoline-is (a)
+			 `(and (function? @a)
+						 (get @a '**sibilisp-recur**)))
+
+(macro recur (...args)
+			 (var jump (gensym "jump"))
+			 `(scoped
+				 (defun @jump () (call looprec-step ...@args))
+				 (defprop @jump '**sibilisp-recur** true)))
+
+(macro loop (variables ...body)
+			 (var retv (gensym "looprecReturn")
+						vars (map variables.contents
+											(lambda (pair) (first pair.contents)))
+						vals (map variables.contents
+											(lambda (pair) (last pair.contents))))
+			 `(scoped
+				 (call
+					(lambda (step ...args)
+						(var @retv (.apply step (nil) args))
+						(while (trampoline-is @retv)
+							(assign @retv (call @retv)))
+						@retv)
+					(trampoline-fn looprec-step (...@vars) ...@body)
+					...@vals)))
