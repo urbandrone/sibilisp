@@ -51,6 +51,32 @@
 																											 (.assign Object acc p))
 																										 (hash))))
 
+;;; ====== CLASSES ======
+(delete-macro instance-of?)
+(macro instance-of? (item type)
+			 [(transpile item) " instanceof " (transpile type)])
+
+(macro deftype (tname pkeys)
+			 (var self (gensym "deftypeSelf")
+						args (interleave ", " pkeys.contents))
+			 `(var @tname @{ type 'output
+						 contents [
+						 "function " tname "(" args ") {"
+						 (indent
+							`(do
+								(var @self (ternary (instance-of? this @tname)
+																		this
+																		(new @tname)))
+								...@(map pkeys.contents
+												 (lambda (p)
+													 `(set @self (quote @p) @p)))
+								@self))
+						 "}"]}))
+
+(macro defmethod (tname mname args ...body)
+			 `(set (get @tname 'prototype) (quote @mname)
+						 (lambda (...@args.contents) ...@body)))
+
 
 
 ;;; ====== ES2015+ MODULE SYSTEM ======
