@@ -16,8 +16,8 @@ const SIBILANT_REGEX = /\.sibilant$/g;
 const JAVASCRIPT_REGEX = /\.js$/g;
 const SLISP_REGEX = /\.slisp$/g;
 
-const MACRO_FILE = 'prelude-macros.sibilant';
-const PROCS_FILE = 'prelude-procs.sibilant';
+const MACRO_FILE = 'macros.sibilant';
+const PROCS_FILE = 'prelude.sibilant';
 
 const getCwd = process.cwd.bind(process);
 
@@ -134,11 +134,17 @@ const or = predicates => x => List.foldl((bool, p) => bool || p(x))(false)(predi
 
 /* ====== PROG DEFINITIONS ====== */
 // ------ FILE SELECTION ------
+const injectPreludeFunctions = flist => {
+	// { file :: String, code :: String }
+	return flist.concat(getProcsPath());
+};
+
 const findFilesInSrc = dpath => {
 	return compl(
 		Async.of,
 		Async.chain(readDir),
 		Async.map(([p, files]) => List.map(file => pjoin(p, file))(files)),
+		//Async.map(injectPreludeFunctions),
 		Async.map(List.select(or([
 		  isDir,
 			isSibilantFile,

@@ -1,5 +1,5 @@
-;;;; Sibilize Prelude
-;;;; ================
+;;;; Sibilisp Macros
+;;;; ===============
 
 (namespace prelude)
 (import-namespace core)
@@ -58,15 +58,16 @@
 
 (macro deftype (tname pkeys)
 			 (var self (gensym "deftypeSelf")
+						type (transpile tname)
 						args (interleave ", " pkeys.contents))
 			 `(var @tname @{ type 'output
 						 contents [
-						 "function " tname "(" args ") {"
+						 "function " type "(" args ") {"
 						 (indent
 							`(do
-								(var @self (ternary (instance-of? this @tname)
+								(var @self (ternary (instance-of? this @type)
 																		this
-																		(new @tname)))
+																		(.create Object (get @type 'prototype))))
 								...@(map pkeys.contents
 												 (lambda (p)
 													 `(set @self (quote @p) @p)))
