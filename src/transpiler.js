@@ -27,7 +27,6 @@ const getMacroPath = () => pjoin(__dirname, '..', 'lang', MACRO_FILE);
 const getProcsPath = () => pjoin(__dirname, '..', 'lang', PROCS_FILE);
 
 
-
 /* ====== HELPER FUNCTIONS ====== */
 const over = prop => fn => obj => {
 	return prop in obj
@@ -144,7 +143,7 @@ const findFilesInSrc = dpath => {
 		Async.of,
 		Async.chain(readDir),
 		Async.map(([p, files]) => List.map(file => pjoin(p, file))(files)),
-		//Async.map(injectPreludeFunctions),
+		Async.map(injectPreludeFunctions),
 		Async.map(List.select(or([
 		  isDir,
 			isSibilantFile,
@@ -213,9 +212,16 @@ const alterPathAndType = to => from => compl(
 	Str.replace(from)(to)
 );
 
+const alterPreludePath = to => fpath => {	
+	return /sibilisp\/lang\/prelude.js$/.test(fpath)
+		? pjoin(to, 'sibilisp-prelude.js')
+		: fpath;
+}
+
 const copyFilesToDest = (spath, dpath, f = null) => files => {
 	return compl(
 		List.map(f ? f : over('path')(alterPathAndType(dpath)(spath))),
+		List.map(over('path')(alterPreludePath(dpath))),
 		List.foldl(
 			(asnc, file) =>
 				compl(
@@ -238,14 +244,16 @@ const main = options => {
 	const src = pjoin(getCwd(), options.src);
 	const dest = pjoin(getCwd(), options.dest);
 	
-	const transpileFiles = compl(findFilesInSrc, Async.chain(handleFilesInSrc));
-	const handleTranspiledFiles = Async.chain(copyFilesToDest(src, dest));
+	const transpileFiles = compl(
+		findFilesInSrc,
+		Async.chain(handleFilesInSrc),
+		Async.chain(copyFilesToDest(src, dest))
+	);
 	
-	return compl(
+	return emptyDir(dest).then(_ => compl(
 		transpileFiles,
-		handleTranspiledFiles,
 		Async.map(() => 'done!')
-	)(src);
+	)(src));
 };
 
 

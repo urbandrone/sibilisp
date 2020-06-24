@@ -255,12 +255,17 @@
 						 (get @a '**sibilisp-recur**)))
 
 (macro recur (...args)
+			 ; creates a new jump point if the fixpoint is not reached
 			 (var jump (gensym "jump"))
 			 `(scoped
 				 (defun @jump () (call looprec-step ...@args))
 				 (defprop @jump '**sibilisp-recur** true)))
 
 (macro loop (variables ...body)
+			 ; allows to use single and multiple direct recursion
+			 ; through trampolining. performance is generally ok
+			 ; up to and above 7500 iterations, which should be
+			 ; good enough for most use cases.
 			 (var retv (gensym "looprecReturn")
 						vars (map variables.contents
 											(lambda (pair) (first pair.contents)))
