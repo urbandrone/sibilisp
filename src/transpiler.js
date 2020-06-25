@@ -157,7 +157,7 @@ const findFilesInSrc = dpath => {
 
 // ------ SOURCE MANIPULATION ------
 const injectPrelude = fdata => {
-	return `(import-namespace prelude)\n(include "${getMacroPath()}")\n\n` + fdata;
+	return `(import-namespace sibilisp)\n(include "${getMacroPath()}")\n\n` + fdata;
 };
 
 const removeComments = Str.

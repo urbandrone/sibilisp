@@ -1,215 +1,265 @@
 ;;;; Sibilisp Macros
 ;;;; ===============
 
-(namespace prelude)
+(namespace sibilisp)
 (import-namespace core)
+
+
 
 (delete-macro last)
 (macro last (ls)
-			 `(get @ls (- (length @ls) 1)))
+       `(get @ls (- (length @ls) 1)))
+
+
 
 ;;; LANGUAGE
 (macro gensym (a)
-			 ; generates a generic symbol
-			 `(generate-symbol @(or a "gensym")))
+       ; generates a generic symbol
+       `(generate-symbol @(or a "gensym")))
 
 
 
 (macro defconst (...pairs)
-			 ; allow ES2015 constant definitions
-			 (as-statement ["const "
-										 (pipe pairs
-													 destructure
-													 (map
-														(lambda (p) [(first p) " = " (second p)]))
-													 (interleave ";\nconst "))
-										 ]))
+       ; allow ES2015 constant definitions
+       (as-statement ["const "
+                     (pipe pairs
+                           destructure
+                           (map
+                            (lambda (p) [(first p) " = " (second p)]))
+                           (interleave ";\nconst "))
+                     ]))
 
 (macro defvar (...pairs)
-			 ; allow ES2015 let definitions
-			 (as-statement ["let "
-										 (pipe pairs
-													 destructure
-													 (map
-														(lambda (p) [(first p) " = " (second p)]))
-													 (interleave ",\n    "))
-										 ]))
+       ; allow ES2015 let definitions
+       (as-statement ["let "
+                     (pipe pairs
+                           destructure
+                           (map
+                            (lambda (p) [(first p) " = " (second p)]))
+                           (interleave ",\n    "))
+                     ]))
 
 (macro defun (name args ...body)
-			 ; function creation utility
-			 `(defconst @name (lambda @args ...@body)))
+       ; function creation utility
+       `(defconst @name (lambda @args ...@body)))
 
 (macro defprop (target ...pairs)
-			 (var ps (bulk-map pairs
-												 (lambda (l r)
-													 `(hash @l (hash enumerable true
-																					 writable false
-																					 configurable false
-																					 value @r)))))
-			 `(.define-properties Object @target @(.reduce ps
-																										 (lambda (acc p)
-																											 (.assign Object acc p))
-																										 (hash))))
+       (var ps (bulk-map pairs
+                         (lambda (l r)
+                           `(hash @l (hash enumerable true
+                                           writable false
+                                           configurable false
+                                           value @r)))))
+       `(.define-properties Object @target @(.reduce ps
+                                                     (lambda (acc p)
+                                                       (.assign Object acc p))
+                                                     (hash))))
 
 ;;; ====== CLASSES ======
 (delete-macro instance-of?)
 (macro instance-of? (item type)
-			 [(transpile item) " instanceof " (transpile type)])
+       [(transpile item) " instanceof " (transpile type)])
 
 (macro deftype (tname pkeys)
-			 (var self (gensym "deftypeSelf")
-						type (transpile tname)
-						args (interleave ", " pkeys.contents))
-			 `(var @tname @{ type 'output
-						 contents [
-						 "function " type "(" args ") {"
-						 (indent
-							`(do
-								(var @self (ternary (instance-of? this @type)
-																		this
-																		(.create Object (get @type 'prototype))))
-								...@(map pkeys.contents
-												 (lambda (p)
-													 `(set @self (quote @p) @p)))
-								@self))
-						 "}"]}))
+       (var self (gensym "deftypeSelf")
+            type (transpile tname)
+            args (interleave ", " pkeys.contents))
+       `(var @tname @{ type 'output
+             contents [
+             "function " type "(" args ") {"
+             (indent
+              `(do
+                (var @self (ternary (instance-of? this @type)
+                                    this
+                                    (.create Object (get @type 'prototype))))
+                ...@(map pkeys.contents
+                         (lambda (p)
+                           `(set @self (quote @p) @p)))
+                @self))
+             "}"]}))
 
 (macro defmethod (tname mname args ...body)
-			 `(set (get @tname 'prototype) (quote @mname)
-						 (lambda (...@args.contents) ...@body)))
+       `(set (get @tname 'prototype) (quote @mname)
+             (lambda (...@args.contents) ...@body)))
 
 
 
 ;;; ====== ES2015+ MODULE SYSTEM ======
 (macro use (path ...as)
-			 ["import { "
-			 (pipe as
-						 (map
-							(lambda (a)
-								(if (= "[" a.token)
-										[(first a.contents) " as " (last a.contents)]
-										a)))
-						 (interleave ", "))
-			 " } from " path])
+       ["import { "
+       (pipe as
+             (map
+              (lambda (a)
+                (if (= "[" a.token)
+                    [(first a.contents) " as " (last a.contents)]
+                    a)))
+             (interleave ", "))
+       " } from " path])
 
 (macro use-all (path alias alias-b)
-			 ["import "
-			 (if (and (node? alias) (= 'as alias.token))
-					 ["* as " alias-b]
-					 alias) " from " path])
+       ["import "
+       (if (and (node? alias) (= 'as alias.token))
+           ["* as " alias-b]
+           alias) " from " path])
 
 
 
 (macro provide (a)
-			 ["export " (transpile a)])
+       ["export " (transpile a)])
 
 (macro provide-all (...as)
-			 (as-statement
-				["export default {\n  "
-				(pipe as
-							(map
-							 (lambda (a)
-								 (if (= "[" a.token)
-										 [(last a.contents) ": " (first a.contents)]
-										 [a ": " a])))
-							(interleave ",\n  "))
-				"\n}"]))
+       (as-statement
+        ["export default {\n  "
+        (pipe as
+              (map
+               (lambda (a)
+                 (if (= "[" a.token)
+                     [(last a.contents) ": " (first a.contents)]
+                     [a ": " a])))
+              (interleave ",\n  "))
+        "\n}"]))
 
 
 ;;; ====== CONDITIONALS ======
 (macro cond (...branches)
-			 ; contitionals. transpiles to a sequence of ternary operators
-			 (var in-else false)
-			 (map branches
-						(lambda (a)
-							(if (and (= "(" a.token) (not in-else))
-									  [(first a.contents) "\n  ? " (second a.contents) "\n  : "]
-									(= "else" a.token)
-									(do (assign in-else true)
-											(list))
-									(transpile a)))))
+       ; contitionals. transpiles to a sequence of ternary operators
+       (var in-else false)
+       (map branches
+            (lambda (a)
+              (if (and (= "(" a.token) (not in-else))
+									(list
+									 (first a.contents) "\n  ? "
+									 (second a.contents) "\n  : ")
+                  (= "else" a.token)
+                  (do (assign in-else true)
+                      (list))
+                  (transpile a)))))
+
+
 
 ;;; ====== OPERATORS ======
 (macro eq? (a b)
-			 ; use loose == operator
-			 [(transpile a) " == " (transpile b)])
+       ; use loose == operator
+       [(transpile a) " == " (transpile b)])
 
 (macro eqv? (a b)
-			 ; use strict == operator
-			 [(transpile a) " === " (transpile b)])
+       ; use strict == operator
+       [(transpile a) " === " (transpile b)])
 
 ;;; ====== TYPES ======
-(delete-macro list?)
-(macro list? (...values)
-			 ; make better list? macro than core sibilant provides
-			 `(and ...@(map values (lambda (v)
-															 `(.isArray Array @v)))))
-
-(alias-macro undefined? void?) ; consistency with void macro
-
-(macro nan? (...values)
-			 ; checks multiple values for equality with NaN
-			 `(and ...@(map values (lambda (v)
-															 `(and (= (typeof @v) 'number)
-																		 (isNaN @v))))))
-
-
-(macro nothing? (...values)
-			 ; checks multiple values for equality with null or undefined
-			 `(and ...@(map values (lambda (v)
-															 `(or (eq? null @v)
-																		(nan? @v))))))
-
-(macro something? (...values)
-			 ; checks multiple values for non-equality with null or undefind
-			 `(not (nothing? ...@values)))
 
 
 
 (macro is-a (a ctor)
-			 ; machtes a value agains a given type constructor
-			 `(and (something? @a)
-						 (eqv? (get @a 'constructor) @ctor)))
+       ; machtes a value agains a given type constructor
+       `(and (something? @a)
+             (eqv? (get @a 'constructor) @ctor)))
 
 
-(macro date? (...values)
-			 ; tests if given values are dates
-			 `(and ...@(map values (lambda (v)
-															 `(is-a @v Date)))))
 
-(macro regex? (...values)
-			 ; tests if given values are regular expressions
-			 `(and ...@(map values (lambda (v)
-															 `(is-a @v RegExp)))))
+
+(macro void ()
+       ; transpiles to undefined
+       ["void 0"])
+
+(alias-macro undefined? void?) ; consistency with void macro
+
+(macro nil ()
+       ; equivalent of null
+       `())
+
+(macro nil? (...values)
+       `(and ...@(map values (lambda (v)
+                               `(eqv? @v (nil))))))
+
+(macro nan ()
+			 `(NaN))
+
+(macro nan? (...values)
+       ; checks multiple values for equality with NaN
+       `(and ...@(map values (lambda (v)
+                               `(and (= (typeof @v) 'number)
+                                     (isNaN @v))))))
+
+(macro nothing? (...values)
+       ; checks multiple values for equality with null or undefined
+       `(and ...@(map values (lambda (v)
+                               `(or (eq? null @v)
+                                    (nan? @v))))))
+
+
 
 (delete-macro number?)
 (macro number? (...values)
-			 ; tests if given values are numbers and not NaN
-			 `(and ...@(map values (lambda (v)
-															 `(and (eqv? (typeof @v) "number")
-																		 (not (nan? @v)))))))
+       ; tests if given values are numbers and not NaN
+       `(and ...@(map values (lambda (v)
+                               `(and (eqv? (typeof @v) "number")
+                                     (not (nan? @v)))))))
 
-(delete-macro hash?)
-(macro hash? (...values)
-			 ; tests if given values are objects
-			 `(and ...@(map values (lambda (v)
-															 `(is-a @v Object)))))
+
 
 (delete-macro list?)
 (macro list? (...values)
-			 ; tests if given values are arrays
-			 `(and ...@(map values (lambda (v)
-															 `(is-a @v Array)))))
+       ; make better list? macro than core sibilant provides
+       `(and ...@(map values (lambda (v)
+                               `(.isArray Array @v)))))
+
+
+
+(delete-macro hash?)
+(macro hash? (...values)
+       ; tests if given values are objects
+       `(and ...@(map values (lambda (v)
+                               `(is-a @v Object)))))
+
+
+
+(macro date (...args)
+       ; creates new Date objects
+       `(new Date ...@args))
+
+(macro date? (...values)
+       ; tests if given values are dates
+       `(and ...@(map values (lambda (v)
+                               `(is-a @v Date)))))
+
+
+
+(macro regex (pattern flag)
+			 `(new RegExp @pattern @flag))
+
+(macro regex? (...values)
+       ; tests if given values are regular expressions
+       `(and ...@(map values (lambda (v)
+                               `(is-a @v RegExp)))))
+
+
+
+(macro future (cbs ...body)
+       ; creates Promise objects
+       `(new Promise (lambda (@(interleave ", " cbs.contents))
+                       ...@body)))
 
 (macro future? (...values)
-			 ; tests if given values are promises
-			 `(and ...@(map values (lambda (v)
-															 `(is-a @v Promise)))))
+       ; tests if given values are promises
+       `(and ...@(map values (lambda (v)
+                               `(is-a @v Promise)))))
+
+
+
+(macro dict (...key-vals)
+       ; creates Map objects
+       (var kvs (bulk-map key-vals
+                          (lambda (key val)
+                            `(list key val))))
+       `(new Map (list ...@kvs)))
 
 (macro dict? (...values)
-			 ; tests if given values are maps
-			 `(and ...@(map values (lambda (v)
-															 `(is-a @v Map)))))
+       ; tests if given values are maps
+       `(and ...@(map values (lambda (v)
+                               `(is-a @v Map)))))
+
+
 
 ;; NOTE
 ;; we won't support the native Set datatype. that is by
@@ -217,66 +267,42 @@
 ;; less useless, except for creating a union
 
 
-(macro void ()
-			 ; transpiles to undefined
-			 ["void 0"])
-
-(macro nil ()
-			 ; equivalent of null
-			 `())
-
-(macro date (...args)
-			 ; creates new Date objects
-			 `(new Date ...@args))
-
-(macro future (cbs ...body)
-			 ; creates Promise objects
-			 `(new Promise (lambda (@(interleave ", " cbs.contents))
-											 ...@body)))
-
-(macro dict (...key-vals)
-			 ; creates Map objects
-			 (var kvs (bulk-map key-vals
-													(lambda (key val)
-														`(list key val))))
-			 `(new Map (list ...@kvs)))
-
 
 
 ;; ====== RECURSION ======
 (macro trampoline-fn (name args ...body)
-			 ["function " name
-			 "(" (interleave ", " args.contents)  ") {"
-			 (indent (apply ^do body))
-			 "}"])
+       ["function " name
+       "(" (interleave ", " args.contents)  ") {"
+       (indent (apply ^do body))
+       "}"])
 
 (macro trampoline-is (a)
-			 `(and (function? @a)
-						 (get @a '**sibilisp-recur**)))
+       `(and (function? @a)
+             (get @a '**sibilisp-recur**)))
 
 (macro recur (...args)
-			 ; creates a new jump point if the fixpoint is not reached
-			 (var jump (gensym "jump"))
-			 `(scoped
-				 (defun @jump () (call looprec-step ...@args))
-				 (defprop @jump '**sibilisp-recur** true)))
+       ; creates a new jump point if the fixpoint is not reached
+       (var jump (gensym "jump"))
+       `(scoped
+         (defun @jump () (call looprec-step ...@args))
+         (defprop @jump '**sibilisp-recur** true)))
 
 (macro loop (variables ...body)
-			 ; allows to use single and multiple direct recursion
-			 ; through trampolining. performance is generally ok
-			 ; up to and above 7500 iterations, which should be
-			 ; good enough for most use cases.
-			 (var retv (gensym "looprecReturn")
-						vars (map variables.contents
-											(lambda (pair) (first pair.contents)))
-						vals (map variables.contents
-											(lambda (pair) (last pair.contents))))
-			 `(scoped
-				 (call
-					(lambda (step ...args)
-						(var @retv (.apply step (nil) args))
-						(while (trampoline-is @retv)
-							(assign @retv (call @retv)))
-						@retv)
-					(trampoline-fn looprec-step (...@vars) ...@body)
-					...@vals)))
+       ; allows to use single and multiple direct recursion
+       ; through trampolining. performance is generally ok
+       ; up to and above 7500 iterations, which should be
+       ; good enough for most use cases.
+       (var retv (gensym "looprecReturn")
+            vars (map variables.contents
+                      (lambda (pair) (first pair.contents)))
+            vals (map variables.contents
+                      (lambda (pair) (last pair.contents))))
+       `(scoped
+         (call
+          (lambda (step ...args)
+            (var @retv (.apply step (nil) args))
+            (while (trampoline-is @retv)
+              (assign @retv (call @retv)))
+            @retv)
+          (trampoline-fn looprec-step (...@vars) ...@body)
+          ...@vals)))
