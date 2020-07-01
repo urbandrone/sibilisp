@@ -12,6 +12,17 @@
 
 
 
+;;; ====== OPERATORS ======
+(macro eq? (a b)
+       ; use loose == operator
+       [(transpile a) " == " (transpile b)])
+
+(macro eqv? (a b)
+       ; use strict == operator
+       [(transpile a) " === " (transpile b)])
+
+
+
 ;;; LANGUAGE
 (macro gensym (a)
        ; generates a generic symbol
@@ -61,26 +72,70 @@
        [(transpile item) " instanceof " (transpile type)])
 
 (macro deftype (tname pkeys)
-       (var self (gensym "deftypeSelf")
+       (var self (gensym "self")
             type (transpile tname)
             args (interleave ", " pkeys.contents))
-       `(var @tname @{ type 'output
+       `(defconst @tname @{ type 'output
              contents [
              "function " type "(" args ") {"
              (indent
               `(do
-                (var @self (ternary (instance-of? this @type)
-                                    this
-                                    (.create Object (get @type 'prototype))))
+                (var @self (.create Object (get @type 'prototype)))
                 ...@(map pkeys.contents
                          (lambda (p)
                            `(set @self (quote @p) @p)))
                 @self))
              "}"]}))
 
+;; (defsum maybe ((none) (some value)))
+(macro defsum (tname variants)
+			 (var tself (gensym "sumtype")
+						subctors (map variants.contents
+													(lambda (vartype)
+														(var self (gensym "self")
+																 type (transpile (first vartype.contents))
+																 pkeys undefined
+																 args "")
+														(when (> (length vartype.contents) 1)
+															(assign pkeys (rest vartype.contents))
+															(assign args (interleave ", " pkeys)))
+														(hash type 'output
+																	contents [
+																	 "function " type "(" args ") {"
+																	 (indent
+																		`(do
+																			(var @self (.create Object (get @tself 'prototype)))
+																			...@(if (defined? pkeys) (map pkeys
+																																		(lambda (p)
+																																			`(set @self (quote @p) @p)))
+																							(list))
+																			(set @self 'constructor @type)
+																			@self))
+																	 "}"])))
+						subnames (map variants.contents
+													(lambda (vartype) (first vartype.contents))))
+			 `(defconst @tname
+					(scoped
+					 (defconst @tself (.create Object (nil)))
+					 (set @tself 'prototype (hash))
+					 ...@(map subnames
+										(lambda (sname index)
+											(list `(set @tself (quote @sname) @(get subctors index))
+														"\n"
+														`(set (get @tself (quote @sname) 'prototype)
+																	'**sibilisp-type**
+																	@tself))))
+					 (defstatic @tself is (x)
+											(and (not (eq? () x))
+													 (= (get x '**sibilisp-type**)
+															@tself)))
+					 @tself)))
+
+(macro defstatic (tname mname args ...body)
+			 `(set @tname (quote @mname) (lambda (...@args.contents) ...@body)))
+
 (macro defmethod (tname mname args ...body)
-       `(set (get @tname 'prototype) (quote @mname)
-             (lambda (...@args.contents) ...@body)))
+       `(defstatic (get @tname 'prototype) @mname @args ...@body))
 
 
 
@@ -135,24 +190,14 @@
                       (list))
                   (transpile a)))))
 
-
-
-;;; ====== OPERATORS ======
-(macro eq? (a b)
-       ; use loose == operator
-       [(transpile a) " == " (transpile b)])
-
-(macro eqv? (a b)
-       ; use strict == operator
-       [(transpile a) " === " (transpile b)])
-
 ;;; ====== TYPES ======
 
 
 
 (macro is-a (a ctor)
        ; machtes a value agains a given type constructor
-       `(and (something? @a)
+       `(and (not (eq? () @a))
+						 (not (isNaN @a))
              (eqv? (get @a 'constructor) @ctor)))
 
 
@@ -203,6 +248,9 @@
        ; make better list? macro than core sibilant provides
        `(and ...@(map values (lambda (v)
                                `(.isArray Array @v)))))
+
+(macro as-list (value)
+			 `(.from Array @value))
 
 
 
