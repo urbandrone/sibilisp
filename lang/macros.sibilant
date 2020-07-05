@@ -29,6 +29,13 @@
        `(generate-symbol @(or a "gensym")))
 
 
+(macro scoped* (...body)
+			 `(*scoped-without-return ...@body))
+
+
+(macro error! (...msg)
+			 `(*scoped-without-return
+				 (throw (new Error (+ "" ...@msg)))))
 
 (macro defconst (...pairs)
        ; allow ES2015 constant definitions
@@ -190,6 +197,42 @@
                       (list))
                   (transpile a)))))
 
+(macro if* (...conditions-and-branches)
+			 (interleave " else "
+									 (bulk-map conditions-and-branches
+														 (lambda (condition branch)
+															 (cond ((defined? branch)
+																			(list "if (" (transpile condition) ") {"
+																						(indent
+																						 (transpile branch))
+																						"}"))
+																		 :else (list "{ " (indent
+																											 (transpile condition)) " }"))))))
+
+
+;; ====== LOOPS ======
+(macro while* (condition ...body)
+			 (hash type 'output
+						 contents (list "while (" (transpile condition) ") {"
+														...(map body (lambda (x) (indent (transpile x))))
+														"}")))
+
+(macro unless* (condition ...body)
+			 `(while* (not @condition) ...@body))
+
+(macro for (coll iter ...body)
+			 `(scoped
+				 @(hash type 'output
+								contents (list "for (let " (transpile iter) " of " (transpile coll)") {"
+															 (indent (apply ^do @body))
+															 "}"))))
+
+(macro for* (coll iter ...body)
+			 (hash type 'output
+						 contents (list "for (let " (transpile iter) " of " (transpile coll)") {"
+														...(map body (lambda (x) (indent (transpile x))))
+														"}")))
+
 ;;; ====== TYPES ======
 
 
@@ -231,7 +274,6 @@
        `(and ...@(map values (lambda (v)
                                `(or (eq? null @v)
                                     (nan? @v))))))
-
 
 
 (delete-macro number?)
@@ -309,11 +351,25 @@
 
 
 
+
 ;; NOTE
 ;; we won't support the native Set datatype. that is by
 ;; intention, because Sets in JavaScript are more or
 ;; less useless, except for creating a union
 
+
+
+(macro generator (name args ...body)
+			 (hash type 'output
+						 contents (list "function * " (transpile name) "("
+														(interleave ", " args.contents)
+														") {"
+														...(map body (lambda (expr)
+																					 (indent (transpile expr))))
+														"}")))
+
+(macro yields (value)
+			 (as-statement (list "yield " @(transpile value))))
 
 
 

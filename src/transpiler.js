@@ -143,7 +143,7 @@ const findFilesInSrc = dpath => {
 		Async.of,
 		Async.chain(readDir),
 		Async.map(([p, files]) => List.map(file => pjoin(p, file))(files)),
-		Async.map(injectPreludeFunctions),
+		// Async.map(injectPreludeFunctions),
 		Async.map(List.select(or([
 		  isDir,
 			isSibilantFile,
@@ -156,7 +156,7 @@ const findFilesInSrc = dpath => {
 
 
 // ------ SOURCE MANIPULATION ------
-const injectPrelude = fdata => {
+const injectMacros = fdata => {
 	return `(import-namespace sibilisp)\n(include "${getMacroPath()}")\n\n` + fdata;
 };
 
@@ -166,7 +166,7 @@ const removeComments = Str.
 
 
 const transpile = compl(
-	injectPrelude,
+	injectMacros,
 	sibilant,
 	x => x.js,
 	removeComments
@@ -221,7 +221,7 @@ const alterPreludePath = to => fpath => {
 const copyFilesToDest = (spath, dpath, f = null) => files => {
 	return compl(
 		List.map(f ? f : over('path')(alterPathAndType(dpath)(spath))),
-		List.map(over('path')(alterPreludePath(dpath))),
+		// List.map(over('path')(alterPreludePath(dpath))),
 		List.foldl(
 			(asnc, file) =>
 				compl(

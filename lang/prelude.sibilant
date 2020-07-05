@@ -1,4 +1,4 @@
-(comment sibilisp-prelude | MIT)
+(comment sibilisp-prelude - MIT)
 
 (provide
  (defun identity (a) a))
@@ -7,3 +7,81 @@
  (defun constant (a)
 	 (lambda () a)))
 
+(provide
+ (defun set-arity (ln func)
+	 (cond ((< ln 1) (lambda ()
+										 (.apply func (nil) arguments)))
+				 ((< ln 2) (lambda (a)
+										 (.apply func (nil) arguments)))
+				 ((< ln 3) (lambda (a b)
+										 (.apply func (nil) arguments)))
+				 ((< ln 4) (lambda (a b c)
+										 (.apply func (nil) arguments)))
+				 ((< ln 5) (lambda (a b c d)
+										 (.apply func (nil) arguments)))
+				 ((< ln 6) (lambda (a b c d e)
+										 (.apply func (nil) arguments)))
+				 ((< ln 7) (lambda (a b c d e f)
+										 (.apply func (nil) arguments)))
+				 ((< ln 8) (lambda (a b c d e f g)
+										 (.apply func (nil) arguments)))
+				 ((< ln 9) (lambda (a b c d e f g h)
+										 (.apply func (nil) arguments)))
+				 ((< ln 10) (lambda (a b c d e f g h i)
+											(.apply func (nil) arguments)))
+				 ((< ln 11) (lambda (a b c d e f g h i j)
+											(.apply func (nil) arguments)))
+				 ((< ln 12) (lambda (a b c d e f g h i j k)
+											(.apply func (nil) arguments)))
+				 ((< ln 13) (lambda (a b c d e f g h i j k l)
+											(.apply func (nil) arguments)))
+				 ((< ln 14) (lambda (a b c d e f g h i j k l m)
+											(.apply func (nil) arguments)))
+				 ((< ln 15) (lambda (a b c d e f g h i j k l m n)
+											(.apply func (nil) arguments)))
+				 ((< ln 16) (lambda (a b c d e f g h i j k l m n o)
+											(.apply func (nil) arguments)))
+				 :else func)))
+
+(defun *curry (args func)
+	(defvar flen (length func))
+	(set-arity flen (lambda (...rest)
+		(defvar param (.concat args rest))
+	  (cond ((< (length param) flen) (*curry param func))
+					:else (.apply func (nil) param)))))
+
+(provide
+ (defun curry (func)
+	 (cond ((< (length func) 1) func)
+				 :else (*curry (list) func))))
+
+(provide
+ (defun compl (fn ...fns)
+	 (curry (set-arity (length fn)
+										 (lambda (...rest)
+											 (.reduce fns
+																(lambda (retv next)
+																	(next retv))
+																(.apply fn (nil) rest)))))))
+
+(provide
+ (defun compr (...fns)
+	 (defvar fn (last fns))
+	 (assign fns (.slice fns 0 -1))
+	 (curry (set-arity (length fn)
+										 (lambda (...rest)
+											 (.reduce-right fns
+																(lambda (retv next)
+																	(next retv))
+																(.apply fn (nil) rest)))))))
+
+(provide
+ (defconst map (curry (lambda (func functor)
+												(cond ((nothing? functor)
+															 )
+															((lambda? functor.map)
+															 (.map functor func))
+															()
+															()
+															()
+															:else )))))
