@@ -12,9 +12,9 @@ const List = require('./utils/list');
 const UTF8 = 'utf8';
 
 const COMMENT_REGEX = /\/\*[a-z0-9\\\/\s\-_\?\!\+\*\#\(\)\:\.]+\*\/(\r|\n|\r\n)+/ig;
-const SIBILANT_REGEX = /\.sibilant$/g;
-const JAVASCRIPT_REGEX = /\.js$/g;
-const SLISP_REGEX = /\.slisp$/g;
+const SIBILANT_REGEX = function () { return /\.sibilant$/g; };
+const JAVASCRIPT_REGEX = function () { return /\.js$/g; };
+const SLISP_REGEX = function () { return /\.slisp$/g; };
 
 const MACRO_FILE = 'macros.sibilant';
 const PROCS_FILE = 'prelude.sibilant';
@@ -117,7 +117,7 @@ const isFile = compl(toStat, x => x.isFile());
 
 const isFileT = regex =>  converge((fp, tp) => Boolean(fp && tp))([
 	isFile,
-	x => regex.test(x)
+	x => regex().test(x)
 ]);
 
 const isSibilantFile = isFileT(SIBILANT_REGEX);

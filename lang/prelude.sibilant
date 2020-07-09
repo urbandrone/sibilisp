@@ -75,6 +75,28 @@
 																	(next retv))
 																(.apply fn (nil) rest)))))))
 
+;; --- TYPES
+(provide
+ (defsum maybe (none) (some value)))
+
+(provide
+ (defun maybe-of (value)
+	 (maybe.some value)))
+
+(provide
+ (defun maybe-lift (value)
+	 (cond ((nothing? value) (maybe.none))
+				 :else (maybe.some value))))
+
+(defmethod maybe is-some ()
+	(defined? (get this 'value)))
+
+(defmethod maybe bimap (none-fn some-fn)
+	(cond ((.is-some this) (maybe.some (some-fn this.value)))
+				:else (maybe-lift (none-fn))))
+
+
+
 (provide
  (defconst map (curry (lambda (func functor)
 												(cond ((nothing? functor)

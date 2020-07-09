@@ -152,7 +152,7 @@
        (pipe as
              (map
               (lambda (a)
-                (if (= "[" a.token)
+                (if (= "(" a.token)
                     [(first a.contents) " as " (last a.contents)]
                     a)))
              (interleave ", "))
@@ -175,7 +175,7 @@
         (pipe as
               (map
                (lambda (a)
-                 (if (= "[" a.token)
+                 (if (= "(" a.token)
                      [(last a.contents) ": " (first a.contents)]
                      [a ": " a])))
               (interleave ",\n  "))
@@ -233,6 +233,14 @@
 														...(map body (lambda (x) (indent (transpile x))))
 														"}")))
 
+(macro break ()
+			 (as-statement `break))
+
+(macro continue ()
+			 (as-statement `continue))
+
+
+
 ;;; ====== TYPES ======
 
 
@@ -250,7 +258,9 @@
        ; transpiles to undefined
        ["void 0"])
 
-(alias-macro undefined? void?) ; consistency with void macro
+(macro void? (...values)
+			 `(and ...@(map values
+											(lambda (v) `(undefined? @v)))))
 
 (macro nil ()
        ; equivalent of null
@@ -261,7 +271,7 @@
                                `(eqv? @v (nil))))))
 
 (macro nan ()
-			 `(NaN))
+			 `NaN)
 
 (macro nan? (...values)
        ; checks multiple values for equality with NaN
@@ -302,6 +312,15 @@
        `(and ...@(map values (lambda (v)
                                `(is-a @v Object)))))
 
+(macro hash-pairs (value)
+			 `(.entries Object @value))
+
+(macro hash-merge (...values)
+			 `(.assign Object (hash) ...@values))
+
+(macro hash-create (value)
+			 `(.create Object @value))
+
 
 
 (macro date (...args)
@@ -312,6 +331,15 @@
        ; tests if given values are dates
        `(and ...@(map values (lambda (v)
                                `(is-a @v Date)))))
+
+(macro date-now-utc ()
+			 `(.now Date))
+
+(macro date-now ()
+			 `(as-number (new Date)))
+
+(macro date-parse (iso-string)
+			 `(.parse Date @iso-string))
 
 
 
@@ -334,6 +362,18 @@
        ; tests if given values are promises
        `(and ...@(map values (lambda (v)
                                `(is-a @v Promise)))))
+
+(macro future-resolve (value)
+			 `(.resolve Promise @value))
+
+(macro future-reject (err)
+			 `(.reject Promise @err))
+
+(macro future-all (...futures)
+			 `(.all Promise (list ...@futures)))
+
+(macro future-any (...futures)
+			 `(.race Promise (list ...@futures)))
 
 
 
