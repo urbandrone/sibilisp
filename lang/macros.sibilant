@@ -37,7 +37,7 @@
 			 `(*scoped-without-return
 				 (throw (new Error (+ "" ...@msg)))))
 
-(macro defconst (...pairs)
+(macro defconstant (...pairs)
        ; allow ES2015 constant definitions
        (as-statement ["const "
                      (pipe pairs
@@ -59,7 +59,7 @@
 
 (macro defun (name args ...body)
        ; function creation utility
-       `(defconst @name (lambda @args ...@body)))
+       `(defconstant @name (lambda @args ...@body)))
 
 (macro defprop (target ...pairs)
        (var ps (bulk-map pairs
@@ -82,7 +82,7 @@
        (var self (gensym "self")
             type (transpile tname)
             args (interleave ", " pkeys.contents))
-       `(defconst @tname @{ type 'output
+       `(defconstant @tname @{ type 'output
              contents [
              "function " type "(" args ") {"
              (indent
@@ -121,9 +121,9 @@
 																	 "}"])))
 						subnames (map variants.contents
 													(lambda (vartype) (first vartype.contents))))
-			 `(defconst @tname
+			 `(defconstant @tname
 					(scoped
-					 (defconst @tself (.create Object (nil)))
+					 (defconstant @tself (.create Object (nil)))
 					 (set @tself 'prototype (hash))
 					 ...@(map subnames
 										(lambda (sname index)
@@ -445,7 +445,7 @@
          (call
           (lambda (step ...args)
             (var @retv (.apply step (nil) args))
-            (while (trampoline-is @retv)
+            (while* (trampoline-is @retv)
               (assign @retv (call @retv)))
             @retv)
           (trampoline-fn looprec-step (...@vars) ...@body)
