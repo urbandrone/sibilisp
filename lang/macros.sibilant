@@ -241,6 +241,40 @@
 
 
 
+;;; ====== MATHS ======
+
+(macro floor (a)
+			 `(.floor Math @a))
+
+(macro ceil (a)
+			 `(.ceil Math @a))
+
+(macro round (a)
+			 `(.round Math @a))
+
+(macro sin (a)
+			 `(.sin Math @a))
+
+(macro cosin (a)
+			 `(.cos Math @a))
+
+(macro tan (a)
+			 `(.tan Math @a))
+
+(macro atan (a)
+			 `(.atan Math @a))
+
+(macro min (a b)
+			 `(.min Math @a @b))
+
+(macro max (a b)
+			 `(.max Math @a @b))
+
+(macro round (a)
+			 `(* (.round Math) @(or a 1)))
+
+
+
 ;;; ====== TYPES ======
 
 
