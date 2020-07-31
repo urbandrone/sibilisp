@@ -264,6 +264,33 @@
 (macro atan (a)
 			 `(.atan Math @a))
 
+(macro atan-2 (a b)
+			 `(.atan2 Math @b @a))
+
+(macro atanh (a)
+			 `(.atanh Math @a))
+
+(macro acos (a)
+			 `(.acos Math @a))
+
+(macro acosh (a)
+			 `(.acosh Math @a))
+
+(macro asin (a)
+			 `(.asin Math @a))
+
+(macro asinh (a)
+			 `(.asinh Math @a))
+
+(macro square-root (a)
+			 `(.sqrt Math @a))
+
+(macro cube-root (a)
+			 `(.cbrt Math @a))
+
+(macro exponent (a)
+			 `(.exp Math @a))
+
 (macro min (a b)
 			 `(.min Math @a @b))
 
@@ -272,6 +299,9 @@
 
 (macro round (a)
 			 `(* (.round Math) @(or a 1)))
+
+(macro abs (a)
+			 `(.abs Math @a))
 
 
 
