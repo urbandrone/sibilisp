@@ -81,13 +81,19 @@
 (macro deftype (tname pkeys)
        (var self (gensym "self")
             type (transpile tname)
-            args (interleave ", " pkeys.contents))
+            args (interleave ", " pkeys.contents)
+						alen (length pkeys.contents))
        `(defconstant @tname @{ type 'output
              contents [
              "function " type "(" args ") {"
              (indent
               `(do
-                (var @self (.create Object (get @type 'prototype)))
+                (defvar @self (.create Object (get @type 'prototype)))
+								(defvar alen (length arguments))
+								(when (not (eqv? alen @alen))
+									(error! "Tagged constructor " @tname
+													"expects " @alen " arguments but got "
+													alen))
                 ...@(map pkeys.contents
                          (lambda (p)
                            `(set @self (quote @p) @p)))
@@ -288,8 +294,11 @@
 (macro cube-root (a)
 			 `(.cbrt Math @a))
 
-(macro exponent (a)
+(macro exp (a)
 			 `(.exp Math @a))
+
+(macro exp-m1 (a)
+			 `(.expm1 Math @a))
 
 (macro min (a b)
 			 `(.min Math @a @b))
@@ -297,11 +306,38 @@
 (macro max (a b)
 			 `(.max Math @a @b))
 
-(macro round (a)
-			 `(* (.round Math) @(or a 1)))
+(macro random (a)
+			 `(* (.random Math) @(or a 1)))
+
+(macro float32-round (a)
+			 `(.fround Math @a))
+
+(macro power (a p)
+			 `(.pow Math @a @p))
+
+(macro hypot (a b)
+			 `(.hypot Math @a @b))
+
+(macro loga (a)
+			 `(.log Math @a))
+
+(macro loga-10 (a)
+			 `(.log10 Math @a))
+
+(macro loga-1p (a)
+			 `(.log1p Math @a))
+
+(macro loga-2 (a)
+			 `(.log2 Math @a))
 
 (macro abs (a)
 			 `(.abs Math @a))
+
+(macro sign (a)
+			 `(.sign Math @a))
+
+(macro trunc (a)
+			 `(.trunc Math @a))
 
 
 
