@@ -33,9 +33,15 @@
 			 `(*scoped-without-return ...@body))
 
 
+
+(macro error (...msg)
+			 `(new Error (+ "" ...@msg)))
+
 (macro error! (...msg)
 			 `(*scoped-without-return
-				 (throw (new Error (+ "" ...@msg)))))
+				 (throw (error ...@msg)))))
+
+
 
 (macro defconstant (...pairs)
        ; allow ES2015 constant definitions
@@ -117,7 +123,12 @@
 																	 "function " type "(" args ") {"
 																	 (indent
 																		`(do
-																			(var @self (.create Object (get @tself 'prototype)))
+																			(defvar @self (.create Object (get @tself 'prototype)))
+																			(defvar alen (length arguments))
+																			 (when (not (eqv? alen @alen))
+																				 (error! "Tagged constructor " @tname "." @type
+																								 "expects " @alen " arguments but got "
+																								 alen))
 																			...@(if (defined? pkeys) (map pkeys
 																																		(lambda (p)
 																																			`(set @self (quote @p) @p)))
@@ -247,6 +258,15 @@
 
 
 
+;;; ====== TIME ======
+(macro timeout (ms ...body)
+			 `(set-timeout (lambda () ...@body) @ms))
+
+(macro interval (ms ...body)
+       `(set-interval (lambda () ...@body) @ms))
+
+
+
 ;;; ====== MATHS ======
 
 (macro floor (a)
@@ -340,11 +360,17 @@
 			 `(.trunc Math @a))
 
 
+(macro PI ()
+			 `(get Math 'PI))
+
+(macro EULER ()
+			 `(get Math 'E))
+
+
+
+
 
 ;;; ====== TYPES ======
-
-
-
 (macro is-a (a ctor)
        ; machtes a value agains a given type constructor
        `(and (not (eq? () @a))
@@ -378,6 +404,12 @@
        `(and ...@(map values (lambda (v)
                                `(and (= (typeof @v) 'number)
                                      (isNaN @v))))))
+
+(macro finite? (...values)
+			 ; checks multiple values for being numeric and finite
+			 `(and ...@(map values (lambda (v)
+															 `(and (eqv? (typeof @v) 'number)
+																		 (is-finite @v))))))
 
 (macro nothing? (...values)
        ; checks multiple values for equality with null or undefined
@@ -509,7 +541,19 @@
 														"}")))
 
 (macro yields (value)
-			 (as-statement (list "yield " @(transpile value))))
+			 (as-statement (list "yield " (transpile value))))
+
+(macro yields-values (value)
+			 (as-statement (list "yield* " (transpile value))))
+
+
+
+;; ====== JSON ======
+(macro from-json (value)
+			 `(.parse JSON @value))
+
+(macro to-json (value)
+			 `(.stringify JSON @value))
 
 
 

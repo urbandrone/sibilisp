@@ -95,15 +95,31 @@
 	(cond ((.is-some this) (maybe.some (some-fn this.value)))
 				:else (maybe-lift (none-fn))))
 
+(defmethod maybe map (func)
+	(.bimap this identity func))
+
+(defmethod maybe concat (maybe-t)
+	(cond ((and (.is-some this) (.is-some maybe-t))
+				 (maybe.some (.concat this.value maybe-t.value)))
+				:else (maybe.none)))
+
+(defmethod maybe ap (maybe-t)
+	(cond ((and (.is-some this) (.is-some maybe-t))
+				 (.map maybe-t this.value))
+				:else (maybe.none)))
+
 
 
 (provide
- (defconst map (curry (lambda (func functor)
-												(cond ((nothing? functor)
-															 )
-															((lambda? functor.map)
-															 (.map functor func))
-															()
-															()
-															()
-															:else )))))
+ (defconstant map (curry (lambda (func functor)
+													 (cond ((nothing? functor)
+																	(error! "Cannot (map) over null/undefined/NaN"))
+																 ((lambda? functor.map)
+																	(.map functor func))
+																 ((future? functor)
+																	(.then functor func))
+																 ((function? functor)
+																	(set-arity (length functor)
+																						 (lambda (...args)
+																							 (call func (.apply functor (nil) args)))))
+																 :else (error! "Value " functor " cannot be (map)ped."))))))
