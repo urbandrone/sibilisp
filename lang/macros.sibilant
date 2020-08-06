@@ -278,10 +278,10 @@
 (macro round (a)
 			 `(.round Math @a))
 
-(macro sin (a)
+(macro sine (a)
 			 `(.sin Math @a))
 
-(macro cosin (a)
+(macro cosine (a)
 			 `(.cos Math @a))
 
 (macro tan (a)
@@ -293,19 +293,19 @@
 (macro atan-2 (a b)
 			 `(.atan2 Math @b @a))
 
-(macro atanh (a)
+(macro atan-h (a)
 			 `(.atanh Math @a))
 
 (macro acos (a)
 			 `(.acos Math @a))
 
-(macro acosh (a)
+(macro acos-h (a)
 			 `(.acosh Math @a))
 
-(macro asin (a)
+(macro asine (a)
 			 `(.asin Math @a))
 
-(macro asinh (a)
+(macro asine-h (a)
 			 `(.asinh Math @a))
 
 (macro square-root (a)
@@ -385,7 +385,8 @@
        ["void 0"])
 
 (macro void? (...values)
-			 `(and ...@(map values
+       ; checks for equality with undefined
+       `(and ...@(map values
 											(lambda (v) `(undefined? @v)))))
 
 (macro nil ()
@@ -393,8 +394,15 @@
        `())
 
 (macro nil? (...values)
+       ; checks for equality with null
        `(and ...@(map values (lambda (v)
                                `(eqv? @v (nil))))))
+
+(delete-macro exists?)
+(macro exists? (...values)
+       ; core sibilant exists? macro is a bit verbose in it's output
+       `(and ...@(map values (lambda (v)
+															 `(eq? @v (nil))))))
 
 (macro nan ()
 			 `NaN)
@@ -429,28 +437,39 @@
 
 (delete-macro list?)
 (macro list? (...values)
-       ; make better list? macro than core sibilant provides
+       ; use native isArray for list? macro
        `(and ...@(map values (lambda (v)
                                `(.isArray Array @v)))))
 
 (macro as-list (value)
+       ; creates a list from array-like objects
 			 `(.from Array @value))
 
 
 
 (delete-macro hash?)
 (macro hash? (...values)
-       ; tests if given values are objects
+       ; core sibilants hash? macro enhancements
        `(and ...@(map values (lambda (v)
                                `(is-a @v Object)))))
 
 (macro hash-pairs (value)
+       ; creates a list of key/value pairs from objects
 			 `(.entries Object @value))
 
+(macro hash-merge! (...values)
+			 ; unsafely merges multiples objects into one
+			 ; objects to the right override previous objects
+			 ; ! modifies the left most object !
+			 `(.assign Object ...@values))
+
 (macro hash-merge (...values)
-			 `(.assign Object (hash) ...@values))
+       ; safely merges multiple objects into a new objects
+       ; objects to the right override previous objects
+       `(hash-merge! (hash) ...@values))
 
 (macro hash-create (value)
+			 ; creates new instances of objects
 			 `(.create Object @value))
 
 
@@ -465,17 +484,26 @@
                                `(is-a @v Date)))))
 
 (macro date-now-utc ()
+			 ; returns the milliseconds since begin of the unix epoche
+			 ; in universal coordinated time
 			 `(.now Date))
 
 (macro date-now ()
+			 ; returns the milliseconds since begin of the unix epoche
+			 ; in local time
 			 `(as-number (new Date)))
 
 (macro date-parse (iso-string)
+			 ; uses the native Date.parse method to parse a string
+			 ; in simplified ISO 8601 format (e. g. 2000-03-03T12:26:37)
+			 ; returns the milliseconds since begin of the unix epoche
+			 ; in universal coordinated time
 			 `(.parse Date @iso-string))
 
 
 
 (macro regex (pattern flag)
+			 ; creates new regular expressions without the need for the new macro
 			 `(new RegExp @pattern @flag))
 
 (macro regex? (...values)
@@ -496,15 +524,23 @@
                                `(is-a @v Promise)))))
 
 (macro future-resolve (value)
+			 ; creates a resolving promise
 			 `(.resolve Promise @value))
 
 (macro future-reject (err)
+			 ; creates a rejecting promise
 			 `(.reject Promise @err))
 
 (macro future-all (...futures)
+			 ; creates a single promise from multiple promises that
+			 ; resolves when all promises resolve or rejects if any
+			 ; promise rejects
 			 `(.all Promise (list ...@futures)))
 
 (macro future-any (...futures)
+			 ; creates a single promise from multiple promises that
+			 ; resolves with the first resolving promise or rejects
+			 ; when any promise rejects
 			 `(.race Promise (list ...@futures)))
 
 
@@ -532,6 +568,7 @@
 
 
 (macro generator (name args ...body)
+			 ; creates ES2015+ generator functions
 			 (hash type 'output
 						 contents (list "function * " (transpile name) "("
 														(interleave ", " args.contents)
@@ -541,30 +578,34 @@
 														"}")))
 
 (macro yields (value)
+			 ; creates a yield statement for use in generator functions
 			 (as-statement (list "yield " (transpile value))))
 
 (macro yields-values (value)
+			 ; creates a yield* statement for use in generator functions
 			 (as-statement (list "yield* " (transpile value))))
 
 
 
 ;; ====== JSON ======
-(macro from-json (value)
+(macro json-from-string (value)
+			 ; parses a JSON string into an object
 			 `(.parse JSON @value))
 
-(macro to-json (value)
+(macro json-to-string (value)
+			 ; parses an object into a JSON string
 			 `(.stringify JSON @value))
 
 
 
 ;; ====== RECURSION ======
-(macro trampoline-fn (name args ...body)
+(macro trampoline-fn (name args ...body) ; used internally
        ["function " name
        "(" (interleave ", " args.contents)  ") {"
        (indent (apply ^do body))
        "}"])
 
-(macro trampoline-is (a)
+(macro trampoline-is (a) ; used internally
        `(and (function? @a)
              (get @a '**sibilisp-recur**)))
 
