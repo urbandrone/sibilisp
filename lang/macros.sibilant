@@ -8,7 +8,7 @@
 
 (delete-macro last)
 (macro last (ls)
-       `(get @ls (- (length @ls) 1)))
+       `(get @ls (- (length @ls) 1))) ; slightly faster than original
 
 
 
@@ -17,7 +17,7 @@
        ; use loose == operator
        [(transpile a) " == " (transpile b)])
 
-(macro eqv? (a b)
+(macro eql? (a b)
        ; use strict == operator
        [(transpile a) " === " (transpile b)])
 
@@ -29,17 +29,15 @@
        `(generate-symbol @(or a "gensym")))
 
 
-(macro scoped* (...body)
-			 `(*scoped-without-return ...@body))
-
-
 
 (macro error (...msg)
+			 ; creates new error instances
 			 `(new Error (+ "" ...@msg)))
 
 (macro error! (...msg)
+			 ; creates and immediatly throws a new error instance
 			 `(*scoped-without-return
-				 (throw (error ...@msg)))))
+				 (throw (error ...@msg))))
 
 
 
@@ -63,6 +61,23 @@
                            (interleave ",\n    "))
                      ]))
 
+(macro let (var-lists ...body)
+			 ; idiomatic variables
+			 (var vnames (map var-lists.contents (lambda (c) (first (get c 'contents))))
+						vvals (map var-lists.contents (lambda (c) (last (get c 'contents)))))
+			 `(call (lambda (...@vnames) ...@body) ...@vvals))
+
+(macro let* (var-lists ...body)
+			 ; idiomatic variables with back referencing
+       (var vars (map var-lists.contents
+											(lambda (paired)
+												`(defvar ...@paired.contents)))
+						vnames (map var-lists.contents
+												(lambda (c) (first c.contents))))
+       `(scoped
+				 ...@vars
+				 (call (lambda (...@vnames) ...@body) ...@vnames)))
+
 (macro defun (name args ...body)
        ; function creation utility
        `(defconstant @name (lambda @args ...@body)))
@@ -82,9 +97,11 @@
 ;;; ====== CLASSES ======
 (delete-macro instance-of?)
 (macro instance-of? (item type)
+			 ; fix broken instance-of macro
        [(transpile item) " instanceof " (transpile type)])
 
 (macro deftype (tname pkeys)
+			 ; tagged type constructor creation facility
        (var self (gensym "self")
             type (transpile tname)
             args (interleave ", " pkeys.contents)
@@ -96,7 +113,7 @@
               `(do
                 (defvar @self (.create Object (get @type 'prototype)))
 								(defvar alen (length arguments))
-								(when (not (eqv? alen @alen))
+								(when (not (eql? alen @alen))
 									(error! "Tagged constructor " @tname
 													"expects " @alen " arguments but got "
 													alen))
@@ -106,8 +123,8 @@
                 @self))
              "}"]}))
 
-;; (defsum maybe ((none) (some value)))
 (macro defsum (tname variants)
+			 ; tagged sum type creation facility
 			 (var tself (gensym "sumtype")
 						subctors (map variants.contents
 													(lambda (vartype)
@@ -125,7 +142,7 @@
 																		`(do
 																			(defvar @self (.create Object (get @tself 'prototype)))
 																			(defvar alen (length arguments))
-																			 (when (not (eqv? alen @alen))
+																			 (when (not (eql? alen @alen))
 																				 (error! "Tagged constructor " @tname "." @type
 																								 "expects " @alen " arguments but got "
 																								 alen))
@@ -149,22 +166,21 @@
 														`(set (get @tself (quote @sname) 'prototype)
 																	'**sibilisp-type**
 																	@tself))))
-					 (defstatic @tself is (x)
-											(and (not (eq? () x))
-													 (= (get x '**sibilisp-type**)
-															@tself)))
+					 (set @tself 'is (lambda (x)
+														(and (not (eq? () x))
+																 (= (get x '**sibilisp-type**)
+																		@tself))))
 					 @tself)))
 
-(macro defstatic (tname mname args ...body)
-			 `(set @tname (quote @mname) (lambda (...@args.contents) ...@body)))
-
 (macro defmethod (tname mname args ...body)
-       `(defstatic (get @tname 'prototype) @mname @args ...@body))
+			 ; method definition facility for types and sum types
+       `(set (get @tname 'prototype) (quote @mname) (lambda @args ...@body)))
 
 
 
 ;;; ====== ES2015+ MODULE SYSTEM ======
 (macro use (path ...as)
+			 ; imports named module exports
        ["import { "
        (pipe as
              (map
@@ -176,6 +192,7 @@
        " } from " path])
 
 (macro use-all (path alias alias-b)
+			 ; imports whole modules
        ["import "
        (if (and (node? alias) (= 'as alias.token))
            ["* as " alias-b]
@@ -184,9 +201,11 @@
 
 
 (macro provide (a)
+			 ; creates named exports
        ["export " (transpile a)])
 
 (macro provide-all (...as)
+			 ; creates default exports
        (as-statement
         ["export default {\n  "
         (pipe as
@@ -255,6 +274,18 @@
 
 (macro continue ()
 			 (as-statement `continue))
+
+
+
+(macro dotimes (var-list ...body)
+			 (var vname (first (get var-list 'contents))
+						vupper (second (get var-list 'contents))
+						vstep (or (third (get var-list 'contents)) 1))
+			 `(scoped
+				 (defvar @vname 0)
+				 (while (< @vname @vupper)
+					 (assign @vname (+ @vname @vstep))
+					 ...@body)))
 
 
 
@@ -375,7 +406,7 @@
        ; machtes a value agains a given type constructor
        `(and (not (eq? () @a))
 						 (not (isNaN @a))
-             (eqv? (get @a 'constructor) @ctor)))
+             (eql? (get @a 'constructor) @ctor)))
 
 
 
@@ -396,7 +427,7 @@
 (macro nil? (...values)
        ; checks for equality with null
        `(and ...@(map values (lambda (v)
-                               `(eqv? @v (nil))))))
+                               `(eql? @v (nil))))))
 
 (delete-macro exists?)
 (macro exists? (...values)
@@ -416,7 +447,7 @@
 (macro finite? (...values)
 			 ; checks multiple values for being numeric and finite
 			 `(and ...@(map values (lambda (v)
-															 `(and (eqv? (typeof @v) 'number)
+															 `(and (eql? (typeof @v) 'number)
 																		 (is-finite @v))))))
 
 (macro nothing? (...values)
@@ -430,7 +461,7 @@
 (macro number? (...values)
        ; tests if given values are numbers and not NaN
        `(and ...@(map values (lambda (v)
-                               `(and (eqv? (typeof @v) "number")
+                               `(and (eql? (typeof @v) "number")
                                      (not (nan? @v)))))))
 
 
