@@ -17,9 +17,13 @@ features like `import` and `export` statements, `Generator`s or `Promise`s.
 * Results in readable JavaScript
 * Tailored towards functional programming
 
-> Sibilisp is in an early stage and without documentation. Your
-> best bets are the [Sibilant docs](https://docs.sibilant.org)
-> and reading `lang/macros.sibilant`. 
+#### Documentation
+
+Sibilisp is in an early stage and is in flux. There is a
+short documentation inside the [Wiki](https://github.com/urbandrone/sibilisp/wiki).
+Also, the [Sibilant docs](https://docs.sibilant.org) can be consulted.
+
+If you like, you can study [Sibilisp's macros file](https://github.com/urbandrone/sibilisp/blob/master/lang/macros.sibilant).
 
 ### Install
 
