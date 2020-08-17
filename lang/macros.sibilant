@@ -277,15 +277,6 @@
 
 
 
-(macro dotimes (var-list ...body)
-			 (var vname (first (get var-list 'contents))
-						vupper (second (get var-list 'contents))
-						vstep (or (third (get var-list 'contents)) 1))
-			 `(scoped
-				 (defvar @vname 0)
-				 (while (< @vname @vupper)
-					 (assign @vname (+ @vname @vstep))
-					 ...@body)))
 
 
 
@@ -402,14 +393,6 @@
 
 
 ;;; ====== TYPES ======
-(macro is-a (a ctor)
-       ; machtes a value agains a given type constructor
-       `(and (not (eq? () @a))
-						 (not (isNaN @a))
-             (eql? (get @a 'constructor) @ctor)))
-
-
-
 
 (macro void ()
        ; transpiles to undefined
@@ -433,7 +416,7 @@
 (macro exists? (...values)
        ; core sibilant exists? macro is a bit verbose in it's output
        `(and ...@(map values (lambda (v)
-															 `(eq? @v (nil))))))
+															 `(not (eq? @v (nil)))))))
 
 (macro nan ()
 			 `NaN)
@@ -441,8 +424,12 @@
 (macro nan? (...values)
        ; checks multiple values for equality with NaN
        `(and ...@(map values (lambda (v)
-                               `(and (= (typeof @v) 'number)
-                                     (isNaN @v))))))
+                               `(.isNaN Number @v)))))
+
+(macro is-a (a ctor)
+       ; machtes a value agains a given type constructor
+       `(and (not (eq? () @a))
+             (eql? (get @a 'constructor) @ctor)))
 
 (macro finite? (...values)
 			 ; checks multiple values for being numeric and finite
