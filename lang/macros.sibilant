@@ -31,52 +31,52 @@
 
 
 (macro error (...msg)
-			 ; creates new error instances
-			 `(new Error (+ "" ...@msg)))
+       ; creates new error instances
+       `(new Error (+ "" ...@msg)))
 
 (macro error! (...msg)
-			 ; creates and immediatly throws a new error instance
-			 `(*scoped-without-return
-				 (throw (error ...@msg))))
+       ; creates and immediatly throws a new error instance
+       `(*scoped-without-return
+         (throw (error ...@msg))))
 
 
 
 (macro defconstant (...pairs)
        ; allow ES2015 constant definitions
        (as-statement ["const "
-                     (pipe pairs
-                           destructure
-                           (map
-                            (lambda (p) [(first p) " = " (second p)]))
-                           (interleave ";\nconst "))
-                     ]))
+                      (pipe pairs
+                            destructure
+                            (map
+                             (lambda (p) [(first p) " = " (second p)]))
+                            (interleave ";\nconst "))]))
+                     
 
 (macro defvar (...pairs)
        ; allow ES2015 let definitions
        (as-statement ["let "
-                     (pipe pairs
-                           destructure
-                           (map
-                            (lambda (p) [(first p) " = " (second p)]))
-                           (interleave ",\n    "))
-                     ]))
+                      (pipe pairs
+                            destructure
+                            (map
+                             (lambda (p) [(first p) " = " (second p)]))
+                            (interleave ",\n    "))]))
+                     
 
 (macro let (var-lists ...body)
-			 ; idiomatic variables
-			 (var vnames (map var-lists.contents (lambda (c) (first (get c 'contents))))
-						vvals (map var-lists.contents (lambda (c) (last (get c 'contents)))))
-			 `(call (lambda (...@vnames) ...@body) ...@vvals))
+       ; idiomatic variables
+       (var vnames (map var-lists.contents (lambda (c) (first (get c 'contents))))
+            vvals (map var-lists.contents (lambda (c) (last (get c 'contents)))))
+       `(call (lambda (...@vnames) ...@body) ...@vvals))
 
 (macro let* (var-lists ...body)
-			 ; idiomatic variables with back referencing
+       ; idiomatic variables with back referencing
        (var vars (map var-lists.contents
-											(lambda (paired)
-												`(defvar ...@paired.contents)))
-						vnames (map var-lists.contents
-												(lambda (c) (first c.contents))))
+                      (lambda (paired)
+                        `(defvar ...@paired.contents)))
+            vnames (map var-lists.contents
+                        (lambda (c) (first c.contents))))
        `(scoped
-				 ...@vars
-				 (call (lambda (...@vnames) ...@body) ...@vnames)))
+         ...@vars
+         (call (lambda (...@vnames) ...@body) ...@vnames)))
 
 (macro defun (name args ...body)
        ; function creation utility
@@ -97,183 +97,202 @@
 ;;; ====== CLASSES ======
 (delete-macro instance-of?)
 (macro instance-of? (item type)
-			 ; fix broken instance-of macro
+       ; fix broken instance-of macro
        [(transpile item) " instanceof " (transpile type)])
 
 (macro deftype (tname pkeys)
-			 ; tagged type constructor creation facility
+       ; tagged type constructor creation facility
        (var self (gensym "self")
             type (transpile tname)
             args (interleave ", " pkeys.contents)
-						alen (length pkeys.contents))
+            alen (length pkeys.contents))
        `(defconstant @tname @{ type 'output
-             contents [
-             "function " type "(" args ") {"
-             (indent
-              `(do
-                (defvar @self (.create Object (get @type 'prototype)))
-								(defvar alen (length arguments))
-								(when (not (eql? alen @alen))
-									(error! "Tagged constructor " @tname
-													"expects " @alen " arguments but got "
-													alen))
-                ...@(map pkeys.contents
-                         (lambda (p)
-                           `(set @self (quote @p) @p)))
-                @self))
-             "}"]}))
+                              contents [
+                                        "function " type "(" args ") {"
+                                        (indent
+                                         `(do
+                                           (defvar @self (.create Object (get @type 'prototype)))
+                                           (defvar alen (length arguments))
+                                           (when (not (eql? alen @alen))
+                                             (error! "Tagged constructor " @tname
+                                                     "expects " @alen " arguments but got "
+                                                     alen))
+                                           ...@(map pkeys.contents
+                                                    (lambda (p)
+                                                      `(set @self (quote @p) @p)))
+                                           @self))
+                                        "}"]}))
 
 (macro defsum (tname variants)
-			 ; tagged sum type creation facility
-			 (var tself (gensym "sumtype")
-						subctors (map variants.contents
-													(lambda (vartype)
-														(var self (gensym "self")
-																 type (transpile (first vartype.contents))
-																 pkeys undefined
-																 args "")
-														(when (> (length vartype.contents) 1)
-															(assign pkeys (rest vartype.contents))
-															(assign args (interleave ", " pkeys)))
-														(hash type 'output
-																	contents [
-																	 "function " type "(" args ") {"
-																	 (indent
-																		`(do
-																			(defvar @self (.create Object (get @tself 'prototype)))
-																			(defvar alen (length arguments))
-																			 (when (not (eql? alen @alen))
-																				 (error! "Tagged constructor " @tname "." @type
-																								 "expects " @alen " arguments but got "
-																								 alen))
-																			...@(if (defined? pkeys) (map pkeys
-																																		(lambda (p)
-																																			`(set @self (quote @p) @p)))
-																							(list))
-																			(set @self 'constructor @type)
-																			@self))
-																	 "}"])))
-						subnames (map variants.contents
-													(lambda (vartype) (first vartype.contents))))
-			 `(defconstant @tname
-					(scoped
-					 (defconstant @tself (.create Object (nil)))
-					 (set @tself 'prototype (hash))
-					 ...@(map subnames
-										(lambda (sname index)
-											(list `(set @tself (quote @sname) @(get subctors index))
-														"\n"
-														`(set (get @tself (quote @sname) 'prototype)
-																	'**sibilisp-type**
-																	@tself))))
-					 (set @tself 'is (lambda (x)
-														(and (not (eq? () x))
-																 (= (get x '**sibilisp-type**)
-																		@tself))))
-					 @tself)))
+       ; tagged sum type creation facility
+       (var tself (gensym "sumtype")
+            subctors (map variants.contents
+                          (lambda (vartype)
+                            (var self (gensym "self")
+                                 type (transpile (first vartype.contents))
+                                 pkeys undefined
+                                 alen 0
+                                 args "")
+                            (when (> (length vartype.contents) 1)
+                              (assign pkeys (rest vartype.contents))
+                              (assign alen (length pkeys))
+                              (assign args (interleave ", " pkeys)))
+                            (hash type 'output
+                                  contents [
+                                            "function " type "(" args ") {"
+                                            (indent
+                                             `(do
+                                               (defvar @self (.create Object (get @tself 'prototype)))
+                                               (defvar alen (length arguments))
+                                               (when (not (eql? alen @alen))
+                                                 (error! "Tagged constructor " @tname "." @type
+                                                         "expects " @alen " arguments but got "
+                                                         alen))
+                                               ...@(if (defined? pkeys) (map pkeys
+                                                                             (lambda (p)
+                                                                               `(set @self (quote @p) @p)))
+                                                       (list))
+                                               (set @self 'constructor @type)
+                                               (set @self '**sibilisp-tags** (list ...@(map pkeys (lambda (k) (quote k)))))
+                                               @self))
+                                            "}"])))
+            subnames (map variants.contents
+                          (lambda (vartype) (first vartype.contents))))
+       `(defconstant @tname
+          (scoped
+           (defconstant @tself (.create Object (nil)))
+           (set @tself 'prototype (hash))
+           ...@(map subnames
+                    (lambda (sname index)
+                      (list `(set @tself (quote @sname) @(get subctors index))
+                            "\n"
+                            `(set (get @tself (quote @sname) 'prototype)
+                                  '**sibilisp-type**
+                                  @tself))))
+           (set (get @tself 'prototype) 'match (lambda (ctors)
+                                                  (defvar self this
+                                                          name (get self 'constructor 'name)
+                                                          ctor (get ctors name)
+                                                          keys (get self '**sibilisp-tags**))
+                                                  (if (function? ctor)
+                                                      (.apply ctor
+                                                              self
+                                                              (.map keys (lambda (key)
+                                                                           (get self key))))
+                                                      (error! ".match :: Cannot find "
+                                                              name
+                                                              " in patterns "
+                                                              ctors))))
+                                                        
+           (set @tself 'is (lambda (x)
+                            (and (not (eq? () x))
+                                 (= (get x '**sibilisp-type**)
+                                    @tself))))
+           @tself)))
 
 (macro defmethod (tname mname args ...body)
-			 ; method definition facility for types and sum types
+       ; method definition facility for types and sum types
        `(set (get @tname 'prototype) (quote @mname) (lambda @args ...@body)))
 
 
 
 ;;; ====== ES2015+ MODULE SYSTEM ======
 (macro use (path ...as)
-			 ; imports named module exports
+       ; imports named module exports
        ["import { "
-       (pipe as
-             (map
-              (lambda (a)
-                (if (= "(" a.token)
-                    [(first a.contents) " as " (last a.contents)]
-                    a)))
-             (interleave ", "))
-       " } from " path])
-
-(macro use-all (path alias alias-b)
-			 ; imports whole modules
-       ["import "
-       (if (and (node? alias) (= 'as alias.token))
-           ["* as " alias-b]
-           alias) " from " path])
-
-
-
-(macro provide (a)
-			 ; creates named exports
-       ["export " (transpile a)])
-
-(macro provide-all (...as)
-			 ; creates default exports
-       (as-statement
-        ["export default {\n  "
         (pipe as
               (map
                (lambda (a)
                  (if (= "(" a.token)
-                     [(last a.contents) ": " (first a.contents)]
-                     [a ": " a])))
-              (interleave ",\n  "))
-        "\n}"]))
+                     [(first a.contents) " as " (last a.contents)]
+                     a)))
+              (interleave ", "))
+        " } from " path])
+
+(macro use-all (path alias alias-b)
+       ; imports whole modules
+       ["import "
+        (if (and (node? alias) (= 'as alias.token))
+            ["* as " alias-b]
+            alias) " from " path])
+
+
+
+(macro provide (a)
+       ; creates named exports
+       ["export " (transpile a)])
+
+(macro provide-all (...as)
+       ; creates default exports
+       (as-statement
+        ["export default {\n  "
+         (pipe as
+               (map
+                (lambda (a)
+                  (if (= "(" a.token)
+                      [(last a.contents) ": " (first a.contents)]
+                      [a ": " a])))
+               (interleave ",\n  "))
+         "\n}"]))
 
 
 ;;; ====== CONDITIONALS ======
 (macro cond (...branches)
        ; contitionals. transpiles to a sequence of ternary operators
        (var in-else false)
-       (map branches
+       `(parens
+          @(map branches
             (lambda (a)
               (if (and (= "(" a.token) (not in-else))
-									(list
-									 (first a.contents) "\n  ? "
-									 (second a.contents) "\n  : ")
+                  (list
+                   (first a.contents) "\n  ? "
+                   (second a.contents) "\n  : ")
                   (= "else" a.token)
                   (do (assign in-else true)
                       (list))
-                  (transpile a)))))
+                  (transpile a))))))
 
 (macro if* (...conditions-and-branches)
-			 (interleave " else "
-									 (bulk-map conditions-and-branches
-														 (lambda (condition branch)
-															 (cond ((defined? branch)
-																			(list "if (" (transpile condition) ") {"
-																						(indent
-																						 (transpile branch))
-																						"}"))
-																		 :else (list "{ " (indent
-																											 (transpile condition)) " }"))))))
+       (interleave " else "
+                   (bulk-map conditions-and-branches
+                             (lambda (condition branch)
+                               (cond ((defined? branch)
+                                      (list "if (" (transpile condition) ") {"
+                                            (indent
+                                             (transpile branch))
+                                            "}"))
+                                     :else (list "{ " (indent
+                                                       (transpile condition)) " }"))))))
 
 
 ;; ====== LOOPS ======
 (macro while* (condition ...body)
-			 (hash type 'output
-						 contents (list "while (" (transpile condition) ") {"
-														...(map body (lambda (x) (indent (transpile x))))
-														"}")))
+       (hash type 'output
+             contents (list "while (" (transpile condition) ") {"
+                            ...(map body (lambda (x) (indent (transpile x))))
+                            "}")))
 
 (macro unless* (condition ...body)
-			 `(while* (not @condition) ...@body))
+       `(while* (not @condition) ...@body))
 
 (macro for (coll iter ...body)
-			 `(scoped
-				 @(hash type 'output
-								contents (list "for (let " (transpile iter) " of " (transpile coll)") {"
-															 (indent (apply ^do @body))
-															 "}"))))
+       `(scoped
+         @(hash type 'output
+                contents (list "for (let " (transpile iter) " of " (transpile coll)") {"
+                               (indent (apply ^do @body))
+                               "}"))))
 
 (macro for* (coll iter ...body)
-			 (hash type 'output
-						 contents (list "for (let " (transpile iter) " of " (transpile coll)") {"
-														...(map body (lambda (x) (indent (transpile x))))
-														"}")))
+       (hash type 'output
+             contents (list "for (let " (transpile iter) " of " (transpile coll)") {"
+                            ...(map body (lambda (x) (indent (transpile x))))
+                            "}")))
 
 (macro break ()
-			 (as-statement `break))
+       (as-statement `break))
 
 (macro continue ()
-			 (as-statement `continue))
+       (as-statement `continue))
 
 
 
@@ -282,7 +301,7 @@
 
 ;;; ====== TIME ======
 (macro timeout (ms ...body)
-			 `(set-timeout (lambda () ...@body) @ms))
+       `(set-timeout (lambda () ...@body) @ms))
 
 (macro interval (ms ...body)
        `(set-interval (lambda () ...@body) @ms))
@@ -292,101 +311,101 @@
 ;;; ====== MATHS ======
 
 (macro floor (a)
-			 `(.floor Math @a))
+       `(.floor Math @a))
 
 (macro ceil (a)
-			 `(.ceil Math @a))
+       `(.ceil Math @a))
 
 (macro round (a)
-			 `(.round Math @a))
+       `(.round Math @a))
 
 (macro sine (a)
-			 `(.sin Math @a))
+       `(.sin Math @a))
 
 (macro cosine (a)
-			 `(.cos Math @a))
+       `(.cos Math @a))
 
 (macro tan (a)
-			 `(.tan Math @a))
+       `(.tan Math @a))
 
 (macro atan (a)
-			 `(.atan Math @a))
+       `(.atan Math @a))
 
 (macro atan-2 (a b)
-			 `(.atan2 Math @b @a))
+       `(.atan2 Math @b @a))
 
 (macro atan-h (a)
-			 `(.atanh Math @a))
+       `(.atanh Math @a))
 
 (macro acos (a)
-			 `(.acos Math @a))
+       `(.acos Math @a))
 
 (macro acos-h (a)
-			 `(.acosh Math @a))
+       `(.acosh Math @a))
 
 (macro asine (a)
-			 `(.asin Math @a))
+       `(.asin Math @a))
 
 (macro asine-h (a)
-			 `(.asinh Math @a))
+       `(.asinh Math @a))
 
 (macro square-root (a)
-			 `(.sqrt Math @a))
+       `(.sqrt Math @a))
 
 (macro cube-root (a)
-			 `(.cbrt Math @a))
+       `(.cbrt Math @a))
 
 (macro exp (a)
-			 `(.exp Math @a))
+       `(.exp Math @a))
 
 (macro exp-m1 (a)
-			 `(.expm1 Math @a))
+       `(.expm1 Math @a))
 
 (macro min (a b)
-			 `(.min Math @a @b))
+       `(.min Math @a @b))
 
 (macro max (a b)
-			 `(.max Math @a @b))
+       `(.max Math @a @b))
 
 (macro random (a)
-			 `(* (.random Math) @(or a 1)))
+       `(* (.random Math) @(or a 1)))
 
 (macro float32-round (a)
-			 `(.fround Math @a))
+       `(.fround Math @a))
 
 (macro power (a p)
-			 `(.pow Math @a @p))
+       `(.pow Math @a @p))
 
 (macro hypot (a b)
-			 `(.hypot Math @a @b))
+       `(.hypot Math @a @b))
 
 (macro loga (a)
-			 `(.log Math @a))
+       `(.log Math @a))
 
 (macro loga-10 (a)
-			 `(.log10 Math @a))
+       `(.log10 Math @a))
 
 (macro loga-1p (a)
-			 `(.log1p Math @a))
+       `(.log1p Math @a))
 
 (macro loga-2 (a)
-			 `(.log2 Math @a))
+       `(.log2 Math @a))
 
 (macro abs (a)
-			 `(.abs Math @a))
+       `(.abs Math @a))
 
 (macro sign (a)
-			 `(.sign Math @a))
+       `(.sign Math @a))
 
 (macro trunc (a)
-			 `(.trunc Math @a))
+       `(.trunc Math @a))
 
 
 (macro PI ()
-			 `(get Math 'PI))
+       `(get Math 'PI))
 
 (macro EULER ()
-			 `(get Math 'E))
+       `(get Math 'E))
 
 
 
@@ -401,7 +420,7 @@
 (macro void? (...values)
        ; checks for equality with undefined
        `(and ...@(map values
-											(lambda (v) `(undefined? @v)))))
+                      (lambda (v) `(undefined? @v)))))
 
 (macro nil ()
        ; equivalent of null
@@ -416,10 +435,10 @@
 (macro exists? (...values)
        ; core sibilant exists? macro is a bit verbose in it's output
        `(and ...@(map values (lambda (v)
-															 `(not (eq? @v (nil)))))))
+                               `(not (eq? @v (nil)))))))
 
 (macro nan ()
-			 `NaN)
+       `NaN)
 
 (macro nan? (...values)
        ; checks multiple values for equality with NaN
@@ -432,10 +451,10 @@
              (eql? (get @a 'constructor) @ctor)))
 
 (macro finite? (...values)
-			 ; checks multiple values for being numeric and finite
-			 `(and ...@(map values (lambda (v)
-															 `(and (eql? (typeof @v) 'number)
-																		 (is-finite @v))))))
+       ; checks multiple values for being numeric and finite
+       `(and ...@(map values (lambda (v)
+                               `(and (eql? (typeof @v) 'number)
+                                     (is-finite @v))))))
 
 (macro nothing? (...values)
        ; checks multiple values for equality with null or undefined
@@ -461,7 +480,7 @@
 
 (macro as-list (value)
        ; creates a list from array-like objects
-			 `(.from Array @value))
+       `(.from Array @value))
 
 
 
@@ -473,13 +492,13 @@
 
 (macro hash-pairs (value)
        ; creates a list of key/value pairs from objects
-			 `(.entries Object @value))
+       `(.entries Object @value))
 
 (macro hash-merge! (...values)
-			 ; unsafely merges multiples objects into one
-			 ; objects to the right override previous objects
-			 ; ! modifies the left most object !
-			 `(.assign Object ...@values))
+       ; unsafely merges multiples objects into one
+       ; objects to the right override previous objects
+       ; ! modifies the left most object !
+       `(.assign Object ...@values))
 
 (macro hash-merge (...values)
        ; safely merges multiple objects into a new objects
@@ -487,8 +506,8 @@
        `(hash-merge! (hash) ...@values))
 
 (macro hash-create (value)
-			 ; creates new instances of objects
-			 `(.create Object @value))
+       ; creates new instances of objects
+       `(.create Object @value))
 
 
 
@@ -502,27 +521,27 @@
                                `(is-a @v Date)))))
 
 (macro date-now-utc ()
-			 ; returns the milliseconds since begin of the unix epoche
-			 ; in universal coordinated time
-			 `(.now Date))
+       ; returns the milliseconds since begin of the unix epoche
+       ; in universal coordinated time
+       `(.now Date))
 
 (macro date-now ()
-			 ; returns the milliseconds since begin of the unix epoche
-			 ; in local time
-			 `(as-number (new Date)))
+       ; returns the milliseconds since begin of the unix epoche
+       ; in local time
+       `(as-number (new Date)))
 
 (macro date-parse (iso-string)
-			 ; uses the native Date.parse method to parse a string
-			 ; in simplified ISO 8601 format (e. g. 2000-03-03T12:26:37)
-			 ; returns the milliseconds since begin of the unix epoche
-			 ; in universal coordinated time
-			 `(.parse Date @iso-string))
+       ; uses the native Date.parse method to parse a string
+       ; in simplified ISO 8601 format (e. g. 2000-03-03T12:26:37)
+       ; returns the milliseconds since begin of the unix epoche
+       ; in universal coordinated time
+       `(.parse Date @iso-string))
 
 
 
 (macro regex (pattern flag)
-			 ; creates new regular expressions without the need for the new macro
-			 `(new RegExp @pattern @flag))
+       ; creates new regular expressions without the need for the new macro
+       `(new RegExp @pattern @flag))
 
 (macro regex? (...values)
        ; tests if given values are regular expressions
@@ -542,24 +561,24 @@
                                `(is-a @v Promise)))))
 
 (macro future-resolve (value)
-			 ; creates a resolving promise
-			 `(.resolve Promise @value))
+       ; creates a resolving promise
+       `(.resolve Promise @value))
 
 (macro future-reject (err)
-			 ; creates a rejecting promise
-			 `(.reject Promise @err))
+       ; creates a rejecting promise
+       `(.reject Promise @err))
 
 (macro future-all (...futures)
-			 ; creates a single promise from multiple promises that
-			 ; resolves when all promises resolve or rejects if any
-			 ; promise rejects
-			 `(.all Promise (list ...@futures)))
+       ; creates a single promise from multiple promises that
+       ; resolves when all promises resolve or rejects if any
+       ; promise rejects
+       `(.all Promise (list ...@futures)))
 
 (macro future-any (...futures)
-			 ; creates a single promise from multiple promises that
-			 ; resolves with the first resolving promise or rejects
-			 ; when any promise rejects
-			 `(.race Promise (list ...@futures)))
+       ; creates a single promise from multiple promises that
+       ; resolves with the first resolving promise or rejects
+       ; when any promise rejects
+       `(.race Promise (list ...@futures)))
 
 
 
@@ -586,42 +605,42 @@
 
 
 (macro generator (name args ...body)
-			 ; creates ES2015+ generator functions
-			 (hash type 'output
-						 contents (list "function * " (transpile name) "("
-														(interleave ", " args.contents)
-														") {"
-														...(map body (lambda (expr)
-																					 (indent (transpile expr))))
-														"}")))
+       ; creates ES2015+ generator functions
+       (hash type 'output
+             contents (list "function * " (transpile name) "("
+                            (interleave ", " args.contents)
+                            ") {"
+                            ...(map body (lambda (expr)
+                                           (indent (transpile expr))))
+                            "}")))
 
 (macro yields (value)
-			 ; creates a yield statement for use in generator functions
-			 (as-statement (list "yield " (transpile value))))
+       ; creates a yield statement for use in generator functions
+       (as-statement (list "yield " (transpile value))))
 
 (macro yields-values (value)
-			 ; creates a yield* statement for use in generator functions
-			 (as-statement (list "yield* " (transpile value))))
+       ; creates a yield* statement for use in generator functions
+       (as-statement (list "yield* " (transpile value))))
 
 
 
 ;; ====== JSON ======
 (macro json-from-string (value)
-			 ; parses a JSON string into an object
-			 `(.parse JSON @value))
+       ; parses a JSON string into an object
+       `(.parse JSON @value))
 
 (macro json-to-string (value)
-			 ; parses an object into a JSON string
-			 `(.stringify JSON @value))
+       ; parses an object into a JSON string
+       `(.stringify JSON @value))
 
 
 
 ;; ====== RECURSION ======
 (macro trampoline-fn (name args ...body) ; used internally
        ["function " name
-       "(" (interleave ", " args.contents)  ") {"
-       (indent (apply ^do body))
-       "}"])
+        "(" (interleave ", " args.contents)  ") {"
+        (indent (apply ^do body))
+        "}"])
 
 (macro trampoline-is (a) ; used internally
        `(and (function? @a)

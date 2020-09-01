@@ -1,0 +1,30 @@
+{
+  "name": "sibilisp",
+  "version": "0.2.0",
+  "description": "A LISP like language to JavaScript transpiler, based on Sibilant",
+  "main": "sibilisp.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+		"rebuild": "node bin/cli.js src source/ dest lib/"
+  },
+  "keywords": [
+    "lisp",
+    "sibilant",
+    "javascript",
+    "transpiler",
+    "open-source",
+    "mit",
+    "cli"
+  ],
+  "author": "David Hofmann <the.urban.drone@gmail.com>",
+  "license": "MIT",
+  "bin": {
+    "sibilisp": "bin/cli.js",
+		"sibilisp-cli": "bin/new-cli.js"
+  },
+  "dependencies": {
+    "fs-extra": "^9.0.0",
+    "sibilant": "^0.5.5"
+  },
+  "repository": "https://github.com/urbandrone/sibilisp"
+}
