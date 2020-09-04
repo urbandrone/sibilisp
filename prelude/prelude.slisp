@@ -1,0 +1,148 @@
+(comment sibilisp-prelude - MIT)
+
+;;; BASIC LAMBDA OPERATORS (I, K, S)
+(provide
+ (defun identity (a) a))
+
+(provide
+ (defun thunk (a)
+   (lambda () a)))
+
+
+;;; LANGUAGE TYPE CHECK UTILITIES
+(provide
+  (defun list-of? (x predicate)
+    (cond ((not (function? predicate))
+           (error! "(list-of? expects argument 2 to
+					 				 be a function, got " predicate))
+          :else (and (list? x)
+                     (.every x predicate)))))
+
+(provide
+  (defun hash-of? (x predicate)
+    (cond ((not (function? predicate))
+           (error! "(hash-of? expects argument 2 to 
+					 				 be a function, got " predicate))
+          :else (and (hash? x)
+                     (.every (hash-pairs x) (lambda ([_ v]) (predicate v)))))))
+
+(provide 
+  (defun dict-of? (x predicate)
+    (cond ((not (function? predicate))
+           (error! "(dict-of?) expects argument 2 to 
+					 				 be a function, got " predicate))
+          :else (and (dict? x)
+                     (.every (.entries x) (lambda ([_ v]) (predicate v)))))))
+
+
+
+;;; FUNCTION FUNCTIONS
+(provide
+  (defun converge (combine branches)
+    (cond ((not (function? combine))
+           (error! "(converge) expects argument 1 to
+					 				 be a function, got " combine))
+          ((not (list-of? branches (lambda (v) (function? v))))
+           (error! "(converge) expects argument 2 to
+					 				 be a list of functions, got " branches))
+          :else (lambda (...args)
+                  (cond ((not (= (length args) (length branches)))
+                         (error! "(converge -> lambda) expects arguments
+												 				 length (" (length args) ") to equal the number
+																 of branches (" (length branches) ") but they
+																 differ."))
+                        :else (.apply converge
+                                      (nil)
+                                      (.map branches
+                                            (lambda (branch i)
+                                              (branch (get args i)
+                                                      i
+                                                      args)))))))))
+
+
+
+;;; ALGEBRAIC TYPES
+(provide
+  (deftype unit (value)))
+
+(defmethod unit to-string () ; show
+  (+ "(unit " (show (get this 'value)) ")"))
+
+(defmethod unit equals (t-unit) ; setoid
+  (and (instance-of? t-unit unit)
+       (eql? (get this 'value) (get t-unit 'value))))
+
+(defmethod unit concat (t-unit) ; semigroup
+  (cond ((not (instance-of? t-unit unit))
+         (error! "(unit.concat) expects argument 1 to 
+				 				 be a unit, got " t-unit))
+        ((or (not (function? (get this 'value 'concat)))
+             (not (function? (get t-unit 'value 'concat))))
+         (error! "(unit.concat) cannot concat units
+				 				 with non-semigroup values"))  
+        :else (unit (.concat (get this 'value) (get t-unit 'value)))))
+
+(defmethod unit map (mapper) ; functor
+  (cond ((not (function? mapper))
+         (error! "(unit.map) expects argument 1 to
+				 				 be a function, got " mapper))
+        :else (unit (mapper (get this 'value)))))
+
+(defmethod unit ap (t-unit) ; apply
+  (cond ((not (instance-of? t-unit unit))
+         (error! "(unit.ap) expects argument 1 to
+				 				 be a unit, got " t-unit))
+        ((not (function? (get this 'value)))
+         (error! "(unit.ap) cannot apply a unit that
+				 				 doesn't carry a function, but " (get this 'value)))
+        :else (.map t-unit (get this 'value))))
+
+(defmethod unit reduce (reducer seed) ; foldable
+  (cond ((not (function? reducer))
+         (error! "(unit.reduce) expects argument 1 to
+				 				 be a function, got " reducer))
+        ((not (defined? seed))
+         (error! "(unit.reduce) expects argument 2 to
+				 				 be any value except undefined."))
+        :else (reducer seed (get this 'value))))
+
+(defmethod unit value-of () ; like native types
+  (get this 'value))
+
+
+;;; GENERAL PURPOSE OPERATIONS
+(provide
+  (defun show (x)
+    (cond ((eq? (nil) x)
+           "(nil)")
+          ((nan? x)
+           "(nan)")
+          ((string? x)
+           (+ "(string " x ")"))
+          ((number? x)
+           (+ "(number " x ")"))
+          ((function? x)
+           (+ "(function " (or (get x 'name) "lambda") ")"))
+          ((generator? x)
+           (+ "(generator " (get x 'name) ")"))
+          ((list? x)
+           (+ "(list" (.reduce x (lambda (a v)
+                                   (+ a " " (show v))) "") ")"))
+          ((hash? x)
+           (+ "(hash" (.reduce (hash-pairs x)
+                               (lambda (a [k v])
+                                (+ a " :" k " " (show v))) "") ")"))
+          ((dict? x)
+           (+ "(dict" (.reduce (.entries x)
+                               (lambda (a [k v])
+                                 (+ a " :" (show k) " " (show v)))
+                               "") ")"))
+          ((future? x)
+           "(future)")
+          ((date? x)
+           (+ "(date" (.get-full-year x)
+              "-" (+ 1 (.get-month x))
+              "-" (.get-date x) ")"))
+          ((regex? x)
+           (+ "(regex " (get x 'source) " :flags " (get x 'flags) ")"))
+          :else (.to-string x))))

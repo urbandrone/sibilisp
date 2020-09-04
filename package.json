@@ -4,7 +4,8 @@
   "description": "A LISP like language to JavaScript transpiler, based on Sibilant",
   "main": "sibilisp.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "compile-prelude": "sibilisp -s prelude/ -d prelude/compiled/"
   },
   "keywords": [
     "lisp",
