@@ -63,74 +63,61 @@
 
 ;;; ALGEBRAIC TYPES
 
-;; --- unit (a. k. a. identity)
+;; --- coyo (-neda)
 (provide
-  (deftype unit (value)))
+  (deftype coyo (value mapper)))
 
-(defmethod unit to-string () ; show
-  (+ "(unit " (show (get this 'value)) ")"))
+(defmethod coyo to-string ()
+  (let ((value (get this 'value))
+        (fn (get this 'mapper)))
+    (+ "(coyo " (show value) " " (show fn) ")")))
 
-(defmethod unit equals (t-unit) ; setoid
-  (and (instance-of? t-unit unit)
-       (eql? (get this 'value) (get t-unit 'value))))
-
-(defmethod unit concat (t-unit) ; semigroup
-  (cond ((not (instance-of? t-unit unit))
-         (error! "(unit.concat) expects argument 1 to 
-				 				 be a unit, got " t-unit))
-        ((or (not (function? (get this 'value 'concat)))
-             (not (function? (get t-unit 'value 'concat))))
-         (error! "(unit.concat) cannot concat units
-				 				 with non-semigroup values"))  
-        :else (unit (.concat (get this 'value) (get t-unit 'value)))))
-
-(defmethod unit map (mapper) ; functor
+(defmethod coyo map (mapper)
   (cond ((not (function? mapper))
-         (error! "(unit.map) expects argument 1 to
-				 				 be a function, got " mapper))
-        :else (unit (mapper (get this 'value)))))
+         (error! "(coyo.map) expects argument 1 to be
+                 a function, got " (show mapper)))
+        :else (let ((value (get this 'value))
+                    (run-self (get this 'mapper)))
+                (coyo value (lambda (arg) (mapper (run-self arg)))))))
 
-(defmethod unit ap (t-unit) ; apply
-  (cond ((not (instance-of? t-unit unit))
-         (error! "(unit.ap) expects argument 1 to
-				 				 be a unit, got " t-unit))
-        ((not (function? (get this 'value)))
-         (error! "(unit.ap) cannot apply a unit that
-				 				 doesn't carry a function, but " (get this 'value)))
-        :else (.map t-unit (get this 'value))))
+(defmethod coyo lower ()
+  (let ((mapper (get this 'mapper))
+        (value (get this 'value)))
+    (cond ((not (function? mapper))
+           (error! "(coyo.lower) requires the coyo:mapper property
+                   to hold a function, but it holds " (show mapper)))
+          ((not (exists? value))
+           (error! "(coyo.lower) requires the coyo:value property
+                   to hold a non (void) or (nil) value, but it holds "
+                   (show value)))
+          ((not (function? (get value 'map)))
+           (error! "(coyo.lower) requires the coyo:value property
+                   to implement the functor typeclass but it doesn't"))
+          :else (coyo (.map value mapper) identity))))
 
-(defmethod unit reduce (reducer seed) ; foldable
-  (cond ((not (function? reducer))
-         (error! "(unit.reduce) expects argument 1 to
-				 				 be a function, got " reducer))
-        ((not (defined? seed))
-         (error! "(unit.reduce) expects argument 2 to
-				 				 be any value except undefined."))
-        :else (reducer seed (get this 'value))))
-
-(defmethod unit value-of () ; like native types
-  (get this 'value))
-
-
-(provide
-  (defun unit-of (x)
-    (unit x)))
-
+(defmethod coyo get-value ()
+  (call (get this 'mapper) (get this 'value)))
 
 
 ;; --- io
 (provide
   (deftype io (unsafe-perform)))
 
+(defmethod io to-string ()
+  (let ((fn (get this 'unsafe-perform)))
+    (+ "(io " (show fn) ")")))
+
 (defmethod io equals (t-io)
   (cond ((not (instance-of? t-io io))
-         (error! ""))
+         (error! "(io.equals) expects argument 1 to be
+                 an io, got " (show t-io)))
         :else (eql? (get this 'unsafe-perform)
                     (get t-io 'unsafe-perform))))
 
 (defmethod io concat (t-io)
   (cond ((not (instance-of? t-io io))
-         (error! ""))
+         (error! "(io.concat) expects argument 1 to be
+                 an io, got " (show t-io)))
         :else (let ((run-self (get this 'unsafe-perform))
                     (run-that (get t-io 'unsafe-perform)))
                 (io (lambda (arg)
@@ -139,14 +126,16 @@
 
 (defmethod io map (mapper)
   (cond ((not (function? mapper))
-         (error! ""))
+         (error! "(io.map) expects argument 1 to be
+                 a function, got " (show mapper)))
         :else (let ((run-self (get this 'unsafe-perform)))
                 (io (lambda (arg)
                       (mapper (run-self arg)))))))
 
 (defmethod io ap (t-io)
   (cond ((not (instance-of? t-io io))
-         (error! ""))
+         (error! "(io.ap) expects argument 1 to be
+                 an io, got " (show t-io)))
         :else (let ((run-self (get this 'unsafe-perform))
                     (run-that (get t-io 'unsafe-perform)))
                 (io (lambda (arg)
@@ -154,10 +143,128 @@
 
 (defmethod io flat-map (to-io-mapper)
   (cond ((not (function? to-io-mapper))
-         (error! ""))
+         (error! "(io.flat-map | io.chain) expects argument 1 to be
+                 an io returning function, got " (show to-io-mapper)))
         :else (let ((run-self (get this 'unsafe-perform)))
                 (io (lambda (arg)
                       (.unsafe-perform (to-io-mapper (run-self arg)) arg))))))
+
+(set (get io 'prototype) 'chain (get io 'prototype 'flat-map))
+
+(defmethod io compose (t-io)
+  (cond ((not (instance-of? t-io io))
+         (error! "(io.compose) expects argument 1 to be
+                 an io, got " (show t-io)))
+        :else (let ((run-self (get this 'unsafe-perform))
+                    (run-that (get t-io 'unsafe-perform)))
+                (io (lambda (arg)
+                      (run-that
+                        (run-self arg)))))))
+
+(defmethod io run-io (arg)
+  (.unsafe-perform this arg))
+
+
+(provide
+  (defun io-of (value)
+    (io (lambda () value))))
+
+(provide
+  (defun io-empty ()
+    (io identity)))
+
+(provide
+  (defun io-identity ()
+    (io identity)))
+
+
+;; --- maybe
+(provide
+  (defsum maybe ((nothing) (just value))))
+
+(defmethod maybe to-string ()
+  (.match this (hash nothing (lambda () 
+                               "(maybe.nothing)")
+                     just (lambda (value)
+                            (+ "(maybe.just " (show value) ")")))))
+
+(defmethod maybe equals (t-maybe)
+  (when (not (.is maybe t-maybe))
+    (error! "(maybe.equals) expects argument 1 to be
+            an instance of maybe, got " (show t-maybe)))
+  (.match this
+          (hash nothing (lambda ()
+                          (.match t-maybe
+                                  (hash nothing (lambda () true)
+                                        just (lambda () false))))
+                just (lambda (value)
+                      (.match t-maybe 
+                              (hash nothing (lambda ()
+                                              false)
+                                    just (lambda (t-value)
+                                           (if (function? (get value 'equals))  
+                                               (.equals value t-value)
+                                               (eql? value t-value)))))))))
+
+(defmethod maybe concat (t-maybe)
+  (when (not (.is maybe t-maybe))
+    (error! "(maybe.concat) expects argument 1 to be
+            an instance of maybe, got " (show t-maybe)))
+  (.match this
+          (hash nothing (lambda ()
+                          (maybe.nothing))
+                just (lambda (value)
+                       (.match t-maybe
+                               (hash nothing (lambda () t-maybe)
+                                     just (lambda (t-value)
+                                            (let ((cnt (get value 'concat)))
+                                              (when (not (function? cnt))
+                                                (error! "(maybe.concat) cannot
+                                                        concat when both of
+                                                        the carried values
+                                                        implement the
+                                                        semigroup
+                                                        typeclass"))
+                                              (.call cnt value t-value)))))))))
+
+(defmethod maybe map (mapper)
+  (cond ((not (function? mapper))
+         (error! "(maybe.map) expects argument 1 to be
+                 a function, got " (show mapper)))
+        :else (.match this 
+                      (hash nothing (lambda ()
+                                      (maybe.nothing))
+                            just (lambda (value) 
+                                  (maybe-lift (mapper value))))))) 
+
+(defmethod maybe ap (t-maybe)
+  (when (not (.is maybe t-maybe))
+    (error! ""))
+  (.match this
+          (hash nothing (lambda () 
+                          (maybe.nothing))
+                just (lambda (value)
+                      (.map t-maybe value)))))
+                      
+
+
+(provide
+  (defun maybe-of (value)
+    (maybe.just value)))
+
+(provide
+  (defun maybe-empty ()
+    (maybe.nothing)))
+
+(provide
+  (defun maybe-zero ()
+    (maybe.nothing)))
+
+(provide
+  (defun maybe-lift (value)
+    (cond (exists? value)
+          (maybe.just value)
+          (maybe.nothing))))
 
 
 ;;; GENERAL PURPOSE OPERATIONS
