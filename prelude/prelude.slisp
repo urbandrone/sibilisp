@@ -61,11 +61,58 @@
 
 
 
+;;; GENERAL PURPOSE OPERATIONS
+(provide
+  (defun show (x)
+    (cond ((eq? (nil) x)
+           "(nil)")
+          ((nan? x)
+           "(nan)")
+          ((string? x)
+           (+ "(string " x ")"))
+          ((number? x)
+           (+ "(number " x ")"))
+          ((function? x)
+           (+ "(function " (or (get x 'name) "lambda") ")"))
+          ((generator? x)
+           (+ "(generator " (get x 'name) ")"))
+          ((list? x)
+           (+ "(list" (.reduce x (lambda (a v)
+                                   (+ a " " (show v))) "") ")"))
+          ((hash? x)
+           (+ "(hash" (.reduce (hash-pairs x)
+                               (lambda (a [k v])
+                                (+ a " :" k " " (show v))) "") ")"))
+          ((dict? x)
+           (+ "(dict" (.reduce (.entries x)
+                               (lambda (a [k v])
+                                 (+ a " :" (show k) " " (show v)))
+                               "") ")"))
+          ((future? x)
+           "(future)")
+          ((date? x)
+           (+ "(date" (.get-full-year x)
+              "-" (+ 1 (.get-month x))
+              "-" (.get-date x) ")"))
+          ((regex? x)
+           (+ "(regex " (get x 'source) " :flags " (get x 'flags) ")"))
+          :else (.to-string x))))
+
+
 ;;; ALGEBRAIC TYPES
 
 ;; --- coyo (-neda)
 (provide
   (deftype coyo (value mapper)))
+
+(set coyo 'of (lambda (value)
+                (coyo value identity)))
+
+(set coyo 'lift (lambda (value)
+                  (cond ((not (exists? value))
+                         (error! "(coyo.lift) guards against (void) or
+                                 (nil) values, got" value))
+                        :else (coyo.of value))))
 
 (defmethod coyo to-string ()
   (let ((value (get this 'value))
@@ -95,13 +142,40 @@
                    to implement the functor typeclass but it doesn't"))
           :else (coyo (.map value mapper) identity))))
 
-(defmethod coyo get-value ()
-  (call (get this 'mapper) (get this 'value)))
+(defmethod coyo reduce (reducer seed)
+  (let ((value (get this 'value))
+        (mapper (get this 'mapper)))
+    (cond ((not (function? reducer))
+           (error! "(coyo.reduce) expects argument 1 to be
+                   a function, got " (show reducer)))
+          ((not (defined? seed))
+           (error! "(coyo.reduce) expects argument 2 to be
+                   a non (void) value, got " (show seed)))
+          ((function? (get value 'map) (get value 'reduce))
+           (.reduce value
+                    (lambda (acc val)
+                      (reducer acc (mapper val)))
+                    seed))
+          :else (reducer seed (mapper value)))))
 
 
 ;; --- io
 (provide
   (deftype io (unsafe-perform)))
+
+(set io 'of (lambda (value)
+              (io (lambda () value))))
+
+(set io 'lift (lambda (value)
+                (cond ((not (exists? value))
+                       (error! "(io.lift) guards agains (void) or
+                               (nil) values, got " value))
+                      :else (io.of value))))
+
+(set io 'empty (lambda ()
+                (io (lambda (value) value))))
+
+(set io 'identity (get io 'empty))
 
 (defmethod io to-string ()
   (let ((fn (get this 'unsafe-perform)))
@@ -165,22 +239,24 @@
   (.unsafe-perform this arg))
 
 
-(provide
-  (defun io-of (value)
-    (io (lambda () value))))
-
-(provide
-  (defun io-empty ()
-    (io identity)))
-
-(provide
-  (defun io-identity ()
-    (io identity)))
-
 
 ;; --- maybe
 (provide
   (defsum maybe ((nothing) (just value))))
+
+(set maybe 'of (lambda (value)
+                (maybe.just value)))
+
+(set maybe 'lift (lambda (value)
+                  (cond ((not (exists? value))
+                         (maybe.nothing))
+                        :else (maybe.of value))))
+
+(set maybe 'empty (lambda ()
+                    (maybe.nothing)))
+
+(set maybe 'zero (lambda ()
+                  (maybe.nothing)))
 
 (defmethod maybe to-string ()
   (.match this (hash nothing (lambda () 
@@ -239,67 +315,60 @@
 
 (defmethod maybe ap (t-maybe)
   (when (not (.is maybe t-maybe))
-    (error! ""))
+    (error! "(maybe.ap) expects argument 1 to be
+            a maybe.nothing or maybe.just, got " (show t-maybe)))
   (.match this
           (hash nothing (lambda () 
                           (maybe.nothing))
                 just (lambda (value)
                       (.map t-maybe value)))))
-                      
 
+(defmethod maybe flat-map (to-maybe-mapper)
+  (cond ((not (function? to-maybe-mapper))
+         (error! "(maybe.flat-map|maybe.chain) expects argument 1 to be
+                 a function, got " (show to-maybe-mapper)))
+        :else (.match this
+                      (hash nothing (lambda ()
+                                      (maybe.nothing))
+                            just (lambda (value)
+                                  (to-maybe-mapper value))))))
 
-(provide
-  (defun maybe-of (value)
-    (maybe.just value)))
+(set (get maybe 'prototype) 'chain (get maybe 'prototype 'flat-map))
 
-(provide
-  (defun maybe-empty ()
-    (maybe.nothing)))
+(defmethod maybe alt (t-maybe)
+  (cond ((not (.is maybe t-maybe))
+         (error! "(maybe.alt) expects argument 1 to be
+                 a maybe.nothing or maybe.just, got " (show t-maybe)))
+        :else (.match this
+                      (hash nothing (lambda () t-maybe)
+                            just (lambda (value) (maybe.just value))))))
 
-(provide
-  (defun maybe-zero ()
-    (maybe.nothing)))
+(defmethod maybe reduce (reducer seed)
+  (cond ((not (function? reducer))
+         (error! "(maybe.reduce) expects argument 1 to be
+                 a function, got " (show reducer)))
+        ((not (defined? seed))
+         (error! "(maybe.reduce) expects argument 2 to be
+                 a non (void) value, got " (show seed)))
+        :else (.match this
+                      (hash nothing (lambda () seed)
+                            just (lambda (value) (reducer seed value))))))
 
-(provide
-  (defun maybe-lift (value)
-    (cond (exists? value)
-          (maybe.just value)
-          (maybe.nothing))))
+(defmethod maybe traverse (lift transformer)
+  (cond ((not (function? lift))
+         (error! "(maybe.traverse) expects argument 1 to be
+                 a function, got " (show lift)))
+        (not (function? transformer)
+         (error! "(maybe.traverse) expects argument 2 to be
+                 a function, got " (show transformer)))
+        :else (.match this
+                      (hash nothing (lambda () 
+                                      (lift (maybe.nothing)))
+                            just (lambda (value)
+                                  (.map (transformer value) maybe-of))))))
 
-
-;;; GENERAL PURPOSE OPERATIONS
-(provide
-  (defun show (x)
-    (cond ((eq? (nil) x)
-           "(nil)")
-          ((nan? x)
-           "(nan)")
-          ((string? x)
-           (+ "(string " x ")"))
-          ((number? x)
-           (+ "(number " x ")"))
-          ((function? x)
-           (+ "(function " (or (get x 'name) "lambda") ")"))
-          ((generator? x)
-           (+ "(generator " (get x 'name) ")"))
-          ((list? x)
-           (+ "(list" (.reduce x (lambda (a v)
-                                   (+ a " " (show v))) "") ")"))
-          ((hash? x)
-           (+ "(hash" (.reduce (hash-pairs x)
-                               (lambda (a [k v])
-                                (+ a " :" k " " (show v))) "") ")"))
-          ((dict? x)
-           (+ "(dict" (.reduce (.entries x)
-                               (lambda (a [k v])
-                                 (+ a " :" (show k) " " (show v)))
-                               "") ")"))
-          ((future? x)
-           "(future)")
-          ((date? x)
-           (+ "(date" (.get-full-year x)
-              "-" (+ 1 (.get-month x))
-              "-" (.get-date x) ")"))
-          ((regex? x)
-           (+ "(regex " (get x 'source) " :flags " (get x 'flags) ")"))
-          :else (.to-string x))))
+(defmethod maybe sequence (lift)
+  (cond ((not (function? lift))
+         (error! "(maybe.sequence) expects argument 1 to be
+                 a function, got " (show lift)))
+        :else (.traverse this lift identity)))
