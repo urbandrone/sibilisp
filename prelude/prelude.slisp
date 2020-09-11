@@ -1,5 +1,11 @@
 (comment sibilisp-prelude - MIT)
 
+;;; CONSTANTS
+(defconstant *e-no-value* "E_NO_VALUE")
+(defconstant *e-guard* " guards agains (nil) and (void) values, got")
+(defconstant *e-arg-1* " expects argument 1 to be a ")
+(defconstant *e-arg-2* " expects argument 2 to be a ")
+
 ;;; BASIC LAMBDA OPERATORS (I, K, S)
 (provide
  (defun identity (a) a))
@@ -13,24 +19,21 @@
 (provide
   (defun list-of? (x predicate)
     (cond ((not (function? predicate))
-           (error! "(list-of? expects argument 2 to
-					 				 be a function, got " predicate))
+           (error! "(list-of?)" *e-arg-2* "function, got " predicate))
           :else (and (list? x)
                      (.every x predicate)))))
 
 (provide
   (defun hash-of? (x predicate)
     (cond ((not (function? predicate))
-           (error! "(hash-of? expects argument 2 to 
-					 				 be a function, got " predicate))
+           (error! "(hash-of?)" *e-arg-2* "function, got " predicate))
           :else (and (hash? x)
                      (.every (hash-pairs x) (lambda ([_ v]) (predicate v)))))))
 
 (provide 
   (defun dict-of? (x predicate)
     (cond ((not (function? predicate))
-           (error! "(dict-of?) expects argument 2 to 
-					 				 be a function, got " predicate))
+           (error! "(dict-of?)" *e-arg-2* "function, got " predicate))
           :else (and (dict? x)
                      (.every (.entries x) (lambda ([_ v]) (predicate v)))))))
 
@@ -40,11 +43,9 @@
 (provide
   (defun converge (combine branches)
     (cond ((not (function? combine))
-           (error! "(converge) expects argument 1 to
-					 				 be a function, got " combine))
+           (error! "(converge)" *e-arg-1* "function, got " combine))
           ((not (list-of? branches (lambda (v) (function? v))))
-           (error! "(converge) expects argument 2 to
-					 				 be a list of functions, got " branches))
+           (error! "(converge)" *e-arg-2* "list of functions, got " branches))
           :else (lambda (...args)
                   (cond ((not (= (length args) (length branches)))
                          (error! "(converge -> lambda) expects arguments
@@ -110,8 +111,7 @@
 
 (set coyo 'lift (lambda (value)
                   (cond ((not (exists? value))
-                         (error! "(coyo.lift) guards against (void) or
-                                 (nil) values, got" value))
+                         (error! "(coyo.lift)" *e-guard* value))
                         :else (coyo.of value))))
 
 (defmethod coyo to-string ()
@@ -121,8 +121,7 @@
 
 (defmethod coyo map (mapper)
   (cond ((not (function? mapper))
-         (error! "(coyo.map) expects argument 1 to be
-                 a function, got " (show mapper)))
+         (error! "(coyo.map)" *e-arg-1* "function, got " (show mapper)))
         :else (let ((value (get this 'value))
                     (run-self (get this 'mapper)))
                 (coyo value (lambda (arg) (mapper (run-self arg)))))))
@@ -146,11 +145,9 @@
   (let ((value (get this 'value))
         (mapper (get this 'mapper)))
     (cond ((not (function? reducer))
-           (error! "(coyo.reduce) expects argument 1 to be
-                   a function, got " (show reducer)))
+           (error! "(coyo.reduce)" *e-arg-1* "function, got " (show reducer)))
           ((not (defined? seed))
-           (error! "(coyo.reduce) expects argument 2 to be
-                   a non (void) value, got " (show seed)))
+           (error! "(coyo.reduce)" *e-arg-2* "non (void) value, got " (show seed)))
           ((function? (get value 'map) (get value 'reduce))
            (.reduce value
                     (lambda (acc val)
@@ -168,8 +165,7 @@
 
 (set io 'lift (lambda (value)
                 (cond ((not (exists? value))
-                       (error! "(io.lift) guards agains (void) or
-                               (nil) values, got " value))
+                       (error! "(io.lift)" *e-guard* value))
                       :else (io.of value))))
 
 (set io 'empty (lambda ()
@@ -183,15 +179,13 @@
 
 (defmethod io equals (t-io)
   (cond ((not (instance-of? t-io io))
-         (error! "(io.equals) expects argument 1 to be
-                 an io, got " (show t-io)))
+         (error! "(io.equals)" *e-arg-1* "io, got " (show t-io)))
         :else (eql? (get this 'unsafe-perform)
                     (get t-io 'unsafe-perform))))
 
 (defmethod io concat (t-io)
   (cond ((not (instance-of? t-io io))
-         (error! "(io.concat) expects argument 1 to be
-                 an io, got " (show t-io)))
+         (error! "(io.concat)" *e-arg-1* "io, got " (show t-io)))
         :else (let ((run-self (get this 'unsafe-perform))
                     (run-that (get t-io 'unsafe-perform)))
                 (io (lambda (arg)
@@ -200,16 +194,14 @@
 
 (defmethod io map (mapper)
   (cond ((not (function? mapper))
-         (error! "(io.map) expects argument 1 to be
-                 a function, got " (show mapper)))
+         (error! "(io.map)" *e-arg-1* "function, got " (show mapper)))
         :else (let ((run-self (get this 'unsafe-perform)))
                 (io (lambda (arg)
                       (mapper (run-self arg)))))))
 
 (defmethod io ap (t-io)
   (cond ((not (instance-of? t-io io))
-         (error! "(io.ap) expects argument 1 to be
-                 an io, got " (show t-io)))
+         (error! "(io.ap)" *e-arg-1* "io, got " (show t-io)))
         :else (let ((run-self (get this 'unsafe-perform))
                     (run-that (get t-io 'unsafe-perform)))
                 (io (lambda (arg)
@@ -217,8 +209,7 @@
 
 (defmethod io flat-map (to-io-mapper)
   (cond ((not (function? to-io-mapper))
-         (error! "(io.flat-map | io.chain) expects argument 1 to be
-                 an io returning function, got " (show to-io-mapper)))
+         (error! "(io.flat-map | io.chain)" *e-arg-1* "io returning function, got " (show to-io-mapper)))
         :else (let ((run-self (get this 'unsafe-perform)))
                 (io (lambda (arg)
                       (.unsafe-perform (to-io-mapper (run-self arg)) arg))))))
@@ -227,8 +218,7 @@
 
 (defmethod io compose (t-io)
   (cond ((not (instance-of? t-io io))
-         (error! "(io.compose) expects argument 1 to be
-                 an io, got " (show t-io)))
+         (error! "(io.compose)" *e-arg-1* "io, got " (show t-io)))
         :else (let ((run-self (get this 'unsafe-perform))
                     (run-that (get t-io 'unsafe-perform)))
                 (io (lambda (arg)
@@ -266,8 +256,7 @@
 
 (defmethod maybe equals (t-maybe)
   (when (not (.is maybe t-maybe))
-    (error! "(maybe.equals) expects argument 1 to be
-            an instance of maybe, got " (show t-maybe)))
+    (error! "(maybe.equals)" *e-arg-1* "instance of maybe, got " (show t-maybe)))
   (.match this
           (hash nothing (lambda ()
                           (.match t-maybe
@@ -284,8 +273,7 @@
 
 (defmethod maybe concat (t-maybe)
   (when (not (.is maybe t-maybe))
-    (error! "(maybe.concat) expects argument 1 to be
-            an instance of maybe, got " (show t-maybe)))
+    (error! "(maybe.concat)" *e-arg-1* "instance of maybe, got " (show t-maybe)))
   (.match this
           (hash nothing (lambda ()
                           (maybe.nothing))
@@ -305,18 +293,16 @@
 
 (defmethod maybe map (mapper)
   (cond ((not (function? mapper))
-         (error! "(maybe.map) expects argument 1 to be
-                 a function, got " (show mapper)))
+         (error! "(maybe.map)" *e-arg-1* "function, got " (show mapper)))
         :else (.match this 
                       (hash nothing (lambda ()
                                       (maybe.nothing))
                             just (lambda (value) 
-                                  (maybe-lift (mapper value))))))) 
+                                  (maybe.lift (mapper value))))))) 
 
 (defmethod maybe ap (t-maybe)
   (when (not (.is maybe t-maybe))
-    (error! "(maybe.ap) expects argument 1 to be
-            a maybe.nothing or maybe.just, got " (show t-maybe)))
+    (error! "(maybe.ap)" *e-arg-1* "instance of maybe, got " (show t-maybe)))
   (.match this
           (hash nothing (lambda () 
                           (maybe.nothing))
@@ -325,8 +311,7 @@
 
 (defmethod maybe flat-map (to-maybe-mapper)
   (cond ((not (function? to-maybe-mapper))
-         (error! "(maybe.flat-map|maybe.chain) expects argument 1 to be
-                 a function, got " (show to-maybe-mapper)))
+         (error! "(maybe.flat-map|maybe.chain)" *e-arg-1* "function, got " (show to-maybe-mapper)))
         :else (.match this
                       (hash nothing (lambda ()
                                       (maybe.nothing))
@@ -335,40 +320,219 @@
 
 (set (get maybe 'prototype) 'chain (get maybe 'prototype 'flat-map))
 
+(defmethod maybe bimap (transform-nothing transform-just)
+  (cond ((not (function? transform-nothing))
+         (error! "(maybe.bimap)" *e-arg-1* "function, got " (show transform-nothing)))
+        ((not (function? transform-just))
+         (error! "(maybe.bimap)" *e-arg-2* "function, got " (show transform-just)))
+        :else (.match this
+                      (hash nothing (lambda () (transform-nothing))
+                            just (lambda (value) (transform-just value))))))
+
 (defmethod maybe alt (t-maybe)
   (cond ((not (.is maybe t-maybe))
-         (error! "(maybe.alt) expects argument 1 to be
-                 a maybe.nothing or maybe.just, got " (show t-maybe)))
+         (error! "(maybe.alt)" *e-arg-1* "instance of maybe, got " (show t-maybe)))
         :else (.match this
                       (hash nothing (lambda () t-maybe)
                             just (lambda (value) (maybe.just value))))))
 
 (defmethod maybe reduce (reducer seed)
   (cond ((not (function? reducer))
-         (error! "(maybe.reduce) expects argument 1 to be
-                 a function, got " (show reducer)))
+         (error! "(maybe.reduce)" *e-arg-1* "function, got " (show reducer)))
         ((not (defined? seed))
-         (error! "(maybe.reduce) expects argument 2 to be
-                 a non (void) value, got " (show seed)))
+         (error! "(maybe.reduce)" *e-arg-2* "non (void) value, got " (show seed)))
         :else (.match this
                       (hash nothing (lambda () seed)
                             just (lambda (value) (reducer seed value))))))
 
 (defmethod maybe traverse (lift transformer)
   (cond ((not (function? lift))
-         (error! "(maybe.traverse) expects argument 1 to be
-                 a function, got " (show lift)))
+         (error! "(maybe.traverse)" *e-arg-1* "function, got " (show lift)))
         (not (function? transformer)
-         (error! "(maybe.traverse) expects argument 2 to be
-                 a function, got " (show transformer)))
+         (error! "(maybe.traverse)" *e-arg-2* "function, got " (show transformer)))
         :else (.match this
                       (hash nothing (lambda () 
                                       (lift (maybe.nothing)))
                             just (lambda (value)
-                                  (.map (transformer value) maybe-of))))))
+                                  (.map (transformer value) maybe.of))))))
 
 (defmethod maybe sequence (lift)
   (cond ((not (function? lift))
-         (error! "(maybe.sequence) expects argument 1 to be
-                 a function, got " (show lift)))
+         (error! "(maybe.sequence)" *e-arg-1* "function, got " (show lift)))
         :else (.traverse this lift identity)))
+
+
+
+;; --- either
+(provide
+  (defsum either ((left error)
+                  (right value))))
+
+(set either 'of (lambda (value))
+                (either.right value))
+
+(set either 'lift (lambda (value))
+                  (cond ((not (exists? value))
+                         (either.left (error "")))
+                        :else (either.of value)))
+
+(set either 'empty (lambda ()
+                    (either.right (list))))
+
+(set either 'zero (lambda ())
+                  (either.left (error "either-zero")))
+
+(defmethod either to-string ()
+  (.match this (hash left (lambda (error) 
+                               "(either.left " (show error) ")")
+                     right (lambda (value)
+                            (+ "(either.right " (show value) ")")))))
+
+(defmethod either equals (t-either)
+  (when (not (.is either t-either))
+    (error! "(either.equals)" *e-arg-1* "instance of either, got " (show t-either)))
+  (.match this
+          (hash left (lambda ()
+                      (.match t-either
+                              (hash left (lambda () true)
+                                    right (lambda () false))))
+                right (lambda (value)
+                        (.match t-either 
+                                (hash left (lambda ()
+                                            false)
+                                      right (lambda (t-value)
+                                             (if (function? (get value 'equals))  
+                                                 (.equals value t-value)
+                                                 (eql? value t-value)))))))))
+
+(defmethod either concat (t-either)
+  (when (not (.is either t-either))
+    (error! "(either.concat)" *e-arg-1* "instance of either, got " (show t-either)))
+  (.match this
+          (hash left (lambda (error) (either.left error))
+                right (lambda (value)
+                       (.match t-either
+                               (hash left (lambda () t-either)
+                                     right (lambda (t-value)
+                                            (let ((cnt (get value 'concat)))
+                                              (when (not (function? cnt))
+                                                (error! "(either.concat) cannot
+                                                        concat when both of
+                                                        the carried values
+                                                        implement the
+                                                        semigroup
+                                                        typeclass"))
+                                              (.call cnt value t-value)))))))))
+
+(defmethod either map (mapper)
+  (cond ((not (function? mapper))
+         (error! "(either.map)" *e-arg-1* "function, got " (show mapper)))
+        :else (.match this 
+                      (hash left (lambda (error)
+                                  (either.left error))
+                            right (lambda (value) 
+                                   (either.lift (mapper value))))))) 
+
+(defmethod either ap (t-either)
+  (when (not (.is either t-either))
+    (error! "(either.ap)" *e-arg-1* "instance of either, got " (show t-either)))
+  (.match this
+          (hash left (lambda (error) 
+                      (either.left error))
+                right (lambda (value)
+                       (.map t-either value)))))
+
+(defmethod either flat-map (to-either-mapper)
+  (cond ((not (function? to-either-mapper))
+         (error! "(either.flat-map|either.chain)" *e-arg-1* "function, got " (show to-either-mapper)))
+        :else (.match this
+                      (hash left (lambda (error)
+                                  (either.left error))
+                            right (lambda (value)
+                                   (to-either-mapper value))))))
+
+(set (get either 'prototype) 'chain (get either 'prototype 'flat-map))
+
+(defmethod either bimap (transform-left transform-right)
+  (cond ((not (function? transform-left))
+         (error! "(either.bimap)" *e-arg-1* "function, got " (show transform-left)))
+        ((not (function? transform-right))
+         (error! "(either.bimap)" *e-arg-2* "function, got " (show transform-right)))
+        :else (.match this
+                      (hash left (lambda (error) (transform-left error))
+                            right (lambda (value) (transform-right value))))))
+
+(defmethod either alt (t-either)
+  (cond ((not (.is either t-either))
+         (error! "(either.alt)" *e-arg-1* "instance of either, got " (show t-either)))
+        :else (.match this
+                      (hash left (lambda () t-either)
+                            right (lambda (value) (either.right value))))))
+
+(defmethod either reduce (reducer seed)
+  (cond ((not (function? reducer))
+         (error! "(either.reduce)" *e-arg-1* "function, got " (show reducer)))
+        ((not (defined? seed))
+         (error! "(either.reduce)" *e-arg-2* "non (void) value, got " (show seed)))
+        :else (.match this
+                      (hash left (lambda () seed)
+                            right (lambda (value) (reducer seed value))))))
+
+(defmethod either traverse (lift transformer)
+  (cond ((not (function? lift))
+         (error! "(either.traverse)" *e-arg-1* "function, got " (show lift)))
+        (not (function? transformer)
+         (error! "(either.traverse)" *e-arg-2* "function, got " (show transformer)))
+        :else (.match this
+                      (hash left (lambda (error) 
+                                  (lift (either.left error)))
+                            right (lambda (value)
+                                   (.map (transformer value) either.of))))))
+
+(defmethod either sequence (lift)
+  (cond ((not (function? lift))
+         (error! "(either.sequence)" *e-arg-1* "function, got " (show lift)))
+        :else (.traverse this lift identity)))
+
+
+;; --- proof
+(provide
+  (defsum proof ((falsy errors)
+                 (truthy value))))
+
+(set proof 'of (lambda (value)
+                (proof.truthy value)))
+
+(set proof 'lift (lambda (value)
+                  (cond ((nothing? value)
+                         (proof.falsy (list (error *e-no-value*))))
+                        ((error? value)
+                         (proof.falsy (list value)))
+                        :else (proof.truthy value))))
+
+(set proof 'empty (lambda ()
+                    (proof.truthy true)))
+
+(set proof 'zero (lambda ()
+                  (proof.falsy false)))
+
+(defmethod proof equals (t-proof)
+  (cond ((not (.is proof t-proof))
+         (error! "(proof.equals)" *e-arg-1* "instance of proof, got " (show t-proof)))
+        :else (.match this
+                      (hash truthy (lambda (value)
+                                    (.match t-proof
+                                            (hash truthy (lambda (t-value)
+                                                          (equals value
+                                                                  t-value))
+                                                  falsy (lambda ()
+                                                          false))))
+                            falsy (lambda (errors)
+                                    (.match t-proof
+                                            (hash truthy (lambda () false)
+                                                  falsy (lambda (t-errors)
+                                                          (.every errors
+                                                                  (lambda (e i)
+                                                                    (equals e
+                                                                            (get t-errors i))))))))))))
+                                              

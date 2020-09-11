@@ -39,6 +39,10 @@
        `(*scoped-without-return
          (throw (error ...@msg))))
 
+(macro error? (...values)
+       ; checks multiple values for being instances of errors
+       `(and ...@(map values (lambda (v)
+                               `(.is-prototype-of (get Error 'prototype) @v)))))
 
 
 (macro defconstant (...pairs)
