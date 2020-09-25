@@ -100,6 +100,57 @@
           :else (.to-string x))))
 
 
+(provide
+  (defun equals (value-a value-b)
+      (cond ((nil? value-a) (nil? value-b))
+            ((void? value-a) (void? value-b))
+            ((string? value-a value-b) (eql? value-a value-b))
+            ((function? value-a value-b) (eql? value-a value-b))
+            ((number? value-a value-b) (eql? value-a value-b))
+            ((regex? value-a value-b) (and (eql? (get value-a 'source)
+                                                 (get value-b 'source))
+                                           (eql? (get value-a 'flag)
+                                                 (get value-b 'flag))))
+            ((date? value-a value-b) (eql? (as-number value-a)
+                                           (as-number value-b)))
+            ((generator? value-a value-b) (eql? value-a value-b))
+            ((future? value-a value-b) (eql? value-a value-b))
+            ((list? value-a value-b) (and (eql? (length value-a)
+                                                (length value-b))
+                                          (.every 
+                                            value-a
+                                            (lambda (va i)
+                                              (equals va (get value-b i))))))
+            ((hash? value-a value-b) (let ((pa (hash-pairs value-a))
+                                           (pb (hash-pairs value-b)))
+                                      (and (eql? (length pa) (length pb))
+                                           (.every 
+                                            pa
+                                            (lambda ([k v])
+                                              (equals v (get value-b k)))))))
+            ((dict? value-a value-b) (let ((pa (dict-pairs value-a))
+                                           (pb (dict-pairs value-b)))
+                                      (and (eql? (length pa) (length pb))
+                                           (.every
+                                            pa
+                                            (lambda ([k v])
+                                              (equals v (.get value-b k)))))))
+            ((function? (get value-a 'equals)) (.equals value-a value-b))
+            :else false)))
+
+(provide
+  (defun concat (value-a value-b)
+    (cond ((or (not (exists? value-a)) (not (exists? value-b)))
+           (error! "(concat)"))
+          ((string? value-a value-b) (+ value-a value-b))
+          ((function? value-a value-b) (lambda (arg) (value-b (value-a arg))))
+          ((list? value-a value-b) (.concat value-a value-b))
+          ((future? value-a value-b) (future-all value-a value-b))
+          ((function? (get value-a 'concat)) (.concat value-a value-b))
+          :else (error! "(concat)"))))
+          
+
+
 ;;; ALGEBRAIC TYPES
 
 ;; --- coyo (-neda)
