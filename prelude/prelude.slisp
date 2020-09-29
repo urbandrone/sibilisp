@@ -5,18 +5,23 @@
 (defconstant *e-guard* " guards agains (nil) and (void) values, got")
 (defconstant *e-arg-1* " expects argument 1 to be a ")
 (defconstant *e-arg-2* " expects argument 2 to be a ")
+(defconstant *e-arg-3* " expects argument 3 to be a ")
 
 ;;; BASIC LAMBDA OPERATORS (I, K, S)
 (provide
- (defun identity (a) a))
+  ;; identity :: a -> a
+  (defun identity (a) a))
 
 (provide
- (defun thunk (a)
-   (lambda () a)))
+  ;; thunk :: a -> () -> a
+  (defun thunk (a)
+    (lambda () a)))
 
 
 ;;; LANGUAGE TYPE CHECK UTILITIES
 (provide
+  ;; list-of? :: (a, (_ -> Boolean)) -> Boolean
+  ;; --- (list-of *items* (lambda (x) (string? x)))
   (defun list-of? (x predicate)
     (cond ((not (function? predicate))
            (error! "(list-of?)" *e-arg-2* "function, got " predicate))
@@ -41,6 +46,7 @@
 
 ;;; FUNCTION FUNCTIONS
 (provide
+  ;; converge :: (((a, b, ...) -> c), [(_ -> a), (_ -> b), ...]) -> ((_, _, ...) -> c)
   (defun converge (combine branches)
     (cond ((not (function? combine))
            (error! "(converge)" *e-arg-1* "function, got " combine))
@@ -52,7 +58,7 @@
 												 				 length (" (length args) ") to equal the number
 																 of branches (" (length branches) ") but they
 																 differ."))
-                        :else (.apply converge
+                        :else (.apply combine
                                       (nil)
                                       (.map branches
                                             (lambda (branch i)
@@ -64,6 +70,7 @@
 
 ;;; GENERAL PURPOSE OPERATIONS
 (provide
+  ;; show :: a -> String
   (defun show (x)
     (cond ((eq? (nil) x)
            "(nil)")
@@ -101,6 +108,7 @@
 
 
 (provide
+  ;; equals :: (a, b) -> Boolean
   (defun equals (x y)
       (cond ((nil? x) (nil? y))
             ((void? x) (void? y))
@@ -139,6 +147,8 @@
             :else false)))
 
 (provide
+  ;; concat :: Semigroup S. (S a, S a) -> S a
+  ;; --- string, function, list, future, semigroupoid
   (defun concat (x y)
     (cond ((or (not (exists? x)) (not (exists? y)))
            (error! "(concat) cannot concatenate with a (void) or (nil) value"))
@@ -151,6 +161,7 @@
           :else (error! "(concat) needs both arguments to be in the same semigroup"))))
 
 (provide
+  ;; map :: Functor F. (F a, (a -> b)) -> F b
   (defun map (x mapper)
     (cond ((not (exists? x))
            (error! "(map)" *e-guard* (show x)))
@@ -179,11 +190,12 @@
           :else (error! "(map) needs the value to be a Functor"))))
 
 (provide
+  ;; flat-map :: Chain C. (C a, (a -> C b)) -> C b
   (defun flat-map (x chain-mapper)
     (cond ((not (exists? x))
-           (error! "(flat-map)"))
+           (error! "(flat-map|chain)" *e-guard* (show x)))
           ((not (function? chain-mapper))
-           (error! "(flat-map)"))
+           (error! "(flat-map|chain)" *e-arg-2* "function, got " (show chain-mapper)))
           ((function? x)
            (lambda (...args)
             (call (chain-mapper (.apply x null args)) ...args)))
@@ -196,8 +208,48 @@
                     (lambda (ls v)
                       (.concat ls v))
                     (list)))
-          :else (error! "(flat-map)"))))
-          
+          :else (error! "(flat-map|chain) needs the value to be a Chain"))))
+
+(provide
+  (defconstant chain flat-map))
+
+(provide
+  ;; bimap :: BiFunctor B. (B a, (_ -> b), (a -> b)) -> B b
+  ;; --- future, list, bifunctors
+  (defun bimap (x lhs-mapper rhs-mapper)
+    (cond ((not (exists? x))
+           (error! "(bimap)" *e-guard* (show x)))
+          ((not (function? lhs-mapper))
+           (error! "(bimap)" *e-arg-2* "function, got " (show lhs-mapper)))
+          ((not (function? rhs-mapper))
+           (error! "(bimap)" *e-arg-3* "function, got " (show rhs-mapper)))
+          ((future? x)
+           (.then x rhs-mapper lhs-mapper))
+          ((list? x)
+           (ternary (< (length x) 1)
+                    (list (lhs-mapper)) 
+                    (.map x rhs-mapper)))
+          ((function? (get x 'bimap))
+           (.bimap x lhs-mapper rhs-mapper))
+          :else (error! "(bimap) needs the first argument to be a BiFunctor"))))
+
+(provide
+  ;; promap :: ProFunctor P. (P a b, (c -> a), (b -> d)) -> P c d
+  ;; --- function, profunctors
+  (defun promap (x pre-mapper post-mapper)
+    (cond ((not (exists? x))
+           (error! "(promap)" *e-guard* (show x)))
+          ((function? pre-mapper)
+           (error! "(promap)" *e-arg-2* "function, got " (show pre-mapper)))
+          ((function? post-mapper)
+           (error! "(promap)" *e-arg-3* "function, got " (show post-mapper)))
+          ((function? x)
+           (lambda (...args)
+            (post-mapper (x (.apply pre-mapper null args)))))
+          ((function? (get x 'promap))
+           (.promap x pre-mapper post-mapper))
+          :else (error! "(promap) needs the first argument to be a ProFunctor"))))
+
 
 
 ;;; ALGEBRAIC TYPES
@@ -298,6 +350,22 @@
         :else (let ((run-self (get this 'unsafe-perform)))
                 (io (lambda (arg)
                       (mapper (run-self arg)))))))
+
+(defmethod io contramap (pre-mapper)
+  (cond ((not (function? pre-mapper))
+         (error! "(io.contramp)" *e-arg-1* "function, got " (show pre-mapper)))
+        :else (let ((run-self (get this 'unsafe-perform)))
+                (io (lambda (arg)
+                      (run-self (pre-mapper arg)))))))
+
+(defmethod io promap (pre-mapper post-mapper)
+  (cond ((not (function? pre-mapper))
+         (error! "(io.promap)" *e-arg-1* "function, got " (show pre-mapper)))
+        ((not (function? post-mapper))
+         (error! "(io.promap)" *e-arg-2* "function, got " (show post-mapper)))
+        :else (let ((run-self (get this 'unsafe-perform)))
+                (io (lambda (arg)
+                      (post-mapper (run-self (pre-mapper arg))))))))
 
 (defmethod io ap (t-io)
   (cond ((not (instance-of? t-io io))
@@ -614,7 +682,7 @@
                     (proof.truthy true)))
 
 (set proof 'zero (lambda ()
-                  (proof.falsy false)))
+                  (proof.falsy (list (error "ProofZero")))))
 
 (defmethod proof equals (t-proof)
   (cond ((not (.is proof t-proof))
@@ -635,4 +703,68 @@
                                                                   (lambda (e i)
                                                                     (equals e
                                                                             (get t-errors i))))))))))))
-                                              
+
+(defmethod proof concat (t-proof)
+  (cond ((not (.is proof t-proof))
+         (error! "(proof.concat)" *e-arg-1* "proof, got " (show t-proof)))
+        :else (.match this
+                      (hash truthy (lambda (value)
+                                    (.match t-proof
+                                            (hash truthy (lambda (t-value)
+                                                          (proof.truthy t-value))
+                                                  falsy (lambda (errors)
+                                                          (proof.falsy errors)))))
+                            falsy (lambda (errors)
+                                    (.match t-proof
+                                            (hash truthy (lambda ()
+                                                          (proof.falsy errors))
+                                                  falsy (lambda (t-errors)
+                                                          (proof.falsy 
+                                                            (.concat errors
+                                                                     t-errors))))))))))
+
+(defmethod proof map (mapper)
+  (cond ((not (function? mapper))
+         (error! "(proof.map)" *e-arg-1* "function, got " (show mapper)))
+        :else (.match this
+                      (hash truthy (lambda (value)
+                                    (proof.lift (mapper value)))
+                            falsy (lambda (errors)
+                                    (proof.falsy errors))))))
+                    
+(defmethod proof bimap (lhs-mapper rhs-mapper)
+  (cond ((not (function? lhs-mapper))
+         (error! "(proof.bimap)" *e-arg-1* "function, got " (show lhs-mapper)))
+        ((not (function? rhs-mapper))
+         (error! "(proof.bimap)" *e-arg-2* "function, got " (show rhs-mapper)))
+        :else (.match this
+                      (hash truthy (lambda (value)
+                                    (proof.lift (rhs-mapper value)))
+                            falsy (lambda (errors)
+                                    (proof.falsy (.map errors lhs-mapper)))))))
+
+(defmethod proof ap (t-proof)
+  (cond ((not (.is proof t-proof))
+         (error! "(proof.ap)" *e-arg-1* "proof, got " (show t-proof)))
+        :else (.match this
+                      (hash truthy (lambda (value)
+                                    (.match t-proof
+                                            (hash truthy (lambda (t-value)
+                                                          (proof.lift (value t-value)))
+                                                  falsy (lambda (t-errors)
+                                                          (proof.falsy t-errors)))))
+                            falsy (lambda (errors)
+                                    (.match t-proof
+                                            (hash truthy (lambda ()
+                                                          (proof.falsy errors))
+                                                  falsy (lambda (t-errors)
+                                                          (proof.falsy 
+                                                            (.concat errors 
+                                                                     t-errors))))))))))
+
+(defmethod proof alt (t-proof)
+  (cond ((not (.is proof t-proof))
+         (error! "(proof.alt)" *e-arg-1* "proof, got " (show t-proof)))
+        :else (.match this
+                      (hash truthy (lambda (value) (proof.truthy value))
+                            falsy (lambda () t-proof)))))
