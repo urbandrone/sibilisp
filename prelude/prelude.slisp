@@ -76,6 +76,8 @@
            "(nil)")
           ((nan? x)
            "(nan)")
+          ((error? x)
+           (+ "(error " x.name ": " x.message ")"))
           ((string? x)
            (+ "(string " x ")"))
           ((number? x)
@@ -115,34 +117,34 @@
             ((string? x y) (eql? x y))
             ((function? x y) (eql? x y))
             ((number? x y) (eql? x y))
-            ((regex? x y) (and (eql? (get x 'source
-                                                 (get y 'source)
-                                           (eql? (get x 'flag)
-                                                 (get y 'flag))))))
-            ((date? x y) (eql? (as-number x
-                                           (as-number y))))
+            ((regex? x y) (and 
+                            (eql? (get x 'source)
+                                  (get y 'source))
+                            (eql? (get x 'flag)
+                                  (get y 'flag))))
+            ((date? x y) (eql? (as-number x) (as-number y)))
             ((generator? x y) (eql? x y))
             ((future? x y) (eql? x y))
-            ((list? x y) (and (eql? (length x
-                                                (length y)
-                                          (.every 
-                                            x
-                                            (lambda (va i)
-                                              (equals va (get y i))))))))
-            ((hash? x y) (let ((pa (hash-pairs x
-                                           (pb (hash-pairs y))
-                                      (and (eql? (length pa) (length pb))
-                                           (.every 
-                                            pa
-                                            (lambda ([k v])
-                                              (equals v (get y k))))))))))
-            ((dict? x y) (let ((pa (dict-pairs x
-                                           (pb (dict-pairs y))
-                                      (and (eql? (length pa) (length pb))
-                                           (.every
-                                            pa
-                                            (lambda ([k v])
-                                              (equals v (.get y k))))))))))
+            ((list? x y) (and (eql? (length x)
+                                    (length y))
+                              (.every 
+                                x
+                                (lambda (va i)
+                                  (equals va (get y i))))))
+            ((hash? x y) (let ((pa (hash-pairs x))
+                               (pb (hash-pairs y)))
+                          (and (eql? (length pa) (length pb)) 
+                               (.every 
+                                pa
+                                (lambda ([k v])
+                                  (equals v (get y k)))))))
+            ((dict? x y) (let ((pa (dict-pairs x))
+                               (pb (dict-pairs y)))
+                          (and (eql? (length pa) (length pb))
+                               (.every
+                                pa
+                                (lambda ([k v])
+                                  (equals v (.get y k)))))))
             ((function? (get x 'equals)) (.equals x y))
             :else false)))
 
@@ -153,8 +155,7 @@
     (cond ((or (not (exists? x)) (not (exists? y)))
            (error! "(concat) cannot concatenate with a (void) or (nil) value"))
           ((string? x y) (+ x y))
-          ((function? x y) (lambda (...args
-                                        (y (.apply x null args)))))
+          ((function? x y) (lambda (...args) (y (.apply x null args))))
           ((list? x y) (.concat x y))
           ((future? x y) (future-all x y))
           ((function? (get x 'concat)) (.concat x y))
@@ -167,9 +168,6 @@
            (error! "(map)" *e-guard* (show x)))
           ((not (function? mapper))
            (error! "(map)" *e-arg-1* "function, got " (show mapper)))
-          ((or (string? x)
-               (number? x))
-           (mapper x))
           ((function? x) (lambda (...args) (mapper (.apply x null args))))
           ((future? x) (.then x mapper identity))
           ((function? (get x 'map)) (.map x mapper))
@@ -410,11 +408,9 @@
                          (maybe.nothing))
                         :else (maybe.of value))))
 
-(set maybe 'empty (lambda ()
-                    (maybe.nothing)))
+(set maybe 'empty (lambda () (maybe.nothing)))
 
-(set maybe 'zero (lambda ()
-                  (maybe.nothing)))
+(set maybe 'zero (lambda () (maybe.nothing)))
 
 (defmethod maybe to-string ()
   (.match this (hash nothing (lambda () 
@@ -451,12 +447,7 @@
                                      just (lambda (t-value)
                                             (let ((cnt (get value 'concat)))
                                               (when (not (function? cnt))
-                                                (error! "(maybe.concat) cannot
-                                                        concat when both of
-                                                        the carried values
-                                                        implement the
-                                                        semigroup
-                                                        typeclass"))
+                                                (error! "(maybe.concat) can only concat when both of the carried values implement the semigroup typeclass"))
                                               (.call cnt value t-value)))))))))
 
 (defmethod maybe map (mapper)
@@ -536,61 +527,61 @@
   (defsum either ((left error)
                   (right value))))
 
-(set either 'of (lambda (value))
-                (either.right value))
+(set either 'of (lambda (value)
+                  (either.right value)))
 
-(set either 'lift (lambda (value))
-                  (cond ((not (exists? value))
-                         (either.left (error "")))
-                        :else (either.of value)))
+(set either 'lift (lambda (value)
+                    (cond ((not (exists? value))
+                           (either.left (error "")))
+                          :else (either.of value))))
 
 (set either 'empty (lambda ()
                     (either.right (list))))
 
-(set either 'zero (lambda ())
-                  (either.left (error "either-zero")))
+(set either 'zero (lambda ()
+                    (either.left (error "either-zero"))))
 
 (defmethod either to-string ()
   (.match this (hash left (lambda (error) 
-                               "(either.left " (show error) ")")
+                            (+ "(either.left " (show error) ")"))
                      right (lambda (value)
                             (+ "(either.right " (show value) ")")))))
 
 (defmethod either equals (t-either)
-  (when (not (.is either t-either))
-    (error! "(either.equals)" *e-arg-1* "instance of either, got " (show t-either)))
-  (.match this
-          (hash left (lambda ()
-                      (.match t-either
-                              (hash left (lambda () true)
-                                    right (lambda () false))))
-                right (lambda (value)
-                        (.match t-either 
-                                (hash left (lambda ()
-                                            false)
-                                      right (lambda (t-value)
-                                             (if (function? (get value 'equals))  
-                                                 (.equals value t-value)
-                                                 (eql? value t-value)))))))))
+  (cond ((not (.is either t-either))
+         (error! "(either.equals)" *e-arg-1* "instance of either, got " (show t-either)))
+        :else (.match this
+                (hash left (lambda ()
+                            (.match t-either
+                                    (hash left (lambda () true)
+                                          right (lambda () false))))
+                      right (lambda (value)
+                              (.match t-either 
+                                      (hash left (lambda ()
+                                                  false)
+                                            right (lambda (t-value))
+                                                  (if (function? (get value 'equals))  
+                                                      (.equals value t-value)
+                                                      (eql? value t-value)))))))))
 
 (defmethod either concat (t-either)
-  (when (not (.is either t-either))
-    (error! "(either.concat)" *e-arg-1* "instance of either, got " (show t-either)))
-  (.match this
-          (hash left (lambda (error) (either.left error))
-                right (lambda (value)
-                       (.match t-either
-                               (hash left (lambda () t-either)
-                                     right (lambda (t-value)
-                                            (let ((cnt (get value 'concat)))
-                                              (when (not (function? cnt))
-                                                (error! "(either.concat) cannot
-                                                        concat when both of
-                                                        the carried values
-                                                        implement the
-                                                        semigroup
-                                                        typeclass"))
-                                              (.call cnt value t-value)))))))))
+  (cond ((not (.is either t-either))
+         (error! "(either.concat)" *e-arg-1* "either, got " (show t-either)))
+        :else (.match this
+                (hash left (lambda (error) (either.left error))
+                      right (lambda (value))
+                            (.match t-either
+                                    (hash left (lambda () t-either)
+                                          right (lambda (t-value)
+                                                  (let ((cnt (get value 'concat)))
+                                                    (when (not (function? cnt))
+                                                      (error! "(either.concat) cannot
+                                                              concat when both of
+                                                              the carried values
+                                                              implement the
+                                                              semigroup
+                                                              typeclass"))
+                                                    (.call cnt value t-value)))))))))
 
 (defmethod either map (mapper)
   (cond ((not (function? mapper))
