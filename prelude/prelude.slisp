@@ -542,46 +542,40 @@
                     (either.left (error "either-zero"))))
 
 (defmethod either to-string ()
-  (.match this (hash left (lambda (error) 
-                            (+ "(either.left " (show error) ")"))
-                     right (lambda (value)
-                            (+ "(either.right " (show value) ")")))))
+  (.match this 
+          (hash left (lambda (error) (+ "(either.left " (show error) ")")) 
+                right (lambda (value) (+ "(either.right " (show value) ")")))))
 
 (defmethod either equals (t-either)
   (cond ((not (.is either t-either))
          (error! "(either.equals)" *e-arg-1* "instance of either, got " (show t-either)))
         :else (.match this
-                (hash left (lambda ()
-                            (.match t-either
-                                    (hash left (lambda () true)
-                                          right (lambda () false))))
-                      right (lambda (value)
-                              (.match t-either 
-                                      (hash left (lambda ()
-                                                  false)
-                                            right (lambda (t-value))
-                                                  (if (function? (get value 'equals))  
-                                                      (.equals value t-value)
-                                                      (eql? value t-value)))))))))
+                      (hash left (lambda ()
+                                  (.match t-either
+                                          (hash left (lambda () true)
+                                                right (lambda () false))))
+                            right (lambda (value)
+                                    (.match t-either 
+                                            (hash left (lambda () false)
+                                                  right (lambda (t-value)
+                                                          (ternary (function? 
+                                                                    (get value 'equals))  
+                                                              (.equals value t-value)
+                                                              (eql? value t-value))))))))))
 
 (defmethod either concat (t-either)
   (cond ((not (.is either t-either))
          (error! "(either.concat)" *e-arg-1* "either, got " (show t-either)))
         :else (.match this
-                (hash left (lambda (error) (either.left error))
-                      right (lambda (value))
-                            (.match t-either
-                                    (hash left (lambda () t-either)
-                                          right (lambda (t-value)
-                                                  (let ((cnt (get value 'concat)))
-                                                    (when (not (function? cnt))
-                                                      (error! "(either.concat) cannot
-                                                              concat when both of
-                                                              the carried values
-                                                              implement the
-                                                              semigroup
-                                                              typeclass"))
-                                                    (.call cnt value t-value)))))))))
+                      (hash left (lambda (error) (either.left error))
+                            right (lambda (value)
+                                    (.match t-either
+                                            (hash left (lambda () t-either)
+                                                  right (lambda (t-value)
+                                                          (let ((cnt (get value 'concat)))
+                                                            (when (not (function? cnt))
+                                                              (error! "(either.concat) cannot concat when both of the carried values implement the semigroup typeclass"))
+                                                            (.call cnt value t-value))))))))))
 
 (defmethod either map (mapper)
   (cond ((not (function? mapper))
@@ -640,7 +634,7 @@
 (defmethod either traverse (lift transformer)
   (cond ((not (function? lift))
          (error! "(either.traverse)" *e-arg-1* "function, got " (show lift)))
-        (not (function? transformer)
+        ((not (function? transformer))
          (error! "(either.traverse)" *e-arg-2* "function, got " (show transformer)))
         :else (.match this
                       (hash left (lambda (error) 
@@ -682,10 +676,8 @@
                       (hash truthy (lambda (value)
                                     (.match t-proof
                                             (hash truthy (lambda (t-value)
-                                                          (equals value
-                                                                  t-value))
-                                                  falsy (lambda ()
-                                                          false))))
+                                                          (equals value t-value))
+                                                  falsy (lambda () false))))
                             falsy (lambda (errors)
                                     (.match t-proof
                                             (hash truthy (lambda () false)
