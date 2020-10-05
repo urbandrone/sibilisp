@@ -368,10 +368,8 @@
 (defmethod io ap (t-io)
   (cond ((not (instance-of? t-io io))
          (error! "(io.ap)" *e-arg-1* "io, got " (show t-io)))
-        :else (let ((run-self (get this 'unsafe-perform))
-                    (run-that (get t-io 'unsafe-perform)))
-                (io (lambda (arg)
-                      (call (run-self run-that) arg))))))
+        :else (let ((run-self (get this 'unsafe-perform)))
+                (.map t-io run-self))))
 
 (defmethod io flat-map (to-io-mapper)
   (cond ((not (function? to-io-mapper))

@@ -23,6 +23,17 @@
 
 
 
+(macro setf (x ...ps-vl)
+       (var val (last ps-vl)
+              keys (.slice ps-vl 0 -1)
+              key (.pop keys))
+       `(set (get @x ...@keys) @key @val))
+
+(macro getf (x ...ps)
+       `(get @x ...@ps))
+
+
+
 ;;; LANGUAGE
 (macro gensym (a)
        ; generates a generic symbol
@@ -157,7 +168,7 @@
                                                                                `(set @self (quote @p) @p)))
                                                        (list))
                                                (set @self 'constructor @type)
-                                               (set @self '**sibilisp-tags** (list ...@(map pkeys (lambda (k) (quote k)))))
+                                               (set @self '**sibilisp-tags** (list ...@(map pkeys (lambda (k) `(quote @k)))))
                                                @self))
                                             "}"])))
             subnames (map variants.contents

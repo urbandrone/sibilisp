@@ -515,13 +515,10 @@ io.prototype.ap = (function(tIo) {
     ? (function() {
     throw (new Error(("" + "(io.ap)" + _eArg1_ + "io, got " + show(tIo))))
   }).call(this)
-    : (function(runSelf, runThat) {
+    : (function(runSelf) {
       
-    return io((function(arg) {
-          
-      return runSelf(runThat)(arg);
-    }));
-  })(this.unsafePerform, tIo.unsafePerform));
+    return tIo.map(runSelf);
+  })(this.unsafePerform));
 });
 io.prototype.flatMap = (function(toIoMapper) {
     return (!(typeof toIoMapper === "function")
@@ -583,7 +580,7 @@ export const maybe = (function() {
     }).call(this);
     self$4.value = value;
     self$4.constructor = just;
-    self$4.__sibilispTags__ = [ k ];
+    self$4.__sibilispTags__ = [ "value" ];
     return self$4;
   };
   sumtype$1.just.prototype.__sibilispType__ = sumtype$1;;
@@ -867,7 +864,7 @@ export const either = (function() {
     }).call(this);
     self$5.error = error;
     self$5.constructor = left;
-    self$5.__sibilispTags__ = [ k ];
+    self$5.__sibilispTags__ = [ "error" ];
     return self$5;
   };
   sumtype$2.left.prototype.__sibilispType__ = sumtype$2;;
@@ -883,7 +880,7 @@ export const either = (function() {
     }).call(this);
     self$6.value = value;
     self$6.constructor = right;
-    self$6.__sibilispTags__ = [ k ];
+    self$6.__sibilispTags__ = [ "value" ];
     return self$6;
   };
   sumtype$2.right.prototype.__sibilispType__ = sumtype$2;;
@@ -1157,7 +1154,7 @@ export const proof = (function() {
     }).call(this);
     self$7.errors = errors;
     self$7.constructor = falsy;
-    self$7.__sibilispTags__ = [ k ];
+    self$7.__sibilispTags__ = [ "errors" ];
     return self$7;
   };
   sumtype$3.falsy.prototype.__sibilispType__ = sumtype$3;;
@@ -1173,7 +1170,7 @@ export const proof = (function() {
     }).call(this);
     self$8.value = value;
     self$8.constructor = truthy;
-    self$8.__sibilispTags__ = [ k ];
+    self$8.__sibilispTags__ = [ "value" ];
     return self$8;
   };
   sumtype$3.truthy.prototype.__sibilispType__ = sumtype$3;;
