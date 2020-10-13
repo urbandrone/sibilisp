@@ -24,12 +24,14 @@
 
 
 (macro setf (x ...ps-vl)
+       ; allows setting a nested propertie's value
        (var val (last ps-vl)
               keys (.slice ps-vl 0 -1)
               key (.pop keys))
        `(set (get @x ...@keys) @key @val))
 
 (macro getf (x ...ps)
+       ; just an alias to sibilant's (get) for symmetry with our (setf)
        `(get @x ...@ps))
 
 
@@ -176,14 +178,10 @@
        `(defconstant @tname
           (scoped
            (defconstant @tself (.create Object (nil)))
-           (set @tself 'prototype (hash))
+           (set @tself 'prototype (hash **sibilisp-type** @tself))
            ...@(map subnames
                     (lambda (sname index)
-                      (list `(set @tself (quote @sname) @(get subctors index))
-                            "\n"
-                            `(set (get @tself (quote @sname) 'prototype)
-                                  '**sibilisp-type**
-                                  @tself))))
+                      (list `(set @tself (quote @sname) @(get subctors index)))))
            (set (get @tself 'prototype) 'match (lambda (ctors)
                                                   (defvar self this
                                                           name (get self 'constructor 'name)
@@ -644,6 +642,11 @@
                             ...(map body (lambda (expr)
                                            (indent (transpile expr))))
                             "}")))
+
+(macro generator? (...values)
+       `(and ...@(map values
+                      (lambda (v)
+                            `(is-a @v GeneratorFunction)))))
 
 (macro yields (value)
        ; creates a yield statement for use in generator functions

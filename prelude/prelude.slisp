@@ -248,6 +248,22 @@
            (.promap x pre-mapper post-mapper))
           :else (error! "(promap) needs the first argument to be a ProFunctor"))))
 
+(provide
+  (defun reduce (x reducer seed)
+    (cond ((not (function? reducer))
+           (error! "(reduce)" *e-arg-2* "function, got " (show reducer)))
+          ((not (exists? seed))
+           (error! "(reduce)" *e-arg-3* "to exist, got " (show seed)))
+          ((not (exists? x)) seed)
+          ((is-a x Set)
+           (let ((y seed))
+            (each value x
+              (assign y (reducer y value)))
+            y))
+          ((function? (get x 'reduce))
+           (.reduce x reducer seed))
+          :else (error! "(reduce)"))))
+
 
 
 ;;; ALGEBRAIC TYPES

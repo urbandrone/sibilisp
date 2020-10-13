@@ -1,6 +1,4 @@
-const path = require('path');
-const fs = require('fs-extra');
-const { compl, converge } = require('./utils/lambda');
+const { compl } = require('./utils/lambda');
 const Async = require('./utils/async');
 const List = require('./utils/list');
 const transpile = require('./transpiler');
@@ -90,7 +88,7 @@ const copyFilesToDest = (spath, dpath, f = null) => files => {
 const main = () => {
 	const options = List.foldl(
 		(opts, [key, value]) => 
-			// src :: String
+		// src :: String
 		// dest :: String
 		// entry :: String
 		key === 'src' || key === '--src' || key === '-s'

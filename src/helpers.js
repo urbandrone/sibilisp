@@ -20,6 +20,8 @@ const getCwd = process.cwd.bind(process);
 
 const pjoin = path.join.bind(path);
 
+const pnormal = path.normalize.bind(path);
+
 const getMacroPath = () => pjoin(__dirname, '..', 'lang', MACRO_FILE);
 
 /* ====== HELPER FUNCTIONS ====== */
@@ -146,6 +148,7 @@ module.exports = {
 	UTF8,
 	COMMENT_REGEX,
 	pjoin,
+	pnormal,
 	getCwd,
 	getMacroPath,
 	isSLispFile,
