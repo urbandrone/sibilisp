@@ -262,7 +262,18 @@
             y))
           ((function? (get x 'reduce))
            (.reduce x reducer seed))
-          :else (error! "(reduce)"))))
+          :else (error! "(reduce) needs the first argument to be a Foldable"))))
+
+(provide
+  (defun fold-map (x mapper seed*)
+    (cond ((not (function? mapper))
+           (error! "(fold-map)" *e-arg-2* "function, got " (show mapper)))
+          ((not (exists? x)) seed*)
+          ((is-a x Set)
+           (let ((y (.entries x)))
+            ))
+          ()
+          :else)))
 
 
 

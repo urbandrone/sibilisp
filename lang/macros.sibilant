@@ -88,12 +88,10 @@
        ; idiomatic variables with back referencing
        (var vars (map var-lists.contents
                       (lambda (paired)
-                        `(defvar ...@paired.contents)))
-            vnames (map var-lists.contents
-                        (lambda (c) (first c.contents))))
+                        `(defvar ...@paired.contents))))
        `(scoped
          ...@vars
-         (call (lambda (...@vnames) ...@body) ...@vnames)))
+         (call (lambda () ...@body))))
 
 (macro defun (name args ...body)
        ; function creation utility
