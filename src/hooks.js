@@ -33,7 +33,7 @@ const prePublish_run = (srcPath, outPath) => file => {
     Async.map(util.over('code')(transpile)),
     Async.map(util.over('path')(prePublish_alterPathAndType(outPath)(srcPath))),
     Async.chain(util.writeFile),
-    Async.map(() => 'Installed Prelude')
+    Async.map(() => 'Created Prelude')
   )(file);
 };
 

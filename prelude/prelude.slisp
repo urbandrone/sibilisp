@@ -1,5 +1,39 @@
 (comment sibilisp-prelude - MIT)
 
+;;;;                  PRELUDE - README
+;;;; --------------------------------------------
+;;;; This file contains definitions for all the functions that 
+;;;; are parts of sibilisp's prelude. It uses a modified syntax
+;;;; of Hindley-Milner type notation to describe it's included
+;;;; function's arguments and outputs.
+;;;; Here's a short description:
+;;;; - Specified types are written with their respective constructor
+;;;;    Example: String, Boolean
+;;;; - Abstract types are written as lowercase symbols
+;;;;   Example: a, b
+;;;; - In case a type is ireelevant, the underscore is used in place
+;;;;   Example: _
+;;;; - Null is written as unit/nil/empty list
+;;;;   Example: ()
+;;;; - If a function requires multiple arguments at once, braces
+;;;;   and commas are used
+;;;;   Example: (String, String)
+;;;; - Functions are written with arrow notation
+;;;;   Example: (String, String) -> String
+;;;; - Type classes are written in capital case symbols
+;;;;   Example: Functor, Semigroup
+;;;; - Type restrictions for type classes may be added to functions
+;;;;   Example: Functor F. (F a, (a -> b)) -> F b
+;;;; - Lists may be written with square braces instead of the
+;;;;   fully specified types
+;;;;   Example (full specified): (List String Number)
+;;;;   Example (appreviated): [String Number]
+;;;; - Hashes may be written with curly braces instead of the
+;;;;   fully specified types
+;;;;   Example (full specified): (Hash :a Number)
+;;;;   Example (appreviated): { :a Number }
+
+
 ;;; CONSTANTS
 (defconstant *e-no-value* "E_NO_VALUE")
 (defconstant *e-guard* " guards agains (nil) and (void) values, got")
@@ -20,8 +54,8 @@
 
 ;;; LANGUAGE TYPE CHECK UTILITIES
 (provide
-  ;; list-of? :: (a, (_ -> Boolean)) -> Boolean
-  ;; --- (list-of *items* (lambda (x) (string? x)))
+  ;; list-of? :: ([_], (_ -> Boolean)) -> Boolean
+  ;; --- (list-of? *items* (lambda (x) (string? x)))
   (defun list-of? (x predicate)
     (cond ((not (function? predicate))
            (error! "(list-of?)" *e-arg-2* "function, got " predicate))
@@ -29,6 +63,8 @@
                      (.every x predicate)))))
 
 (provide
+  ;; hash-of? :: ({ :a _ }, (_ -> Boolean)) -> Boolean
+  ;; --- (hash-of? *items* (lambda (x) (string? x)))
   (defun hash-of? (x predicate)
     (cond ((not (function? predicate))
            (error! "(hash-of?)" *e-arg-2* "function, got " predicate))
@@ -36,6 +72,8 @@
                      (.every (hash-pairs x) (lambda ([_ v]) (predicate v)))))))
 
 (provide 
+  ;; dict-of? :: ((Dict :a _), (_ -> Boolean)) -> Boolean
+  ;; --- (dict-of? *items* (lambda (x) (string? x)))
   (defun dict-of? (x predicate)
     (cond ((not (function? predicate))
            (error! "(dict-of?)" *e-arg-2* "function, got " predicate))
@@ -47,6 +85,10 @@
 ;;; FUNCTION FUNCTIONS
 (provide
   ;; converge :: (((a, b, ...) -> c), [(_ -> a), (_ -> b), ...]) -> ((_, _, ...) -> c)
+  ;; --- (converge (lambda (prefix word)
+  ;;                    (+ prefix "-" word))
+  ;;                  (list (thunk "Hello")
+  ;;                        (lambda (w) (.to-lower-case w))))
   (defun converge (combine branches)
     (cond ((not (function? combine))
            (error! "(converge)" *e-arg-1* "function, got " combine))
@@ -62,7 +104,7 @@
                                       (nil)
                                       (.map branches
                                             (lambda (branch i)
-                                              (branch (get args i)
+                                              (branch (getf args i)
                                                       i
                                                       args)))))))))
 
@@ -83,9 +125,9 @@
           ((number? x)
            (+ "(number " x ")"))
           ((function? x)
-           (+ "(function " (or (get x 'name) "lambda") ")"))
+           (+ "(function " (or (getf x 'name) "lambda") ")"))
           ((generator? x)
-           (+ "(generator " (get x 'name) ")"))
+           (+ "(generator " (getf x 'name) ")"))
           ((list? x)
            (+ "(list" (.reduce x (lambda (a v)
                                    (+ a " " (show v))) "") ")"))
@@ -105,7 +147,7 @@
               "-" (+ 1 (.get-month x))
               "-" (.get-date x) ")"))
           ((regex? x)
-           (+ "(regex " (get x 'source) " :flags " (get x 'flags) ")"))
+           (+ "(regex " (getf x 'source) " :flags " (getf x 'flags) ")"))
           :else (.to-string x))))
 
 
@@ -118,10 +160,10 @@
             ((function? x y) (eql? x y))
             ((number? x y) (eql? x y))
             ((regex? x y) (and 
-                            (eql? (get x 'source)
-                                  (get y 'source))
-                            (eql? (get x 'flag)
-                                  (get y 'flag))))
+                            (eql? (getf x 'source)
+                                  (getf y 'source))
+                            (eql? (getf x 'flag)
+                                  (getf y 'flag))))
             ((date? x y) (eql? (as-number x) (as-number y)))
             ((generator? x y) (eql? x y))
             ((future? x y) (eql? x y))
@@ -130,14 +172,14 @@
                               (.every 
                                 x
                                 (lambda (va i)
-                                  (equals va (get y i))))))
+                                  (equals va (getf y i))))))
             ((hash? x y) (let ((pa (hash-pairs x))
                                (pb (hash-pairs y)))
                           (and (eql? (length pa) (length pb)) 
                                (.every 
                                 pa
                                 (lambda ([k v])
-                                  (equals v (get y k)))))))
+                                  (equals v (getf y k)))))))
             ((dict? x y) (let ((pa (dict-pairs x))
                                (pb (dict-pairs y)))
                           (and (eql? (length pa) (length pb))
@@ -145,7 +187,7 @@
                                 pa
                                 (lambda ([k v])
                                   (equals v (.get y k)))))))
-            ((function? (get x 'equals)) (.equals x y))
+            ((function? (getf x 'equals)) (.equals x y))
             :else false)))
 
 (provide
@@ -158,7 +200,7 @@
           ((function? x y) (lambda (...args) (y (.apply x null args))))
           ((list? x y) (.concat x y))
           ((future? x y) (future-all x y))
-          ((function? (get x 'concat)) (.concat x y))
+          ((function? (getf x 'concat)) (.concat x y))
           :else (error! "(concat) needs both arguments to be in the same semigroup"))))
 
 (provide
@@ -170,7 +212,7 @@
            (error! "(map)" *e-arg-1* "function, got " (show mapper)))
           ((function? x) (lambda (...args) (mapper (.apply x null args))))
           ((future? x) (.then x mapper identity))
-          ((function? (get x 'map)) (.map x mapper))
+          ((function? (getf x 'map)) (.map x mapper))
           ((hash? x)
            (.reduce (hash-pairs x)
                     (lambda (o [k v]) (hash-merge! o (hash k v)))
@@ -199,7 +241,7 @@
             (call (chain-mapper (.apply x null args)) ...args)))
           ((future? x)
            (.then x chain-mapper identity))
-          ((function? (get x 'flat-map))
+          ((function? (getf x 'flat-map))
            (.flat-map x chain-mapper))
           ((list? x)
            (.reduce x 
@@ -227,7 +269,7 @@
            (ternary (< (length x) 1)
                     (list (lhs-mapper)) 
                     (.map x rhs-mapper)))
-          ((function? (get x 'bimap))
+          ((function? (getf x 'bimap))
            (.bimap x lhs-mapper rhs-mapper))
           :else (error! "(bimap) needs the first argument to be a BiFunctor"))))
 
@@ -244,34 +286,80 @@
           ((function? x)
            (lambda (...args)
             (post-mapper (x (.apply pre-mapper null args)))))
-          ((function? (get x 'promap))
+          ((function? (getf x 'promap))
            (.promap x pre-mapper post-mapper))
           :else (error! "(promap) needs the first argument to be a ProFunctor"))))
 
 (provide
+  ;; reduce :: Foldable F. (F a, ((b a) -> b) -> *opt b -> b)
+  ;; --- list, set
   (defun reduce (x reducer seed)
-    (cond ((not (function? reducer))
+    (cond ((not (exists? x))
+           (error! "(reduce)" *e-guard* (show x)))
+          ((not (function? reducer))
            (error! "(reduce)" *e-arg-2* "function, got " (show reducer)))
-          ((not (exists? seed))
-           (error! "(reduce)" *e-arg-3* "to exist, got " (show seed)))
-          ((not (exists? x)) seed)
           ((is-a x Set)
-           (let ((y seed))
-            (each value x
-              (assign y (reducer y value)))
-            y))
-          ((function? (get x 'reduce))
+           (let ((y (as-list (.values x))))
+            (.reduce y reducer seed)))
+          ((function? (getf x 'reduce))
            (.reduce x reducer seed))
           :else (error! "(reduce) needs the first argument to be a Foldable"))))
 
 (provide
-  (defun fold-map (x mapper seed*)
-    (cond ((not (function? mapper))
-           (error! "(fold-map)" *e-arg-2* "function, got " (show mapper)))
-          ((not (exists? x)) seed*)
+  (defun fold-map (x lift-map)
+    (cond ((not (exists? x))
+           (error! "(reduce)" *e-guard* (show x)))
+          ((not (function? lift-map))
+           (error! "(fold-map)" *e-arg-2* "function, got " (show lift-map)))
           ((is-a x Set)
-           (let ((y (.entries x)))
-            ))
+           (let ((y (as-list (.values x))))
+            (.reduce y
+                     (lambda (a value)
+                      (ternary (nil? a)
+                               (lift-map value)
+                               (.concat a (lift-map value))))
+                     (nil))))
+          ((function? (getf x 'reduce))
+           (.reduce x
+                    (lambda (a value)
+                      (ternary (nil? a)
+                               (lift-map value)
+                               (.concat a (lift-map value))))
+                    (nil)))
+          :else (error! "(fold-map) needs the first argument to be a Foldable"))))
+
+(provide
+  (defun fold (x lift)
+    (cond ((not (function? lift))
+           (error! "(fold)" *e-arg-2* "function, got " (show lift)))
+          ((is-a x Set)
+           (let ((y (as-list (.values x))))
+            (.reduce y
+                     (lambda (a value)
+                      (ternary (nil? a)
+                               (lift value)
+                               (.concat a (lift value))))
+                     (nil))))
+          ((function? (getf x 'fold))
+           (.fold x lift))
+          ((function? (getf x 'reduce))
+           (.reduce x
+                    (lambda (a value)
+                      (ternary (nil? a)
+                               (lift value)
+                               (.concat a (lift value))))
+                    (nil)))
+          :else (error! "(fold) needs the first argument to be a Foldable"))))
+
+(provide
+  (defun traverse (x lift transformer)
+    (cond ((not (exists? x))
+           (error! "(traverse)" *e-arg-1* "Traversable, got " (show x)))
+          ((not (function? lift))
+           (error! "(traverse)" *e-arg-2* "Functor returning function, got " (show lift)))
+          ((not (function?)))
+          ()
+          ()
           ()
           :else)))
 
@@ -292,20 +380,20 @@
                         :else (coyo.of value))))
 
 (defmethod coyo to-string ()
-  (let ((value (get this 'value))
-        (fn (get this 'mapper)))
+  (let ((value (getf this 'value))
+        (fn (getf this 'mapper)))
     (+ "(coyo " (show value) " " (show fn) ")")))
 
 (defmethod coyo map (mapper)
   (cond ((not (function? mapper))
          (error! "(coyo.map)" *e-arg-1* "function, got " (show mapper)))
-        :else (let ((value (get this 'value))
-                    (run-self (get this 'mapper)))
+        :else (let ((value (getf this 'value))
+                    (run-self (getf this 'mapper)))
                 (coyo value (lambda (arg) (mapper (run-self arg)))))))
 
 (defmethod coyo lower ()
-  (let ((mapper (get this 'mapper))
-        (value (get this 'value)))
+  (let ((mapper (getf this 'mapper))
+        (value (getf this 'value)))
     (cond ((not (function? mapper))
            (error! "(coyo.lower) requires the coyo:mapper property
                    to hold a function, but it holds " (show mapper)))
@@ -313,19 +401,19 @@
            (error! "(coyo.lower) requires the coyo:value property
                    to hold a non (void) or (nil) value, but it holds "
                    (show value)))
-          ((not (function? (get value 'map)))
+          ((not (function? (getf value 'map)))
            (error! "(coyo.lower) requires the coyo:value property
                    to implement the functor typeclass but it doesn't"))
           :else (coyo (.map value mapper) identity))))
 
 (defmethod coyo reduce (reducer seed)
-  (let ((value (get this 'value))
-        (mapper (get this 'mapper)))
+  (let ((value (getf this 'value))
+        (mapper (getf this 'mapper)))
     (cond ((not (function? reducer))
            (error! "(coyo.reduce)" *e-arg-1* "function, got " (show reducer)))
           ((not (defined? seed))
            (error! "(coyo.reduce)" *e-arg-2* "non (void) value, got " (show seed)))
-          ((function? (get value 'map) (get value 'reduce))
+          ((function? (getf value 'map) (getf value 'reduce))
            (.reduce value
                     (lambda (acc val)
                       (reducer acc (mapper val)))
@@ -348,23 +436,23 @@
 (set io 'empty (lambda ()
                 (io (lambda (value) value))))
 
-(set io 'identity (get io 'empty))
+(set io 'identity (getf io 'empty))
 
 (defmethod io to-string ()
-  (let ((fn (get this 'unsafe-perform)))
+  (let ((fn (getf this 'unsafe-perform)))
     (+ "(io " (show fn) ")")))
 
 (defmethod io equals (t-io)
   (cond ((not (instance-of? t-io io))
          (error! "(io.equals)" *e-arg-1* "io, got " (show t-io)))
-        :else (eql? (get this 'unsafe-perform)
-                    (get t-io 'unsafe-perform))))
+        :else (eql? (getf this 'unsafe-perform)
+                    (getf t-io 'unsafe-perform))))
 
 (defmethod io concat (t-io)
   (cond ((not (instance-of? t-io io))
          (error! "(io.concat)" *e-arg-1* "io, got " (show t-io)))
-        :else (let ((run-self (get this 'unsafe-perform))
-                    (run-that (get t-io 'unsafe-perform)))
+        :else (let ((run-self (getf this 'unsafe-perform))
+                    (run-that (getf t-io 'unsafe-perform)))
                 (io (lambda (arg)
                       (run-that
                         (run-self arg)))))))
@@ -372,14 +460,14 @@
 (defmethod io map (mapper)
   (cond ((not (function? mapper))
          (error! "(io.map)" *e-arg-1* "function, got " (show mapper)))
-        :else (let ((run-self (get this 'unsafe-perform)))
+        :else (let ((run-self (getf this 'unsafe-perform)))
                 (io (lambda (arg)
                       (mapper (run-self arg)))))))
 
 (defmethod io contramap (pre-mapper)
   (cond ((not (function? pre-mapper))
          (error! "(io.contramp)" *e-arg-1* "function, got " (show pre-mapper)))
-        :else (let ((run-self (get this 'unsafe-perform)))
+        :else (let ((run-self (getf this 'unsafe-perform)))
                 (io (lambda (arg)
                       (run-self (pre-mapper arg)))))))
 
@@ -388,30 +476,30 @@
          (error! "(io.promap)" *e-arg-1* "function, got " (show pre-mapper)))
         ((not (function? post-mapper))
          (error! "(io.promap)" *e-arg-2* "function, got " (show post-mapper)))
-        :else (let ((run-self (get this 'unsafe-perform)))
+        :else (let ((run-self (getf this 'unsafe-perform)))
                 (io (lambda (arg)
                       (post-mapper (run-self (pre-mapper arg))))))))
 
 (defmethod io ap (t-io)
   (cond ((not (instance-of? t-io io))
          (error! "(io.ap)" *e-arg-1* "io, got " (show t-io)))
-        :else (let ((run-self (get this 'unsafe-perform)))
+        :else (let ((run-self (getf this 'unsafe-perform)))
                 (.map t-io run-self))))
 
 (defmethod io flat-map (to-io-mapper)
   (cond ((not (function? to-io-mapper))
          (error! "(io.flat-map | io.chain)" *e-arg-1* "io returning function, got " (show to-io-mapper)))
-        :else (let ((run-self (get this 'unsafe-perform)))
+        :else (let ((run-self (getf this 'unsafe-perform)))
                 (io (lambda (arg)
                       (.unsafe-perform (to-io-mapper (run-self arg)) arg))))))
 
-(set (get io 'prototype) 'chain (get io 'prototype 'flat-map))
+(set (getf io 'prototype) 'chain (getf io 'prototype 'flat-map))
 
 (defmethod io compose (t-io)
   (cond ((not (instance-of? t-io io))
          (error! "(io.compose)" *e-arg-1* "io, got " (show t-io)))
-        :else (let ((run-self (get this 'unsafe-perform))
-                    (run-that (get t-io 'unsafe-perform)))
+        :else (let ((run-self (getf this 'unsafe-perform))
+                    (run-that (getf t-io 'unsafe-perform)))
                 (io (lambda (arg)
                       (run-that
                         (run-self arg)))))))
@@ -456,7 +544,7 @@
                               (hash nothing (lambda ()
                                               false)
                                     just (lambda (t-value)
-                                           (if (function? (get value 'equals))  
+                                           (if (function? (getf value 'equals))  
                                                (.equals value t-value)
                                                (eql? value t-value)))))))))
 
@@ -470,7 +558,7 @@
                        (.match t-maybe
                                (hash nothing (lambda () t-maybe)
                                      just (lambda (t-value)
-                                            (let ((cnt (get value 'concat)))
+                                            (let ((cnt (getf value 'concat)))
                                               (when (not (function? cnt))
                                                 (error! "(maybe.concat) can only concat when both of the carried values implement the semigroup typeclass"))
                                               (.call cnt value t-value)))))))))
@@ -502,7 +590,7 @@
                             just (lambda (value)
                                   (to-maybe-mapper value))))))
 
-(set (get maybe 'prototype) 'chain (get maybe 'prototype 'flat-map))
+(set (getf maybe 'prototype) 'chain (getf maybe 'prototype 'flat-map))
 
 (defmethod maybe bimap (transform-nothing transform-just)
   (cond ((not (function? transform-nothing))
@@ -584,7 +672,7 @@
                                             (hash left (lambda () false)
                                                   right (lambda (t-value)
                                                           (ternary (function? 
-                                                                    (get value 'equals))  
+                                                                    (getf value 'equals))  
                                                               (.equals value t-value)
                                                               (eql? value t-value))))))))))
 
@@ -597,7 +685,7 @@
                                     (.match t-either
                                             (hash left (lambda () t-either)
                                                   right (lambda (t-value)
-                                                          (let ((cnt (get value 'concat)))
+                                                          (let ((cnt (getf value 'concat)))
                                                             (when (not (function? cnt))
                                                               (error! "(either.concat) cannot concat when both of the carried values implement the semigroup typeclass"))
                                                             (.call cnt value t-value))))))))))
@@ -629,7 +717,7 @@
                             right (lambda (value)
                                    (to-either-mapper value))))))
 
-(set (get either 'prototype) 'chain (get either 'prototype 'flat-map))
+(set (getf either 'prototype) 'chain (getf either 'prototype 'flat-map))
 
 (defmethod either bimap (transform-left transform-right)
   (cond ((not (function? transform-left))
@@ -710,7 +798,7 @@
                                                           (.every errors
                                                                   (lambda (e i)
                                                                     (equals e
-                                                                            (get t-errors i))))))))))))
+                                                                            (getf t-errors i))))))))))))
 
 (defmethod proof concat (t-proof)
   (cond ((not (.is proof t-proof))

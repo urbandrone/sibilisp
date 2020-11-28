@@ -319,6 +319,14 @@
 
 
 
+;;; ====== ARITHMETIC ======
+(macro op-exponentiation (...values)
+       (list "(" (interleave " ** " values) ")"))
+(alias-macro ap-exponentiation **)
+
+
+
+
 ;;; ====== MATHS ======
 
 (macro floor (a)
@@ -474,12 +482,21 @@
                                     (nan? @v))))))
 
 
+
+(macro as-number (value)
+       `(Number @value))
+
 (delete-macro number?)
 (macro number? (...values)
        ; tests if given values are numbers and not NaN
        `(and ...@(map values (lambda (v)
                                `(and (eql? (typeof @v) "number")
                                      (not (nan? @v)))))))
+
+
+
+(macro as-string (value)
+       `(String @value))
 
 
 
@@ -624,10 +641,7 @@
 
 
 
-;; NOTE
-;; we won't support the native Set datatype. that is by
-;; intention, because Sets in JavaScript are more or
-;; less useless, except for creating a union
+;; --- union/set alter
 
 
 
