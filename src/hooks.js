@@ -41,7 +41,9 @@ const prePublish_run = (srcPath, outPath) => file => {
 
 const prePublish = () => {
   return prePublish_findPreludeFile(PREPUBLISH_IN).
-    then(prePublish_run(PREPUBLISH_IN, PREPUBLISH_OUT));
+    then(prePublish_run(PREPUBLISH_IN, PREPUBLISH_OUT)).
+    then(console.log.bind(console)).
+    catch(console.error.bind(console));
 };
 
 

@@ -205,6 +205,10 @@
        ; method definition facility for types and sum types
        `(set (get @tname 'prototype) (quote @mname) (lambda @args ...@body)))
 
+(macro method? (tname mname)
+       ;
+       `(function? (get @tname (quote @mname))))
+
 
 
 ;;; ====== ES2015+ MODULE SYSTEM ======
@@ -624,16 +628,22 @@
 
 (macro dict-pairs (value)
        ; transforms a map into a list of pairs
-       `(.entries @value))
+       `(as-list (.entries @value)))
+
+(macro dict-values (value)
+       ; transforms a map into a list of values
+       `(as-list (.values @value)))
 
 (macro dict-merge! (...values)
        (var fst (first values)
             rst (rest values)
-            d (gensym "dict"))
+            d (gensym "dict")
+            k (gensym "dictKey")
+            v (gensym "dictVal"))
        `(scoped
          (each @d @rst
-               (each (v k) @d
-                     (.add @fst k v)))
+               (each (@v @k) @d
+                     (.set @fst @k @v)))
          @fst))
 
 (macro dict-merge (...values)
@@ -641,7 +651,34 @@
 
 
 
-;; --- union/set alter
+;; --- union/mset
+(macro mset (...values)
+       `(new Set (list ...@values)))
+
+(macro mset? (...values)
+       `(and ...@(map values
+                      (lambda (v)
+                        `(is-a @v Set)))))
+
+(macro mset-pairs (value)
+       `(as-list (.entries @value)))
+
+(macro mset-values (value)
+       `(as-list (.values @value)))
+
+(macro mset-merge! (...values)
+       (var fst (first values)
+            rst (rest values)
+            d (gensym "mset")
+            v (gensym "msetVal"))
+       `(scoped
+         (each @d @rst
+               (each @v @d
+                     (.add @fst @v)))
+         @fst))
+
+(macro mset-merge (...values)
+       `(mset-merge! (mset) ...@values))     
 
 
 
