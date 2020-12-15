@@ -1,6 +1,9 @@
 const cli = require('./src/cli');
 
-const log = console.log.bind(console);
-const err = console.error.bind(console);
-
-cli().then(log).catch(err);
+cli().then(msg => {
+  console.log(msg);
+  process.exitCode = 0;
+}).catch(err => {
+  console.error(err.message);
+  process.exitCode = 1;
+});

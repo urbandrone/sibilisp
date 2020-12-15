@@ -8,10 +8,10 @@ const util = require('./helpers');
 /* ====== PROG DEFINITIONS ====== */
 
 
-const PREPUBLISH_IN = util.pnormal(util.pjoin(__dirname, '..', 'prelude'));
-const PREPUBLISH_OUT = util.pnormal(util.pjoin(__dirname, '..'));
+const PRELUDE_IN = util.pnormal(util.pjoin(__dirname, '..', 'prelude'));
+const PRELUDE_OUT = util.pnormal(util.pjoin(__dirname, '..'));
 
-const prePublish_findPreludeFile = fpath => {
+const findPreludeFile = fpath => {
   return compl(
     Async.of,
     Async.chain(util.readFile),
@@ -21,17 +21,17 @@ const prePublish_findPreludeFile = fpath => {
 
 
 
-const prePublish_alterPathAndType = to => from => compl(
+const alterPathAndType = to => from => compl(
   util.replace('.sibilant')('.js'),
   util.replace('.slisp')('.js'),
   util.replace(from)(to)
 );
 
-const prePublish_run = (srcPath, outPath) => file => {
+const run = (srcPath, outPath) => file => {
   return compl(
     Async.of,
     Async.map(util.over('code')(transpile)),
-    Async.map(util.over('path')(prePublish_alterPathAndType(outPath)(srcPath))),
+    Async.map(util.over('path')(alterPathAndType(outPath)(srcPath))),
     Async.chain(util.writeFile),
     Async.map(() => 'Created Prelude')
   )(file);
@@ -39,15 +39,19 @@ const prePublish_run = (srcPath, outPath) => file => {
 
 
 
-const prePublish = () => {
-  return prePublish_findPreludeFile(PREPUBLISH_IN).
-    then(prePublish_run(PREPUBLISH_IN, PREPUBLISH_OUT)).
-    then(console.log.bind(console)).
-    catch(console.error.bind(console));
+const buildPrelude = () => {
+  return findPreludeFile(PRELUDE_IN).
+    then(run(PRELUDE_IN, PRELUDE_OUT)).
+    then(msg => {
+      console.log(msg);
+      process.exitCode = 0;
+    }).
+    catch(err => {
+      console.error(err.message);
+      process.exitCode = 1;
+    });
 };
 
 
 
-module.exports = {
-  prePublish: prePublish
-};
+buildPrelude();

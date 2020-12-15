@@ -6,6 +6,7 @@
 
 
 
+
 (delete-macro last)
 (macro last (ls)
        `(get @ls (- (length @ls) 1))) ; slightly faster than original
@@ -39,7 +40,16 @@
 ;;; LANGUAGE
 (macro gensym (a)
        ; generates a generic symbol
-       `(generate-symbol @(or a "gensym")))
+       `(generate-symbol @(or a "slispGS")))
+
+(macro with-gensyms (gs ...body)
+       ; generate a group of generic symbols at once
+       (var syms (map gs.contents
+                      (lambda (g-label)
+                        `(@g-label (gensym (quote @g-label))))))
+       `(let (...@syms)
+         ...@body))
+                        
 
 
 
@@ -118,25 +128,30 @@
 (macro deftype (tname pkeys)
        ; tagged type constructor creation facility
        (var self (gensym "self")
-            type (transpile tname)
+            type (gensym "type")
             args (interleave ", " pkeys.contents)
-            alen (length pkeys.contents))
-       `(defconstant @tname @{ type 'output
-                              contents [
-                                        "function " type "(" args ") {"
-                                        (indent
-                                         `(do
-                                           (defvar @self (.create Object (get @type 'prototype)))
-                                           (defvar alen (length arguments))
-                                           (when (not (eql? alen @alen))
-                                             (error! "Tagged constructor " @tname
-                                                     "expects " @alen " arguments but got "
-                                                     alen))
-                                           ...@(map pkeys.contents
-                                                    (lambda (p)
-                                                      `(set @self (quote @p) @p)))
-                                           @self))
-                                        "}"]}))
+            alen (length pkeys.contents)
+            x (gensym "x")
+            emsg "\" received invalid number of arguments.\"")
+       `(defconstant @tname (scoped
+                              @{ type 'output
+                                contents [
+                                          "function " type "(" args ") {"
+                                          (indent
+                                            `(do
+                                              (defvar @self (.create Object (get @type 'prototype)))
+                                              (when (not (eql? (length arguments) @alen))
+                                                (error! (quote @tname) @emsg))
+                                              ...@(map pkeys.contents
+                                                      (lambda (p)
+                                                        `(set @self (quote @p) @p)))
+                                              @self))
+                                          "}"]}
+                              (set @type 'is (lambda (@x) (instance-of? @x @type)))
+                              @type)))
+                              
+                                         
+                                         
 
 (macro defsum (tname variants)
        ; tagged sum type creation facility
@@ -206,7 +221,7 @@
        `(set (get @tname 'prototype) (quote @mname) (lambda @args ...@body)))
 
 (macro method? (tname mname)
-       ;
+       ; tests for method availability
        `(function? (get @tname (quote @mname))))
 
 
