@@ -1,6 +1,6 @@
 {
   "name": "sibilisp",
-  "version": "0.4.4",
+  "version": "0.5.0",
   "description": "A LISP like language to JavaScript transpiler, based on Sibilant",
   "main": "sibilisp.js",
   "module": "prelude.js",
