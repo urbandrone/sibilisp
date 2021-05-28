@@ -229,6 +229,10 @@
 ;;; ====== ES2015+ MODULE SYSTEM ======
 (macro use (path ...as)
        ; imports named module exports
+       (var pth (ternary (.test (new RegExp "\\.\\w+\"$" "g") path.token) 
+                         path.token
+                         (+ (.replace path.token (new RegExp "\\\"$") "") 
+                            ".js\"")))
        ["import { "
         (pipe as
               (map
@@ -237,14 +241,18 @@
                      [(first a.contents) " as " (last a.contents)]
                      a)))
               (interleave ", "))
-        " } from " path])
+        " } from " pth])
 
 (macro use-all (path alias alias-b)
        ; imports whole modules
+       (var pth (ternary (.test (new RegExp "\\.\\w+\"$" "g") path.token) 
+                         path.token
+                         (+ (.replace path.token (new RegExp "\\\"$") "") 
+                            ".js\"")))
        ["import "
         (if (and (node? alias) (= 'as alias.token))
             ["* as " alias-b]
-            alias) " from " path])
+            alias) " from " pth])
 
 
 
@@ -341,7 +349,7 @@
 ;;; ====== ARITHMETIC ======
 (macro op-exponentiation (...values)
        (list "(" (interleave " ** " values) ")"))
-(alias-macro ap-exponentiation **)
+(alias-macro op-exponentiation **)
 
 
 
