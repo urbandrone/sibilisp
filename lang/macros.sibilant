@@ -6,6 +6,7 @@
 
 
 (macro pipe-right (...calls)
+  ; symmetrical to (pipe) or (|> )
   (var callsv (first calls)
        callsr (.reverse (rest calls)))
   `(|> @callsv ...@callsr))
