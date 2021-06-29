@@ -5,6 +5,13 @@
 (import-namespace core)
 
 
+(macro pipe-right (...calls)
+  (var callsv (first calls)
+       callsr (.reverse (rest calls)))
+  `(|> @callsv ...@callsr))
+
+(alias-macro pipe-right <|)
+
 
 
 (delete-macro last)

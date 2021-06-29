@@ -6,6 +6,7 @@
   "module": "prelude.js",
   "scripts": {
     "preversion": "node src/build-prelude.js",
+    "test-build-prelude": "node src/build-prelude.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [

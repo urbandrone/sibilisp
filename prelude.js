@@ -62,18 +62,29 @@ export const converge = (function(combine, branches) {
       
     var args = Array.prototype.slice.call(arguments, 0);
   
-    return (!(args.length === branches.length)
-      ? (function() {
-      throw (new Error(("" + "(converge -> lambda) expects arguments\n" +
-      "												 				 length (" + args.length + ") to equal the number\n" +
-      "																 of branches (" + branches.length + ") but they\n" +
-      "																 differ.")))
-    }).call(this)
-      : combine.apply(null, branches.map((function(branch, i) {
+    return combine.apply(null, branches.map((function(branch, i) {
           
-      return branch(args[i], i, args);
-    }))));
+      return branch.apply(null, args);
+    })));
   }));
+});
+export const memoize = (function(compute) {
+    return (!(typeof compute === "function")
+    ? (function() {
+    throw (new Error(("" + "(memoize)" + _eArg1_ + "function, got " + compute)))
+  }).call(this)
+    : (function(cache) {
+      
+    return (function(args) {
+          
+      var args = Array.prototype.slice.call(arguments, 0);
+    
+      return (cache.has(args)
+        ? cache.get(args)
+        : cache.set(args, compute.apply(null, args));
+      return cache.get(args););
+    });
+  })((new Map([]))));
 });
 export const show = (function(x) {
     return (null == x
@@ -92,6 +103,11 @@ export const show = (function(x) {
     ? ("(generator " + x.name + ")")
     : Array.isArray(x)
     ? ("(list" + x.reduce((function(a, v) {
+      
+    return (a + " " + show(v));
+  }), "") + ")")
+    : (!(null == x) && x.constructor === Set)
+    ? ("(mset" + Array.from(x).reduce((function(a, v) {
       
     return (a + " " + show(v));
   }), "") + ")")
@@ -143,6 +159,8 @@ export const equals = (function(x, y) {
       
     return equals(va, y[i]);
   })))
+    : ((!(null == x) && x.constructor === Set) && (!(null == y) && y.constructor === Set))
+    ? (x.size() === y.size() && equals(Array.from(x), Array.from(y)))
     : ((!(null == x) && x.constructor === Object) && (!(null == y) && y.constructor === Object))
     ? (function(pa, pb) {
       
@@ -231,7 +249,7 @@ export const map = (function(x, mapper) {
     var k = k_v$5[0],
         v = k_v$5[1];
   
-    return Object.assign(o, { k: v });
+    return Object.assign(o, { k: mapper(v) });
   }), {  })
     : (!(null == x) && x.constructor === Map)
     ? (function(y) {
@@ -241,7 +259,7 @@ export const map = (function(x, mapper) {
       var k = k_v$6[0],
           v = k_v$6[1];
     
-      return y.set(k, v);
+      return y.set(k, mapper(v));
     }));
     return y;
   })((new Map([])))
@@ -250,12 +268,59 @@ export const map = (function(x, mapper) {
       
     x.forEach((function(v) {
           
-      return y.add(x);
+      return y.add(mapper(v));
     }));
     return y;
   })((new Set([])))
     : (function() {
     throw (new Error(("" + "(map) needs the value to be a Functor")))
+  }).call(this));
+});
+export const ap = (function(x, applicable) {
+    return (!(!(x == null))
+    ? (function() {
+    throw (new Error(("" + "(ap)" + _eGuard_ + show(x))))
+  }).call(this)
+    : !((!(applicable == null) || typeof applicable === "function" || typeof applicable.ap === "function" || Array.isArray(applicable) || (!(null == applicable) && applicable.constructor === Set)))
+    ? (function() {
+    throw (new Error(("" + "(ap)" + _eArg2_ + "Apply, got " + show(applicable))))
+  }).call(this)
+    : (typeof x === "function" && typeof applicable === "function")
+    ? (function(args) {
+      
+    var args = Array.prototype.slice.call(arguments, 0);
+  
+    return applicable.apply(this, args).apply(this, [ x.apply(this, args) ].concat(args));
+  })
+    : ((!(null == x) && x.constructor === Promise) && (!(null == applicable) && applicable.constructor === Promise))
+    ? applicable.then((function(f) {
+      
+    return x.then(f, identity);
+  }))
+    : (typeof x.map === "function" && typeof applicable.ap === "function")
+    ? applicable.ap(x)
+    : (Array.isArray(x) && Array.isArray(applicable))
+    ? x.map((function(v) {
+      
+    return applicable.reduce((function(y, f) {
+          
+      return f(y);
+    }), v);
+  }))
+    : ((!(null == x) && x.constructor === Set) && (!(null == applicable) && applicable.constructor === Set))
+    ? (function(y) {
+      
+    x.forEach((function(v) {
+          
+      return applicable.forEach((function(f) {
+              
+        return y.add(f(v));
+      }));
+    }));
+    return y;
+  })((new Set([])))
+    : (function() {
+    throw (new Error(("" + "(ap) needs the value to be a Functor")))
   }).call(this));
 });
 export const flatMap = (function(x, chainMapper) {
@@ -312,6 +377,9 @@ export const bimap = (function(x, lhsMapper, rhsMapper) {
     : (function() {
     throw (new Error(("" + "(bimap) needs the first argument to be a BiFunctor")))
   }).call(this));
+});
+export const contramap = (function(x, lhsMapper) {
+    return bimap(x, lhsMapper, identity);
 });
 export const promap = (function(x, preMapper, postMapper) {
     return (!(!(x == null))
@@ -512,6 +580,255 @@ export const sequence = (function(x, lift) {
     : (function() {
     throw (new Error(("" + "(sequence) needs the first argument to be a Traversable")))
   }).call(this));
+});
+export const zip = (function(lsA, lsB) {
+    return ((Array.isArray(lsA) && Array.isArray(lsB))
+    ? (function(l, i, r) {
+      
+    (function() {
+      var while$1 = undefined;
+      while (i < l) {
+        while$1 = (function() {
+          r.push([ lsA[i], lsB[i] ]);
+          return i += 1;
+        }).call(this);
+      };
+      return while$1;
+    }).call(this);
+    return r;
+  })(Math.min(lsA.length, lsB.length), 0, [])
+    : ((!(null == lsA) && lsA.constructor === Set) && (!(null == lsB) && lsB.constructor === Set))
+    ? (function() {
+      
+    let a = Array.from(lsA);
+    let b = Array.from(lsB);
+    let l = Math.min(a.length, b.length);
+    let i = 0;
+    let r = (new Set([]));
+    return (function() {
+          
+      (function() {
+        var while$2 = undefined;
+        while (i < l) {
+          while$2 = (function() {
+            r.add([ a[i], b[i] ]);
+            return i += 1;
+          }).call(this);
+        };
+        return while$2;
+      }).call(this);
+      return r;
+    })();
+  }).call(this)
+    : (function() {
+    throw (new Error(("" + "(zip) expects both arguments to be a list or mset")))
+  }).call(this));
+});
+export const unzip = (function(ls) {
+    return ((Array.isArray(ls) || (!(null == ls) && ls.constructor === Set))
+    ? (function(ks, vs) {
+      
+    ls.forEach((function(k_v$7) {
+          
+      var k = k_v$7[0],
+          v = k_v$7[1];
+    
+      ks.push(k);
+      return vs.push(v);
+    }));
+    return [ ks, vs ];
+  })([], [])
+    : (function() {
+    throw (new Error(("" + "(unzip) expects the argument to be a list or mset")))
+  }).call(this));
+});
+export const find = (function(ls, predicate) {
+    return (!(typeof predicate === "function")
+    ? (function() {
+    throw (new Error(("" + "(find)" + _eArg2_ + "function, got" + show(predicate))))
+  }).call(this)
+    : (Array.isArray(ls) && typeof ls.find === "function")
+    ? maybe.lift(ls.find(predicate))
+    : Array.isArray(ls)
+    ? (function(l, i, m) {
+      
+    (function() {
+      var while$3 = undefined;
+      while ((!(m) && i < l)) {
+        while$3 = (function() {
+          (function() {
+            if (predicate(ls[i])) {
+              return m = ls[i];
+            }
+          }).call(this);
+          return i += 1;
+        }).call(this);
+      };
+      return while$3;
+    }).call(this);
+    return maybe.lift(m);
+  })(ls.length, 0, null)
+    : (!(null == ls) && ls.constructor === Set)
+    ? (function(x, l, i, m) {
+      
+    (function() {
+      var while$4 = undefined;
+      while ((!(m) && i < l)) {
+        while$4 = (function() {
+          (function() {
+            if (predicate(x[i])) {
+              return m = x[i];
+            }
+          }).call(this);
+          return i += 1;
+        }).call(this);
+      };
+      return while$4;
+    }).call(this);
+    return maybe.lift(m);
+  })(Array.from(ls), x.length, 0, null)
+    : (function() {
+    throw (new Error(("" + "(find) expects the first argument to be a list or mset")))
+  }).call(this));
+});
+export const filter = (function(ls, predicate) {
+    return (!(typeof predicate === "function")
+    ? (function() {
+    throw (new Error(("" + "(filter)" + _eArg2_ + "function, got " + show(predicate))))
+  }).call(this)
+    : Array.isArray(ls)
+    ? ls.filter(predicate)
+    : (!(null == ls) && ls.constructor === Set)
+    ? (function(x) {
+      
+    return (new Set([ ls.filter(predicate) ]));
+  })(Array.from(ls))
+    : (function() {
+    throw (new Error(("" + "(filter) expects the first argument to be a list or mset")))
+  }).call(this));
+});
+export const select = filter;
+export const reject = (function(ls, predicate) {
+    return (!((Array.isArray(ls) || (!(null == ls) && ls.constructor === Set)))
+    ? (function() {
+    throw (new Error(("" + "(reject) expects the first argument to be a list or mset")))
+  }).call(this)
+    : !(typeof predicate === "function")
+    ? (function() {
+    throw (new Error(("" + "(reject)" + _eArg2_ + "function, got" + show(predicate))))
+  }).call(this)
+    : filter(ls, (function(x) {
+      
+    return !(predicate(x));
+  })));
+});
+export const unique = (function(ls) {
+    return (!((Array.isArray(ls) || (!(null == ls) && ls.constructor === Set)))
+    ? (function() {
+    throw (new Error(("" + "(unique)" + _eArg1_ + "list or mset, got" + show(ls))))
+  }).call(this)
+    : Array.isArray(ls)
+    ? Array.from((new Set(ls)))
+    : ls);
+});
+export const union = (function(lsA, lsB) {
+    return (!(((Array.isArray(lsA) && Array.isArray(lsB)) || ((!(null == lsA) && lsA.constructor === Set) && (!(null == lsB) && lsB.constructor === Set))))
+    ? (function() {
+    throw (new Error(("" + "(union) expects the arguments to both be lists or msets")))
+  }).call(this)
+    : (Array.isArray(lsA) && Array.isArray(lsB))
+    ? (function(ab) {
+      
+    return Array.from((new Set(ab)));
+  })(lsA.concat(lsB))
+    : (new Set(Array.from(lsA).concat(Array.from(lsB)))));
+});
+export const take = (function(ls, count) {
+    return (!((Array.isArray(ls) || (!(null == ls) && ls.constructor === Set)))
+    ? (function() {
+    throw (new Error(("" + "(take)" + _eArg1_ + "list or mset, got " + show(ls))))
+  }).call(this)
+    : !((typeof count === "number" && !(Number.isNaN(count))))
+    ? (function() {
+    throw (new Error(("" + "(take)" + _eArg2_ + "number, got " + show(count))))
+  }).call(this)
+    : Array.isArray(ls)
+    ? (count <= ls.length) ? ls.slice(0, count) : ls
+    : (count <= ls.size) ? (function() {
+      
+    let xs = Array.from(ls);
+    let ys = xs.slice(0, count);
+    return (function() {
+          
+      return (new Set(ys));
+    })();
+  }).call(this) : ls);
+});
+export const drop = (function(ls, count) {
+    return (!((Array.isArray(ls) || (!(null == ls) && ls.constructor === Set)))
+    ? (function() {
+    throw (new Error(("" + "(drop)" + _eArg1_ + "list or mset, got " + show(ls))))
+  }).call(this)
+    : !((typeof count === "number" && !(Number.isNaN(count))))
+    ? (function() {
+    throw (new Error(("" + "(drop)" + _eArg2_ + "number, got " + show(count))))
+  }).call(this)
+    : Array.isArray(ls)
+    ? (count <= ls.length) ? ls.slice(count) : []
+    : (count <= ls.size) ? (function() {
+      
+    let xs = Array.from(ls);
+    let ys = xs.slice(count);
+    return (function() {
+          
+      return (new Set(ys));
+    })();
+  }).call(this) : (new Set([])));
+});
+export const partition = (function(ls, count) {
+    return (!((Array.isArray(ls) || (!(null == ls) && ls.constructor === Set)))
+    ? (function() {
+    throw (new Error(("" + "(partition)" + _eArg1_ + "list or mset, got " + show(ls))))
+  }).call(this)
+    : !((typeof count === "number" && !(Number.isNaN(count))))
+    ? (function() {
+    throw (new Error(("" + "(partition)" + _eArg2_ + "number, got " + show(count))))
+  }).call(this)
+    : Array.isArray(ls)
+    ? (function(xs) {
+      
+    (function() {
+      var while$6 = undefined;
+      while (i < l) {
+        while$6 = (function() {
+          return (function(a) {
+                      
+            xs.push(a);
+            return i += count;
+          })(ls.slice(i, count));
+        }).call(this);
+      };
+      return while$6;
+    }).call(this);
+    return xs;
+  })(l(ls.length))
+    : (function(xs, ys, i, l) {
+      
+    (function() {
+      var while$5 = undefined;
+      while (i < l) {
+        while$5 = (function() {
+          return (function(a) {
+                      
+            ys.push(a);
+            return i += count;
+          })(xs.slice(i, count));
+        }).call(this);
+      };
+      return while$5;
+    }).call(this);
+    return (new Set(ys));
+  })(Array.from(ls), [], 0, xs.length));
 });
 export const coyo = (function() {
     function type$1(value, mapper) {
@@ -965,7 +1282,7 @@ maybe.prototype.flatMap = (function(toMaybeMapper) {
     })
   }));
 });
-maybe.prototpe.chain = maybe.prototype.flatMap;
+maybe.prototype.chain = maybe.prototype.flatMap;
 maybe.prototype.bimap = (function(transformNothing, transformJust) {
     return (!(typeof transformNothing === "function")
     ? (function() {

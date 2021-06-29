@@ -95,19 +95,26 @@
           ((not (list-of? branches (lambda (v) (function? v))))
            (error! "(converge)" *e-arg-2* "list of functions, got " branches))
           :else (lambda (...args)
-                  (cond ((not (= (length args) (length branches)))
-                         (error! "(converge -> lambda) expects arguments
-												 				 length (" (length args) ") to equal the number
-																 of branches (" (length branches) ") but they
-																 differ."))
-                        :else (.apply combine
-                                      (nil)
-                                      (.map branches
-                                            (lambda (branch i)
-                                              (branch (getf args i)
-                                                      i
-                                                      args)))))))))
+                  (.apply combine
+                          (nil)
+                          (.map branches
+                              (lambda (branch i)
+                                (.apply branch (nil) args))))))))
 
+(provide
+  ;; memoize :: ((a, b, ...) -> c) -> ((a, b, ...) -> c)
+  ;; --- (memoize (lambda ()))
+  (defun memoize (compute)
+    (cond ((not (function? compute))
+           (error! "(memoize)" *e-arg-1* "function, got " compute))
+          :else (let ((cache (dict)))
+                  (lambda (...args)
+                    (cond ((.has cache args)
+                           (.get cache args))
+                          :else (do
+                                  (.set cache args (.apply compute (nil) args))
+                                  (.get cache args)))))))) 
+  
 
 
 ;;; GENERAL PURPOSE OPERATIONS
@@ -129,8 +136,19 @@
           ((generator? x)
            (+ "(generator " (getf x 'name) ")"))
           ((list? x)
-           (+ "(list" (.reduce x (lambda (a v)
-                                   (+ a " " (show v))) "") ")"))
+           (+ "(list" 
+              (.reduce x 
+                       (lambda (a v)
+                        (+ a " " (show v))) 
+                       "")
+              ")"))
+          ((mset? x)
+           (+ "(mset" 
+              (.reduce (as-list x) 
+                       (lambda (a v)
+                        (+ a " " (show v)))
+                       "")
+              ")"))
           ((hash? x)
            (+ "(hash" (.reduce (hash-pairs x)
                                (lambda (a [k v])
@@ -173,6 +191,10 @@
                                 x
                                 (lambda (va i)
                                   (equals va (getf y i))))))
+            ((mset? x y) (and (eql? (.size x)
+                                    (.size y))
+                              (equals (as-list x)
+                                      (as-list y))))
             ((hash? x y) (let ((pa (hash-pairs x))
                                (pb (hash-pairs y)))
                           (and (eql? (length pa) (length pb)) 
@@ -216,19 +238,51 @@
           ((method? x map) (.map x mapper))
           ((hash? x)
            (.reduce (hash-pairs x)
-                    (lambda (o [k v]) (hash-merge! o (hash k v)))
+                    (lambda (o [k v]) (hash-merge! o (hash k (mapper v))))
                     (hash)))
           ((dict? x)
            (let ((y (dict)))
             (each ([k v]) (dict-pairs x)
-              (.set y k v))
+              (.set y k (mapper v)))
             y))
           ((mset? x)
            (let ((y (mset)))
             (each v x
-              (.add y x))
+              (.add y (mapper v)))
             y))
           :else (error! "(map) needs the value to be a Functor"))))
+
+(provide
+  ;; ap :: Functor F, Apply A. (F a, A (a -> b)) -> F b
+  (defun ap (x applicable)
+    (cond ((not (exists? x))
+           (error! "(ap)" *e-guard* (show x)))
+          ((not (or (exists? applicable)
+                    (function? applicable)
+                    (method? applicable ap)
+                    (list? applicable)
+                    (mset? applicable)))
+           (error! "(ap)" *e-arg-2* "Apply, got " (show applicable)))
+          ((function? x applicable)
+           (lambda (...args)
+            (call (applicable ...args) (x ...args) ...args)))
+          ((future? x applicable)
+           (.then applicable (lambda (f) (.then x f identity))))
+          ((and (method? x map) (method? applicable ap))
+           (.ap applicable x))
+          ((list? x applicable)
+           (.map x (lambda (v)
+                    (.reduce applicable 
+                             (lambda (y f)
+                              (f y))
+                             v))))
+          ((mset? x applicable)
+           (let ((y (mset)))
+            (each v x
+              (each f applicable
+                (.add y (f v))))
+            y))
+          :else (error! "(ap) needs the value to be a Functor"))))
 
 (provide
   ;; flat-map :: Chain C. (C a, (a -> C b)) -> C b
@@ -277,6 +331,11 @@
           ((method? x bimap)
            (.bimap x lhs-mapper rhs-mapper))
           :else (error! "(bimap) needs the first argument to be a BiFunctor"))))
+
+(provide
+  ;; contramap :: 
+  (defun contramap (x lhs-mapper)
+    (bimap x lhs-mapper identity)))
 
 (provide
   ;; promap :: ProFunctor P. (P a b, (c -> a), (b -> d)) -> P c d
@@ -419,6 +478,203 @@
           :else (error! "(sequence) needs the first argument to be a Traversable"))))
 
 
+
+;;; LIST/MSET RELATED
+
+(provide
+  (defun zip (ls-a ls-b)
+    (cond ((list? ls-a ls-b)
+           (let ((l (min (length ls-a) (length ls-b)))
+                 (i 0)
+                 (r (list)))
+            (while (< i l)
+              (.push r (list (getf ls-a i) (getf ls-b i)))
+              (incr-by i 1))
+            r))
+          ((mset? ls-a ls-b)
+           (let* ((a (as-list ls-a))
+                  (b (as-list ls-b))
+                  (l (min (length a) (length b)))
+                  (i 0)
+                  (r (mset)))
+            (while (< i l)
+              (.add r (list (getf a i) (getf b i)))
+              (incr-by i 1))
+            r))
+          :else (error! "(zip) expects both arguments to be a list or mset"))))
+            
+(provide
+  (defun unzip (ls)
+    (cond ((or (list? ls) (mset? ls))
+           (let ((ks (list))
+                 (vs (list)))
+            (each ([k v]) ls
+              (.push ks k)
+              (.push vs v))
+            (list ks vs)))
+          :else (error! "(unzip) expects the argument to be a list or mset"))))
+
+(provide
+  (defun find (ls predicate)
+    (cond ((not (function? predicate))
+           (error! "(find)" *e-arg-2* "function, got" (show predicate)))
+          ((and (list? ls) (function? (getf ls 'find)))
+           (maybe.lift (.find ls predicate)))
+          ((list? ls)
+           (let ((l (length ls))
+                 (i 0)
+                 (m (nil)))
+            (while (and (not m) (< i l))
+              (when (predicate (getf ls i))
+                (assign m (getf ls i)))
+              (incr-by i 1))
+            (maybe.lift m)))
+          ((mset? ls)
+           (let ((x (as-list ls))
+                 (l (length x))
+                 (i 0)
+                 (m (nil)))
+            (while (and (not m) (< i l))
+              (when (predicate (getf x i))
+                (assign m (getf x i)))
+              (incr-by i 1))
+            (maybe.lift m)))
+          :else (error! "(find) expects the first argument to be a list or mset"))))
+
+(provide
+  (defun filter (ls predicate)
+    (cond ((not (function? predicate))
+           (error! "(filter)" *e-arg-2* "function, got " (show predicate)))
+          ((list? ls)
+           (.filter ls predicate))
+          ((mset? ls)
+           (let ((x (as-list ls)))
+            (mset (.filter ls predicate))))
+          :else (error! "(filter) expects the first argument to be a list or mset"))))
+
+(provide
+  (defconstant select filter))
+
+(provide
+  (defun reject (ls predicate)
+    (cond ((not (or (list? ls) (mset? ls)))
+           (error! "(reject) expects the first argument to be a list or mset"))
+          ((not (function? predicate))
+           (error! "(reject)" *e-arg-2* "function, got" (show predicate)))
+          :else (filter ls (lambda (x) (not (predicate x)))))))
+
+(provide
+  (defun unique (ls)
+    (cond ((not (or (list? ls) (mset? ls)))
+           (error! "(unique)" *e-arg-1* "list or mset, got" (show ls)))
+          ((list? ls)
+           (as-list (mset ...ls)))
+          :else ls)))
+
+(provide
+  (defun union (ls-a ls-b)
+    (cond ((not (or (list? ls-a ls-b) (mset? ls-a ls-b)))
+           (error! "(union) expects the arguments to both be lists or msets"))
+          ((list? ls-a ls-b)
+           (let ((ab (.concat ls-a ls-b)))
+            (as-list (mset ...ab))))
+          :else (mset ...(as-list ls-a)
+                      ...(as-list ls-b)))))
+
+;; (provide
+;;   (defun intersection (ls-a ls-b)
+;;     (cond ()
+;;           ()
+;;           ()
+;;           :else ())))
+
+;; (provide
+;;   (defun difference (ls-a ls-b)
+;;     (cond ()
+;;           ()
+;;           ()
+;;           :else ())))
+
+(provide
+  (defun take (ls count)
+    (cond ((not (or (list? ls) (mset? ls)))
+           (error! "(take)" *e-arg-1* "list or mset, got " (show ls)))
+          ((not (number? count))
+           (error! "(take)" *e-arg-2* "number, got " (show count)))
+          ((list? ls)
+           (ternary (<= count (length ls))
+                    (.slice ls 0 count)
+                    ls))
+          :else (ternary (<= count (getf ls 'size))
+                         (let* ((xs (as-list ls))
+                                (ys (.slice xs 0 count)))
+                          (mset ...ys))
+                         ls))))
+
+(provide
+  (defun drop (ls count)
+    (cond ((not (or (list? ls) (mset? ls)))
+           (error! "(drop)" *e-arg-1* "list or mset, got " (show ls)))
+          ((not (number? count))
+           (error! "(drop)" *e-arg-2* "number, got " (show count)))
+          ((list? ls)
+           (ternary (<= count (length ls))
+                    (.slice ls count)
+                    (list)))
+          :else (ternary (<= count (getf ls 'size))
+                         (let* ((xs (as-list ls))
+                                (ys (.slice xs count)))
+                          (mset ...ys))
+                         (mset)))))
+
+(provide
+  (defun partition (ls count)
+    (cond ((not (or (list? ls) (mset? ls)))
+           (error! "(partition)" *e-arg-1* "list or mset, got " (show ls)))
+          ((not (number? count))
+           (error! "(partition)" *e-arg-2* "number, got " (show count)))
+          ((list? ls)
+           (let ((xs (list)
+                  (i 0)
+                  (l (length ls))))
+            (while (< i l)
+              (let ((a (.slice ls i count)))
+                (.push xs a)
+                (incr-by i count)))
+            xs))
+          :else (let ((xs (as-list ls))
+                      (ys (list))
+                      (i 0)
+                      (l (length xs)))
+                  (while (< i l)
+                    (let ((a (.slice xs i count)))
+                      (.push ys a)
+                      (incr-by i count)))
+                  (mset ...ys)))))
+
+;; (provide
+;;   (defun partition-with (ls partitioner)))
+
+;; (provide
+;;   (defun sort-with (ls sorter)))
+
+;; (provide
+;;   (defun group-with (ls grouper)))
+
+;; (provide
+;;   (defun keep (ls)
+;;     (cond ((not (or (list? ls) (mset? ls)))
+;;            (error! "(keep)" *e-arg-1* "list or mset, got " (show ls)))
+;;           :else ())))
+
+
+;;; HASH/DICT RELATED
+
+;; (provide
+;;   (defun pick (ob ...props)))
+
+;; (provide
+;;   (defun omit (ob ...props)))
 
 ;;; ALGEBRAIC TYPES
 
@@ -645,7 +901,7 @@
                             just (lambda (value)
                                   (to-maybe-mapper value))))))
 
-(setf maybe 'prototpe 'chain (getf maybe 'prototype 'flat-map))
+(setf maybe 'prototype 'chain (getf maybe 'prototype 'flat-map))
 
 (defmethod maybe bimap (transform-nothing transform-just)
   (cond ((not (function? transform-nothing))
