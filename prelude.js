@@ -81,8 +81,7 @@ export const memoize = (function(compute) {
     
       return (cache.has(args)
         ? cache.get(args)
-        : cache.set(args, compute.apply(null, args));
-      return cache.get(args););
+        : cache.set(args, compute.apply(null, args)).get(args));
     });
   })((new Map([]))));
 });
@@ -1568,7 +1567,7 @@ either.prototype.flatMap = (function(toEitherMapper) {
     })
   }));
 });
-either.protoype.chain = either.prototype.flatMap;
+either.prototype.chain = either.prototype.flatMap;
 either.prototype.bimap = (function(transformLeft, transformRight) {
     return (!(typeof transformLeft === "function")
     ? (function() {

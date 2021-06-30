@@ -111,9 +111,9 @@
                   (lambda (...args)
                     (cond ((.has cache args)
                            (.get cache args))
-                          :else (do
-                                  (.set cache args (.apply compute (nil) args))
-                                  (.get cache args)))))))) 
+                          :else (pipe cache
+                                      (.set args (.apply compute (nil) args))
+                                      (.get args)))))))) 
   
 
 
@@ -1028,7 +1028,7 @@
                             right (lambda (value)
                                    (to-either-mapper value))))))
 
-(setf either 'protoype 'chain (getf either 'prototype 'flat-map))
+(setf either 'prototype 'chain (getf either 'prototype 'flat-map))
 
 (defmethod either bimap (transform-left transform-right)
   (cond ((not (function? transform-left))
