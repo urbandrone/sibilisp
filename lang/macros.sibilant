@@ -137,6 +137,7 @@
        ; tagged type constructor creation facility
        (var self (gensym "self")
             type (gensym "type")
+            arit (gensym "argCount")
             args (interleave ", " pkeys.contents)
             alen (length pkeys.contents)
             x (gensym "x")
@@ -148,7 +149,8 @@
                                           (indent
                                             `(do
                                               (defvar @self (.create Object (get @type 'prototype)))
-                                              (when (not (eql? (length arguments) @alen))
+                                              (defvar @arit (length arguments))
+                                              (when (not (eql? @arit @alen))
                                                 (error! (quote @tname) @emsg))
                                               ...@(map pkeys.contents
                                                       (lambda (p)
@@ -167,6 +169,7 @@
             subctors (map variants.contents
                           (lambda (vartype)
                             (var self (gensym "self")
+                                 arit (gensym "argCount")
                                  type (transpile (first vartype.contents))
                                  pkeys undefined
                                  alen 0
@@ -181,11 +184,11 @@
                                             (indent
                                              `(do
                                                (defvar @self (.create Object (get @tself 'prototype)))
-                                               (defvar alen (length arguments))
-                                               (when (not (eql? alen @alen))
+                                               (defvar @arit (length arguments))
+                                               (when (not (eql? @arit @alen))
                                                  (error! "Tagged constructor " @tname "." @type
                                                          "expects " @alen " arguments but got "
-                                                         alen))
+                                                         @arit))
                                                ...@(if (defined? pkeys) (map pkeys
                                                                              (lambda (p)
                                                                                `(set @self (quote @p) @p)))
@@ -237,7 +240,8 @@
 ;;; ====== ES2015+ MODULE SYSTEM ======
 (macro use (path ...as)
        ; imports named module exports
-       (var pth (ternary (.test (new RegExp "\\.\\w+\"$" "g") path.token) 
+       (var pth (ternary (or (.test (new RegExp "\\.\\w+\"$" "g") path.token)
+                             (not (.test (new RegExp "^\"\\.+\\/" "g") path.token))) 
                          path.token
                          (+ (.replace path.token (new RegExp "\\\"$") "") 
                             ".js\"")))
@@ -253,7 +257,8 @@
 
 (macro use-all (path alias alias-b)
        ; imports whole modules
-       (var pth (ternary (.test (new RegExp "\\.\\w+\"$" "g") path.token) 
+       (var pth (ternary (or (.test (new RegExp "\\.\\w+\"$" "g") path.token)
+                             (not (.test (new RegExp "^\"\\.+\\/" "g") path.token)))  
                          path.token
                          (+ (.replace path.token (new RegExp "\\\"$") "") 
                             ".js\"")))

@@ -832,8 +832,9 @@ export const partition = (function(ls, count) {
 export const coyo = (function() {
     function type$1(value, mapper) {
     let self$1 = Object.create(type$1.prototype);
+    let argCount$1 = arguments.length;
     (function() {
-      if (!(arguments.length === 2)) {
+      if (!(argCount$1 === 2)) {
         return (function() {
           throw (new Error(("" + "coyo" + " received invalid number of arguments.")))
         }).call(this);
@@ -921,8 +922,9 @@ coyo.prototype.reduce = (function(reducer, seed) {
 export const io = (function() {
     function type$2(unsafePerform) {
     let self$2 = Object.create(type$2.prototype);
+    let argCount$2 = arguments.length;
     (function() {
-      if (!(arguments.length === 1)) {
+      if (!(argCount$2 === 1)) {
         return (function() {
           throw (new Error(("" + "io" + " received invalid number of arguments.")))
         }).call(this);
@@ -1071,11 +1073,11 @@ export const maybe = (function() {
   sumtype$1.prototype = { __sibilispType__: sumtype$1 };
   sumtype$1.nothing = function nothing() {
     let self$3 = Object.create(sumtype$1.prototype);
-    let alen = arguments.length;
+    let argCount$3 = arguments.length;
     (function() {
-      if (!(alen === 0)) {
+      if (!(argCount$3 === 0)) {
         return (function() {
-          throw (new Error(("" + "Tagged constructor " + maybe + "." + nothing + "expects " + 0 + " arguments but got " + alen)))
+          throw (new Error(("" + "Tagged constructor " + maybe + "." + nothing + "expects " + 0 + " arguments but got " + argCount$3)))
         }).call(this);
       }
     }).call(this);
@@ -1085,11 +1087,11 @@ export const maybe = (function() {
   };;
   sumtype$1.just = function just(value) {
     let self$4 = Object.create(sumtype$1.prototype);
-    let alen = arguments.length;
+    let argCount$4 = arguments.length;
     (function() {
-      if (!(alen === 1)) {
+      if (!(argCount$4 === 1)) {
         return (function() {
-          throw (new Error(("" + "Tagged constructor " + maybe + "." + just + "expects " + 1 + " arguments but got " + alen)))
+          throw (new Error(("" + "Tagged constructor " + maybe + "." + just + "expects " + 1 + " arguments but got " + argCount$4)))
         }).call(this);
       }
     }).call(this);
@@ -1368,11 +1370,11 @@ export const either = (function() {
   sumtype$2.prototype = { __sibilispType__: sumtype$2 };
   sumtype$2.left = function left(error) {
     let self$5 = Object.create(sumtype$2.prototype);
-    let alen = arguments.length;
+    let argCount$5 = arguments.length;
     (function() {
-      if (!(alen === 1)) {
+      if (!(argCount$5 === 1)) {
         return (function() {
-          throw (new Error(("" + "Tagged constructor " + either + "." + left + "expects " + 1 + " arguments but got " + alen)))
+          throw (new Error(("" + "Tagged constructor " + either + "." + left + "expects " + 1 + " arguments but got " + argCount$5)))
         }).call(this);
       }
     }).call(this);
@@ -1383,11 +1385,11 @@ export const either = (function() {
   };;
   sumtype$2.right = function right(value) {
     let self$6 = Object.create(sumtype$2.prototype);
-    let alen = arguments.length;
+    let argCount$6 = arguments.length;
     (function() {
-      if (!(alen === 1)) {
+      if (!(argCount$6 === 1)) {
         return (function() {
-          throw (new Error(("" + "Tagged constructor " + either + "." + right + "expects " + 1 + " arguments but got " + alen)))
+          throw (new Error(("" + "Tagged constructor " + either + "." + right + "expects " + 1 + " arguments but got " + argCount$6)))
         }).call(this);
       }
     }).call(this);
@@ -1656,11 +1658,11 @@ export const proof = (function() {
   sumtype$3.prototype = { __sibilispType__: sumtype$3 };
   sumtype$3.falsy = function falsy(errors) {
     let self$7 = Object.create(sumtype$3.prototype);
-    let alen = arguments.length;
+    let argCount$7 = arguments.length;
     (function() {
-      if (!(alen === 1)) {
+      if (!(argCount$7 === 1)) {
         return (function() {
-          throw (new Error(("" + "Tagged constructor " + proof + "." + falsy + "expects " + 1 + " arguments but got " + alen)))
+          throw (new Error(("" + "Tagged constructor " + proof + "." + falsy + "expects " + 1 + " arguments but got " + argCount$7)))
         }).call(this);
       }
     }).call(this);
@@ -1671,11 +1673,11 @@ export const proof = (function() {
   };;
   sumtype$3.truthy = function truthy(value) {
     let self$8 = Object.create(sumtype$3.prototype);
-    let alen = arguments.length;
+    let argCount$8 = arguments.length;
     (function() {
-      if (!(alen === 1)) {
+      if (!(argCount$8 === 1)) {
         return (function() {
-          throw (new Error(("" + "Tagged constructor " + proof + "." + truthy + "expects " + 1 + " arguments but got " + alen)))
+          throw (new Error(("" + "Tagged constructor " + proof + "." + truthy + "expects " + 1 + " arguments but got " + argCount$8)))
         }).call(this);
       }
     }).call(this);
@@ -1885,8 +1887,9 @@ proof.prototype.alt = (function(tProof) {
 export const task = (function() {
     function type$3(runTask) {
     let self$9 = Object.create(type$3.prototype);
+    let argCount$9 = arguments.length;
     (function() {
-      if (!(arguments.length === 1)) {
+      if (!(argCount$9 === 1)) {
         return (function() {
           throw (new Error(("" + "task" + " received invalid number of arguments.")))
         }).call(this);
