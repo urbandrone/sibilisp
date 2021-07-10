@@ -22,8 +22,8 @@ const findPreludeFile = fpath => {
 
 
 const alterPathAndType = to => from => compl(
-  util.replace('.sibilant')('.js'),
-  util.replace('.slisp')('.js'),
+  util.replace('.sibilant')('.mjs'),
+  util.replace('.slisp')('.mjs'),
   util.replace(from)(to)
 );
 

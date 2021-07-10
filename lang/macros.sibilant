@@ -264,7 +264,7 @@
                             ".js\"")))
        ["import "
         (if (and (node? alias) (= 'as alias.token))
-            ["* as " alias-b]
+            ["{ * as " alias-b " }"]
             alias) " from " pth])
 
 
