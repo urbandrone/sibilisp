@@ -581,19 +581,53 @@
           :else (mset ...(as-list ls-a)
                       ...(as-list ls-b)))))
 
-;; (provide
-;;   (defun intersection (ls-a ls-b)
-;;     (cond ()
-;;           ()
-;;           ()
-;;           :else ())))
+(provide
+  (defun intersection (ls-a ls-b)
+    (cond ((not (or (list? ls-a ls-b) (mset? ls-a ls-b)))
+           (error! "(intersection) expects the arguments to both be lists or msets"))
+          ((list? ls-a ls-b)
+           (let ((a (unique ls-a))
+                 (b (unique ls-b))
+                 (ab (list)))
+            (each v a
+              (when (> (.index-of b v) -1)
+                (.push ab v)))
+            (each v b
+              (when (> (.index-of a v) -1)
+                (.push ab v)))
+            ab))
+          :else (let (ab (mset))
+                  (each v ls-a
+                    (when (.has b v)
+                      (.add ab v)))
+                  (each v ls-b
+                    (when (.has a v)
+                      (.add ab v)))
+                  ab))))
 
-;; (provide
-;;   (defun difference (ls-a ls-b)
-;;     (cond ()
-;;           ()
-;;           ()
-;;           :else ())))
+(provide
+  (defun difference (ls-a ls-b)
+    (cond ((not (or (list? ls-a ls-b) (mset? ls-a ls-b)))
+           (error! "(difference) expects the arguments to both be lists or msets"))
+          ((list? ls-a ls-b)
+           (let ((a (unique ls-a))
+                 (b (unique ls-b))
+                 (ab (list)))
+            (each v a
+              (when (< (.index-of b v) 0)
+                (.push ab v)))
+            (each v b
+              (when (< (.index-of a v) 0)
+                (.push ab v)))
+            ab))
+          :else (let (ab (mset))
+                  (each v ls-a
+                    (when (not (.has b v))
+                      (.add ab v)))
+                  (each v ls-b
+                    (when (not (.has a v))
+                      (.add ab v)))
+                  ab))))
 
 (provide
   (defun take (ls count)

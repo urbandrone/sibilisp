@@ -264,8 +264,8 @@
                             ".js\"")))
        ["import "
         (if (and (node? alias) (= 'as alias.token))
-            ["{ * as " alias-b " }"]
-            alias) " from " pth])
+            [" * as " alias-b]
+            alias) " from " pth ";"])
 
 
 
@@ -575,7 +575,7 @@
 
 (macro hash-create (value)
        ; creates new instances of objects
-       `(.create Object @value))
+       (ternary (defined? value) `(.create Object @value) `(.create Object null)))
 
 
 
