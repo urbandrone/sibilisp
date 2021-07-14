@@ -742,6 +742,100 @@ export const union = (function(lsA, lsB) {
   })(lsA.concat(lsB))
     : (new Set(Array.from(lsA).concat(Array.from(lsB)))));
 });
+export const intersection = (function(lsA, lsB) {
+    return (!(((Array.isArray(lsA) && Array.isArray(lsB)) || ((!(null == lsA) && lsA.constructor === Set) && (!(null == lsB) && lsB.constructor === Set))))
+    ? (function() {
+    throw (new Error(("" + "(intersection) expects the arguments to both be lists or msets")))
+  }).call(this)
+    : (Array.isArray(lsA) && Array.isArray(lsB))
+    ? (function(a, b, ab) {
+      
+    a.forEach((function(v) {
+          
+      return (function() {
+        if (b.indexOf(v) > -1) {
+          return ab.push(v);
+        }
+      }).call(this);
+    }));
+    b.forEach((function(v) {
+          
+      return (function() {
+        if (a.indexOf(v) > -1) {
+          return ab.push(v);
+        }
+      }).call(this);
+    }));
+    return ab;
+  })(unique(lsA), unique(lsB), [])
+    : (function(, mset) {
+      
+    lsA.forEach((function(v) {
+          
+      return (function() {
+        if (b.has(v)) {
+          return ab.add(v);
+        }
+      }).call(this);
+    }));
+    lsB.forEach((function(v) {
+          
+      return (function() {
+        if (a.has(v)) {
+          return ab.add(v);
+        }
+      }).call(this);
+    }));
+    return ab;
+  })(, mset));
+});
+export const difference = (function(lsA, lsB) {
+    return (!(((Array.isArray(lsA) && Array.isArray(lsB)) || ((!(null == lsA) && lsA.constructor === Set) && (!(null == lsB) && lsB.constructor === Set))))
+    ? (function() {
+    throw (new Error(("" + "(difference) expects the arguments to both be lists or msets")))
+  }).call(this)
+    : (Array.isArray(lsA) && Array.isArray(lsB))
+    ? (function(a, b, ab) {
+      
+    a.forEach((function(v) {
+          
+      return (function() {
+        if (b.indexOf(v) < 0) {
+          return ab.push(v);
+        }
+      }).call(this);
+    }));
+    b.forEach((function(v) {
+          
+      return (function() {
+        if (a.indexOf(v) < 0) {
+          return ab.push(v);
+        }
+      }).call(this);
+    }));
+    return ab;
+  })(unique(lsA), unique(lsB), [])
+    : (function(, mset) {
+      
+    lsA.forEach((function(v) {
+          
+      return (function() {
+        if (!(b.has(v))) {
+          return ab.add(v);
+        }
+      }).call(this);
+    }));
+    lsB.forEach((function(v) {
+          
+      return (function() {
+        if (!(a.has(v))) {
+          return ab.add(v);
+        }
+      }).call(this);
+    }));
+    return ab;
+  })(, mset));
+});
 export const take = (function(ls, count) {
     return (!((Array.isArray(ls) || (!(null == ls) && ls.constructor === Set)))
     ? (function() {
