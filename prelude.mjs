@@ -768,7 +768,7 @@ export const intersection = (function(lsA, lsB) {
     }));
     return ab;
   })(unique(lsA), unique(lsB), [])
-    : (function(, mset) {
+    : (function(ab) {
       
     lsA.forEach((function(v) {
           
@@ -787,7 +787,7 @@ export const intersection = (function(lsA, lsB) {
       }).call(this);
     }));
     return ab;
-  })(, mset));
+  })((new Set([]))));
 });
 export const difference = (function(lsA, lsB) {
     return (!(((Array.isArray(lsA) && Array.isArray(lsB)) || ((!(null == lsA) && lsA.constructor === Set) && (!(null == lsB) && lsB.constructor === Set))))
@@ -815,7 +815,7 @@ export const difference = (function(lsA, lsB) {
     }));
     return ab;
   })(unique(lsA), unique(lsB), [])
-    : (function(, mset) {
+    : (function(ab) {
       
     lsA.forEach((function(v) {
           
@@ -834,7 +834,7 @@ export const difference = (function(lsA, lsB) {
       }).call(this);
     }));
     return ab;
-  })(, mset));
+  })((new Set([]))));
 });
 export const take = (function(ls, count) {
     return (!((Array.isArray(ls) || (!(null == ls) && ls.constructor === Set)))

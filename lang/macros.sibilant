@@ -490,12 +490,6 @@
        `(and ...@(map values (lambda (v)
                                `(eql? @v (nil))))))
 
-(delete-macro exists?)
-(macro exists? (...values)
-       ; core sibilant exists? macro is a bit verbose in it's output
-       `(and ...@(map values (lambda (v)
-                               `(not (eq? @v (nil)))))))
-
 (macro nan ()
        `NaN)
 
@@ -504,10 +498,12 @@
        `(and ...@(map values (lambda (v)
                                `(.isNaN Number @v)))))
 
-(macro is-a (a ctor)
-       ; machtes a value agains a given type constructor
-       `(and (not (eq? () @a))
-             (eql? (get @a 'constructor) @ctor)))
+(delete-macro exists?)
+(macro exists? (...values)
+       ; core sibilant exists? macro is a bit verbose in it's output
+       `(and ...@(map values (lambda (v)
+                               `(not (eq? @v (nil)))))))
+
 
 (macro finite? (...values)
        ; checks multiple values for being numeric and finite
@@ -520,6 +516,11 @@
        `(and ...@(map values (lambda (v)
                                `(or (eq? null @v)
                                     (nan? @v))))))
+                                    
+(macro is-a (a ctor)
+       ; machtes a value agains a given type constructor
+       `(and (not (eq? () @a))
+             (eql? (get @a 'constructor) @ctor)))
 
 
 
@@ -550,6 +551,10 @@
        ; creates a list from array-like objects
        `(.from Array @value))
 
+(macro list-clone (value)
+       ; allows to clone a list (shallow!)
+       `(.slice @value))
+
 
 
 (delete-macro hash?)
@@ -576,6 +581,10 @@
 (macro hash-create (value)
        ; creates new instances of objects
        (ternary (defined? value) `(.create Object @value) `(.create Object null)))
+
+(macro hash-clone (value)
+       ; allows to clone a hash (shallow!)
+       `(hash-merge @value))
 
 
 
@@ -605,16 +614,24 @@
        ; in universal coordinated time
        `(.parse Date @iso-string))
 
+(macro date-clone (value)
+       ; allows to clone a date
+       `(date (as-number @value)))
+
 
 
 (macro regex (pattern flag)
-       ; creates new regular expressions without the need for the new macro
+       ; creates regular expressions without need for the new macro
        `(new RegExp @pattern @flag))
 
 (macro regex? (...values)
        ; tests if given values are regular expressions
        `(and ...@(map values (lambda (v)
                                `(is-a @v RegExp)))))
+
+(macro regex-clone (value)
+       ; allows to clone an existing regular expression into a new one
+       `(regex (get @value 'source) (get @value 'flags)))
 
 
 
@@ -685,6 +702,10 @@
 (macro dict-merge (...values)
        `(dict-merge! (dict) ...values))
 
+(macro dict-clone (value)
+       ; allows to clone a dict into a new one
+       `(dict-merge @value))
+
 
 
 ;; --- union/mset
@@ -714,8 +735,11 @@
          @fst))
 
 (macro mset-merge (...values)
-       `(mset-merge! (mset) ...@values))     
+       `(mset-merge! (mset) ...@values))
 
+(macro mset-clone (value)
+       ; allows to clone an mset
+       `(mset-merge @value))
 
 
 (macro generator (name args ...body)

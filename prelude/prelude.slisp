@@ -596,7 +596,7 @@
               (when (> (.index-of a v) -1)
                 (.push ab v)))
             ab))
-          :else (let (ab (mset))
+          :else (let ((ab (mset)))
                   (each v ls-a
                     (when (.has b v)
                       (.add ab v)))
@@ -620,7 +620,7 @@
               (when (< (.index-of a v) 0)
                 (.push ab v)))
             ab))
-          :else (let (ab (mset))
+          :else (let ((ab (mset)))
                   (each v ls-a
                     (when (not (.has b v))
                       (.add ab v)))
