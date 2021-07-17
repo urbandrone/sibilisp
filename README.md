@@ -56,3 +56,6 @@ $ sibilisp -s [INPATH/DIR/] -d [OUTPATH/DIR/]
 
 The CLI will transpile each `.slisp` and `.sibilant` file inside [INPATH/DIR/],
 and will create a `.js` file with the same name inside [OUTPATH/DIR/]. You can then either ship the resulting JavaScript as modules or use a JavaScript bundler like [Rollup](https://rollupjs.org).
+
+**SINCE VERSION 0.6.6**
+The CLI now allows to define the type of file that will be generated via the `--filetype` or `-f` argument. It accepts the values `js` (default value) or `mjs` and generates `.js` or `.mjs` files respectively.

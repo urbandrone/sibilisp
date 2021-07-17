@@ -57,16 +57,16 @@ const handleFilesInSrc = files => {
 
 
 
-const alterPathAndType = to => from => compl(
-	util.replace('.sibilant')('.js'),
-	util.replace('.slisp')('.js'),
+const alterPathAndType = (to, from, type) => compl(
+	util.replace('.sibilant')(type),
+	util.replace('.slisp')(type),
 	util.replace(from)(to)
 );
 
 
-const copyFilesToDest = (spath, dpath, f = null) => files => {
+const copyFilesToDest = (spath, dpath, ftype) => files => {
 	return compl(
-		List.map(f ? f : util.over('path')(alterPathAndType(dpath)(spath))),
+		List.map(util.over('path')(alterPathAndType(dpath, spath, ftype))),
 		List.foldl(
 			(asnc, file) =>
 				compl(
@@ -90,11 +90,13 @@ const main = () => {
 		(opts, [key, value]) => 
 		// src :: String
 		// dest :: String
-		// entry :: String
-		key === 'src' || key === '--src' || key === '-s'
+		// filetype :: String js/mjs
+		key === '--src' || key === '-s'
 			? Object.assign(opts, { src: value })
-			: key === 'dest' || key === '--dest' || key === '-d'
+			: key === '--dest' || key === '-d'
 			? Object.assign(opts, { dest: value })
+      : key === '--filetype' || key === '-f'
+      ? Object.assign(opts, { ftype: (value === 'mjs' || value === 'js' ? value : 'js' )})
 			: opts
 	)(
 		{}
@@ -111,7 +113,7 @@ const main = () => {
 	return util.emptyDir(dest).then(_ => compl(
 		findFilesInSrc,
 		Async.chain(handleFilesInSrc),
-		Async.chain(copyFilesToDest(src, dest)),
+		Async.chain(copyFilesToDest(src, dest, options.ftype)),
 		Async.map(() => 'done!')
 	)(src));
 };
