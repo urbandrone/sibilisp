@@ -923,6 +923,89 @@ export const partition = (function(ls, count) {
     return (new Set(ys));
   })(Array.from(ls), [], 0, xs.length));
 });
+export const partitionWith = (function(ls, partitioner) {
+    return (!((Array.isArray(ls) || (!(null == ls) && ls.constructor === Set)))
+    ? (function() {
+    throw (new Error(("" + "(partition-with)" + _eArg1_ + "list or mset, got " + show(ls))))
+  }).call(this)
+    : !(typeof partitioner === "function")
+    ? (function() {
+    throw (new Error(("" + "(partition-with)" + _eArg2_ + "list or mset, got " + show(ls))))
+  }).call(this)
+    : Array.isArray(ls)
+    ? ls.reduce((function(acc, a) {
+      
+    return (acc === null
+      ? [ [ a ] ]
+      : !(partitioner(a))
+      ? (function(b) {
+          
+      b.push(a);
+      return acc;
+    })(acc[(acc.length - 1)])
+      : acc.concat([ [ a ] ]));
+  }), null)
+    : (function(xs) {
+      
+    return (new Set(xs.reduce((function(acc, x) {
+          
+      return (acc === null
+        ? [ [ x ] ]
+        : !(partitioner(a))
+        ? (function(b) {
+              
+        b.push(a);
+        return acc;
+      })(acc[(acc.length - 1)])
+        : acc.concat([ [ x ] ]));
+    }), null)));
+  })(Array.from(ls)));
+});
+export const keep = (function(ls) {
+    return (!((Array.isArray(ls) || (!(null == ls) && ls.constructor === Set)))
+    ? (function() {
+    throw (new Error(("" + "(keep)" + _eArg1_ + "list or mset, got " + show(ls))))
+  }).call(this)
+    : Array.isArray(ls)
+    ? ls.reduce((function(acc, a) {
+      
+    return ((!(a == null) && !(Number.isNaN(a)))) ? acc.concat(a) : acc;
+  }), [])
+    : (function(xs) {
+      
+    return (new Set(xs.reduce((function(acc, x) {
+          
+      return ((!(x == null) && !(Number.isNaN(x)))) ? acc.concat(x) : acc;
+    }), [])));
+  })(Array.from(ls)));
+});
+export const getKey = (function(obj, propChain) {
+    var propChain = Array.prototype.slice.call(arguments, 1);
+
+  return (function(x, ps, i, l) {
+      
+    (function() {
+      var while$7 = undefined;
+      while ((!(x == null) && i < l)) {
+        while$7 = (function() {
+          x = x[ps[i]];
+          return i += 1;
+        }).call(this);
+      };
+      return while$7;
+    }).call(this);
+    return maybe.lift(x);
+  })(obj, propChain, 0, ps.length);
+});
+export const pickKeys = (function(ob, propChains) {
+    var propChains = Array.prototype.slice.call(arguments, 1);
+
+  return propChains.reduce((function(acc, pChain) {
+      
+    acc[pChain] = getKey(ob, pChain);
+    return acc;
+  }), Object.create(null));
+});
 export const coyo = (function() {
     function type$1(value, mapper) {
     let self$1 = Object.create(type$1.prototype);
