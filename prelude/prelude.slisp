@@ -686,8 +686,32 @@
                       (incr-by i count)))
                   (mset ...ys)))))
 
-;; (provide
-;;   (defun partition-with (ls partitioner)))
+(provide
+  (defun partition-with (ls partitioner)
+    (cond ((not (or (list? ls) (mset? ls)))
+           (error! "(partition-with)" *e-arg-1* "list or mset, got " (show ls)))
+          ((not (function? partitioner))
+           (error! "(partition-with)" *e-arg-2* "list or mset, got " (show ls)))
+          ((list? ls)
+           (.reduce ls
+                    (#(acc a)
+                      (cond ((nil? acc) (list (list a)))
+                            ((not (partitioner a))
+                             (let ((b (last acc)))
+                              (.push b a)
+                              acc))
+                            :else (.concat acc (list (list a)))))
+                    (nil)))
+          :else (let ((xs (as-list ls)))
+                  (mset ...(.reduce xs
+                                    (#(acc x)
+                                      (cond ((nil? acc) (list (list x)))
+                                            ((not (partitioner a))
+                                             (let ((b (last acc)))
+                                               (.push b a)
+                                               acc))
+                                            :else (.concat acc (list (list x)))))
+                                    (nil)))))))
 
 ;; (provide
 ;;   (defun sort-with (ls sorter)))
@@ -695,20 +719,52 @@
 ;; (provide
 ;;   (defun group-with (ls grouper)))
 
-;; (provide
-;;   (defun keep (ls)
-;;     (cond ((not (or (list? ls) (mset? ls)))
-;;            (error! "(keep)" *e-arg-1* "list or mset, got " (show ls)))
-;;           :else ())))
+(provide
+  (defun keep (ls)
+    (cond ((not (or (list? ls) (mset? ls)))
+           (error! "(keep)" *e-arg-1* "list or mset, got " (show ls)))
+          ((list? ls)
+           (.reduce ls
+                    (#(acc a)
+                      (ternary (and (exists? a) 
+                                    (not (nan? a))) 
+                               (.concat acc a) 
+                               acc))
+                    (list)))
+          :else (let ((xs (as-list ls)))
+                  (mset ...(.reduce xs
+                                    (#(acc x)
+                                      (ternary (and (exists? x)
+                                                    (not (nan? x)))
+                                               (.concat acc x)
+                                               acc))
+                                    (list)))))))
+
 
 
 ;;; HASH/DICT RELATED
 
-;; (provide
-;;   (defun pick (ob ...props)))
+(provide
+  (defun get-key (obj ...prop-chain)
+    (let ((x obj)
+          (ps prop-chain)
+          (i 0)
+          (l (length ps)))
+      (while (and (exists? x)
+                  (< i l))
+        (assign x (getf x (getf ps i)))
+        (incr-by i 1))
+      (maybe.lift x))))
 
-;; (provide
-;;   (defun omit (ob ...props)))
+(provide
+  (defun pick-keys (ob ...prop-chains)
+    (.reduce prop-chains
+             (#(acc p-chain)
+              (setf acc p-chain (get-key ob p-chain))
+              acc)
+             (hash-create))))
+
+
 
 ;;; ALGEBRAIC TYPES
 

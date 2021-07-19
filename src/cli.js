@@ -96,16 +96,16 @@ const main = () => {
 			: key === '--dest' || key === '-d'
 			? Object.assign(opts, { dest: value })
       : key === '--filetype' || key === '-f'
-      ? Object.assign(opts, { ftype: (value === 'mjs' || value === 'js' ? value : 'js' )})
+      ? Object.assign(opts, { ftype: (value === 'mjs' || value === 'js' ? '.' + value : '.js' )})
 			: opts
 	)(
-		{}
+		{ ftype: '.js' }
 	)(
 		util.optPairs(process.argv)
 	);
 
-	if (!options.src) { throw new Error('Sibilisp CLI: Missing src/--src/-s argument.'); }
-	if (!options.dest) { throw new Error('Sibilisp CLI: Missing dest/--dest/-d argument.'); }
+	if (!options.src) { throw new Error('Sibilisp CLI: Missing --src/-s argument.'); }
+	if (!options.dest) { throw new Error('Sibilisp CLI: Missing --dest/-d argument.'); }
 	
 	const src = util.pjoin(util.getCwd(), options.src);
 	const dest = util.pjoin(util.getCwd(), options.dest);
