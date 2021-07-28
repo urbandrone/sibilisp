@@ -477,6 +477,21 @@
            (.sequence x lift transformer))
           :else (error! "(sequence) needs the first argument to be a Traversable"))))
 
+(provide
+  (defun alt (x altern)
+    (cond ((not (exists? x))
+           (error! "(alt)" *e-arg-1* "Alternative, got " (show x)))
+          ((not (exists? altern))
+           (error! "(alt)" *e-arg-2* "Alternative, got " (show altern)))
+          ((mset? x altern)
+           (let ((l (getf x 'size)))
+            (ternary (< l 1) altern x)))
+          ((list? x altern)
+           (let ((l (length x)))
+            (ternary (< l 1) altern x)))
+          ((method? x alt)
+           (.alt x altern))
+          :else (error! "(alt) expects both arguments to be Alternatives"))))
 
 
 ;;; LIST/MSET RELATED
@@ -757,7 +772,7 @@
       (maybe.lift x))))
 
 (provide
-  (defun pick-keys (ob ...prop-chains)
+  (defun get-keys (ob prop-chains)
     (.reduce prop-chains
              (#(acc p-chain)
               (setf acc p-chain (get-key ob p-chain))
@@ -841,7 +856,7 @@
 
 (defmethod io to-string ()
   (let ((fn (getf this 'unsafe-perform)))
-    (+ "(io " (show fn) ")")))
+    (+ "(io " (show fn)) ")"))
 
 (defmethod io equals (t-io)
   (cond ((not (instance-of? t-io io))
@@ -1044,9 +1059,11 @@
 (setf either 'of (lambda (value)
                   (either.right value)))
 
-(setf either 'lift (lambda (value)
+(setf either 'lift (lambda (value is-left?)
                     (cond ((not (exists? value))
                            (either.left (error "")))
+                          ((or (error? value) is-left?)
+                           (either.left value))
                           :else (either.of value))))
 
 (setf either 'empty (lambda ()
@@ -1170,10 +1187,10 @@
 (setf proof 'of (lambda (value)
                  (proof.truthy value)))
 
-(setf proof 'lift (lambda (value)
+(setf proof 'lift (lambda (value is-falsy?)
                    (cond ((nothing? value)
                           (proof.falsy (list (error *e-no-value*))))
-                         ((error? value)
+                         ((or (error? value) is-falsy?)
                           (proof.falsy (list value)))
                          :else (proof.truthy value))))
 
@@ -1182,6 +1199,11 @@
 
 (setf proof 'zero (lambda ()
                    (proof.falsy (list (error "ProofZero")))))
+
+(defmethod proof to-string ()
+  (.match this
+          (hash truthy (lambda (value) (+ "(proof.truthy " (show value) ")"))
+                falsy (lambda (errors) (+ "(proof.falsy " (show errors) ")"))))) 
 
 (defmethod proof equals (t-proof)
   (cond ((not (.is proof t-proof))
@@ -1296,6 +1318,9 @@
 (setf task 'resolve (getf task 'of))
 
 (setf task 'reject (getf task 'zero))
+
+(defmethod task to-string ()
+  "(task)") 
 
 (defmethod task concat (t-task)
   (cond ((not (instance-of? t-task task))

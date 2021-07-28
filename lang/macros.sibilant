@@ -235,7 +235,17 @@
        ; tests for method availability
        `(function? (get @tname (quote @mname))))
 
-
+(macro match-sum (x patterns)
+       ; easier pattern matching for sum types
+       (var pts (.reduce patterns.contents
+                         (#(a p)
+                           (var fst (get p.contents 0)
+                                snd (get p.contents 1)
+                                rst (.slice p.contents 2))
+                           (.concat a (list fst
+                                            `(lambda @snd ...@rst))))
+                         (list)))
+       `(.match @x (hash ...@pts)))
 
 ;;; ====== ES2015+ MODULE SYSTEM ======
 (macro use (path ...as)

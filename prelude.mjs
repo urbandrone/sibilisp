@@ -580,6 +580,31 @@ export const sequence = (function(x, lift) {
     throw (new Error(("" + "(sequence) needs the first argument to be a Traversable")))
   }).call(this));
 });
+export const alt = (function(x, altern) {
+    return (!(!(x == null))
+    ? (function() {
+    throw (new Error(("" + "(alt)" + _eArg1_ + "Alternative, got " + show(x))))
+  }).call(this)
+    : !(!(altern == null))
+    ? (function() {
+    throw (new Error(("" + "(alt)" + _eArg2_ + "Alternative, got " + show(altern))))
+  }).call(this)
+    : ((!(null == x) && x.constructor === Set) && (!(null == altern) && altern.constructor === Set))
+    ? (function(l) {
+      
+    return (l < 1) ? altern : x;
+  })(x.size)
+    : (Array.isArray(x) && Array.isArray(altern))
+    ? (function(l) {
+      
+    return (l < 1) ? altern : x;
+  })(x.length)
+    : typeof x.alt === "function"
+    ? x.alt(altern)
+    : (function() {
+    throw (new Error(("" + "(alt) expects both arguments to be Alternatives")))
+  }).call(this));
+});
 export const zip = (function(lsA, lsB) {
     return ((Array.isArray(lsA) && Array.isArray(lsB))
     ? (function(l, i, r) {
@@ -997,10 +1022,8 @@ export const getKey = (function(obj, propChain) {
     return maybe.lift(x);
   })(obj, propChain, 0, ps.length);
 });
-export const pickKeys = (function(ob, propChains) {
-    var propChains = Array.prototype.slice.call(arguments, 1);
-
-  return propChains.reduce((function(acc, pChain) {
+export const getKeys = (function(ob, propChains) {
+    return propChains.reduce((function(acc, pChain) {
       
     acc[pChain] = getKey(ob, pChain);
     return acc;
@@ -1139,7 +1162,8 @@ io.identity = io.empty;
 io.prototype.toString = (function() {
     return (function(fn) {
       
-    return ("(io " + show(fn) + ")");
+    ("(io " + show(fn));
+    return ")";
   })(this.unsafePerform);
 });
 io.prototype.equals = (function(tIo) {
@@ -1603,9 +1627,11 @@ export const either = (function() {
 either.of = (function(value) {
     return either.right(value);
 });
-either.lift = (function(value) {
+either.lift = (function(value, isLeft__QUERY) {
     return (!(!(value == null))
     ? either.left((new Error(("" + ""))))
+    : (Error.prototype.isPrototypeOf(value) || isLeft__QUERY)
+    ? either.left(value)
     : either.of(value));
 });
 either.empty = (function() {
@@ -1891,10 +1917,10 @@ export const proof = (function() {
 proof.of = (function(value) {
     return proof.truthy(value);
 });
-proof.lift = (function(value) {
+proof.lift = (function(value, isFalsy__QUERY) {
     return ((null == value || Number.isNaN(value))
     ? proof.falsy([ (new Error(("" + _eNoValue_))) ])
-    : Error.prototype.isPrototypeOf(value)
+    : (Error.prototype.isPrototypeOf(value) || isFalsy__QUERY)
     ? proof.falsy([ value ])
     : proof.truthy(value));
 });
@@ -1903,6 +1929,18 @@ proof.empty = (function() {
 });
 proof.zero = (function() {
     return proof.falsy([ (new Error(("" + "ProofZero"))) ]);
+});
+proof.prototype.toString = (function() {
+    return this.match({
+    truthy: (function(value) {
+          
+      return ("(proof.truthy " + show(value) + ")");
+    }),
+    falsy: (function(errors) {
+          
+      return ("(proof.falsy " + show(errors) + ")");
+    })
+  });
 });
 proof.prototype.equals = (function(tProof) {
     return (!(proof.is(tProof))
@@ -2109,6 +2147,9 @@ task.empty = (function() {
 });
 task.resolve = task.of;
 task.reject = task.zero;
+task.prototype.toString = (function() {
+    return "(task)";
+});
 task.prototype.concat = (function(tTask) {
     return (!(tTask instanceof task)
     ? (function() {
