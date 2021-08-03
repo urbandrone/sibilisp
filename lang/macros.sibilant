@@ -19,6 +19,8 @@
 (macro last (ls)
        `(get @ls (- (length @ls) 1))) ; slightly faster than original
 
+(macro butlast (ls)
+       `(.slice @ls 0 (- (length @ls) 1)))
 
 
 ;;; ====== OPERATORS ======

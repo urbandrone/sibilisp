@@ -761,21 +761,23 @@
 
 (provide
   (defun get-key (obj ...prop-chain)
-    (let ((x obj)
-          (ps prop-chain)
-          (i 0)
-          (l (length ps)))
-      (while (and (exists? x)
-                  (< i l))
-        (assign x (getf x (getf ps i)))
-        (incr-by i 1))
-      (maybe.lift x))))
+    (cond ((not (or (hash? obj) (dict? obj)))
+           (error! "(get-key)" *e-arg-1* "hash or dict, got " (show obj)))
+          ((< (length prop-chain) 1)
+           (error! "(get-key)" *e-arg-2* "at least one key, got 0"))
+          :else (loop ((x obj) (ps prop-chain))
+                  (cond ((nothing? x) (maybe.nothing))
+                        ((< (length ps) 1) (maybe.lift x))
+                        :else (recur (ternary (dict? x) 
+                                              (.get x (first ps))
+                                              (getf x (first ps)))
+                                     (rest ps)))))))                         
 
 (provide
-  (defun get-keys (ob prop-chains)
+  (defun get-keys (ob ...prop-chains)
     (.reduce prop-chains
              (#(acc p-chain)
-              (setf acc p-chain (get-key ob p-chain))
+              (setf acc p-chain (get-key ob (.split p-chain ".")))
               acc)
              (hash-create))))
 
