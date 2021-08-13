@@ -78,6 +78,7 @@
                                `(.is-prototype-of (get Error 'prototype) @v)))))
 
 
+
 (macro defconstant (...pairs)
        ; allow ES2015 constant definitions
        (as-statement ["const "

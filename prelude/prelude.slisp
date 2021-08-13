@@ -47,8 +47,8 @@
   (defun identity (a) a))
 
 (provide
-  ;; thunk :: a -> () -> a
-  (defun thunk (a)
+  ;; constantly :: a -> () -> a
+  (defun constantly (a)
     (lambda () a)))
 
 
@@ -493,6 +493,24 @@
            (.alt x altern))
           :else (error! "(alt) expects both arguments to be Alternatives"))))
 
+(provide
+  (defun clone (x)
+    (cond ((list? x)
+           (.map x (lambda (y) (clone y))))
+          ((mset? x)
+           (mset ...(.map (as-list x) (lambda (y) (clone y)))))
+          ((hash? x)
+           (.reduce (hash-pairs x)
+                    (lambda (a [k v])
+                      (setf a k (clone v))
+                      a)
+                    (hash-create)))
+          ((date? x)
+           (date-clone x))
+          ((regex? x)
+           (regex-clone x))
+          :else (error! "(clone) doesn't know how to clone " (show x)))))
+
 
 ;;; LIST/MSET RELATED
 
@@ -729,9 +747,6 @@
                                     (nil)))))))
 
 ;; (provide
-;;   (defun sort-with (ls sorter)))
-
-;; (provide
 ;;   (defun group-with (ls grouper)))
 
 (provide
@@ -861,13 +876,13 @@
     (+ "(io " (show fn)) ")"))
 
 (defmethod io equals (t-io)
-  (cond ((not (instance-of? t-io io))
+  (cond ((not (.is io t-io))
          (error! "(io.equals)" *e-arg-1* "io, got " (show t-io)))
         :else (eql? (getf this 'unsafe-perform)
                     (getf t-io 'unsafe-perform))))
 
 (defmethod io concat (t-io)
-  (cond ((not (instance-of? t-io io))
+  (cond ((not (.is io t-io))
          (error! "(io.concat)" *e-arg-1* "io, got " (show t-io)))
         :else (let ((run-self (getf this 'unsafe-perform))
                     (run-that (getf t-io 'unsafe-perform)))
@@ -899,7 +914,7 @@
                       (post-mapper (run-self (pre-mapper arg))))))))
 
 (defmethod io ap (t-io)
-  (cond ((not (instance-of? t-io io))
+  (cond ((not (.is io t-io))
          (error! "(io.ap)" *e-arg-1* "io, got " (show t-io)))
         :else (let ((run-self (getf this 'unsafe-perform)))
                 (.map t-io run-self))))
@@ -914,7 +929,7 @@
 (setf io 'prototype 'chain (getf io 'prototype 'flat-map))
 
 (defmethod io compose (t-io)
-  (cond ((not (instance-of? t-io io))
+  (cond ((not (.is io t-io))
          (error! "(io.compose)" *e-arg-1* "io, got " (show t-io)))
         :else (let ((run-self (getf this 'unsafe-perform))
                     (run-that (getf t-io 'unsafe-perform)))
@@ -924,6 +939,37 @@
 
 (defmethod io run-io (arg)
   (.unsafe-perform this arg))
+
+
+
+;;; --- transformer
+(provide
+  (defun io-transformer (t)
+    (deftype io-t (stack))
+    (setf io-t 'lift (lambda (v)
+                      (io-t (io (lambda () (t.lift v))))))
+    (defmethod io-t map (mapper)
+      (cond ((not (function? mapper)
+              (error! "(io-transformer.map)" *e-arg-1* "function, got " (show mapper))))
+            :else (io-t (.map (getf this 'stack)
+                              (lambda (tt)
+                                (.map tt mapper))))))
+    (defmethod io-t flat-map (to-io-t-mapper)
+      (cond ((not (function? to-io-t-mapper)
+              (error! "(io-transformer.flat-map/chain)" 
+                      *e-arg-1* 
+                      "function, got " 
+                      (show to-io-t-mapper))))
+            :else (io-t (.map (getf this 'stack)
+                              (lambda (tt)
+                                (.flat-map tt
+                                           (lambda (v))
+                                           (|> (to-io-t-mapper v)
+                                               (getf 'stack)
+                                               (.run-io v))))))))
+    (setf io-t 'prototype 'chain (getf io-t 'prototype 'flat-map))
+    io-t))
+      
 
 
 
@@ -1050,6 +1096,36 @@
   (cond ((not (function? lift))
          (error! "(maybe.sequence)" *e-arg-1* "function, got " (show lift)))
         :else (.traverse this lift identity)))
+
+
+
+;;; --- transformer
+(provide
+  (defun maybe-transformer (t)
+    (deftype maybe-t (stack))
+    (setf maybe-t 'lift (lambda (v))
+                       (maybe-t (maybe.of (t.lift v))))
+    (defmethod maybe-t map (mapper)
+      (cond ((not (function? mapper)
+              (error! "(maybe-transformer.map)" *e-arg-1* "function, got " (show mapper))))
+            :else (maybe-t (.map (getf this 'stack)
+                              (lambda (tt)
+                                (.map tt mapper))))))
+    (defmethod maybe-t flat-map (to-maybe-mapper)
+      (cond ((not (function? to-maybe-mapper)
+              (error! "(maybe-transformer.flat-map/chain)" 
+                      *e-arg-1* 
+                      "function, got " 
+                      (show to-maybe-mapper))))
+            :else (maybe-t (.map (getf this 'stack)
+                              (lambda (tt)
+                                (.flat-map tt
+                                           (lambda (v))
+                                           (|> (to-maybe-mapper v)
+                                               (getf 'stack)
+                                               (.run-io v))))))))
+    (setf maybe-t 'prototype 'chain (getf maybe-t 'prototype 'flat-map))
+    maybe-t))
 
 
 
@@ -1181,6 +1257,37 @@
         :else (.traverse this lift identity)))
 
 
+
+;;; --- transformer
+(provide
+  (defun either-transformer (t)
+    (deftype either-t (stack))
+    (setf either-t 'lift (lambda (v))
+                       (either-t (either.of (t.lift v))))
+    (defmethod either-t map (mapper)
+      (cond ((not (function? mapper)
+              (error! "(either-transformer.map)" *e-arg-1* "function, got " (show mapper))))
+            :else (either-t (.map (getf this 'stack)
+                              (lambda (tt)
+                                (.map tt mapper))))))
+    (defmethod either-t flat-map (to-either-mapper)
+      (cond ((not (function? to-either-mapper)
+              (error! "(either-transformer.flat-map/chain)" 
+                      *e-arg-1* 
+                      "function, got " 
+                      (show to-either-mapper))))
+            :else (either-t (.map (getf this 'stack)
+                              (lambda (tt)
+                                (.flat-map tt
+                                           (lambda (v))
+                                           (|> (to-either-mapper v)
+                                               (getf 'stack)
+                                               (.run-io v))))))))
+    (setf either-t 'prototype 'chain (getf either-t 'prototype 'flat-map))
+    either-t))
+        
+
+
 ;; --- proof
 (provide
   (defsum proof ((falsy errors)
@@ -1252,6 +1359,17 @@
                                     (proof.lift (mapper value)))
                             falsy (lambda (errors)
                                     (proof.falsy errors))))))
+
+(defmethod proof flat-map (to-proof-mapper)
+  (cond ((not (function? to-proof-mapper))
+         (error! "(proof.flat-map/chain)"))
+        :else (.match this
+                      (hash truthy (lambda (value)
+                                    (to-proof-mapper value))
+                            falsy (lambda (errors)
+                                    (proof.falsy errors))))))
+
+(setf proof 'prototype 'chain (getf proof 'prototype 'flat-map))
                     
 (defmethod proof bimap (lhs-mapper rhs-mapper)
   (cond ((not (function? lhs-mapper))
@@ -1292,6 +1410,36 @@
 
 
 
+;;; --- transformer
+(provide
+  (defun proof-transformer (t)
+    (deftype proof-t (stack))
+    (setf proof-t 'lift (lambda (v)
+                         (proof-t (proof.of (t.lift v)))))
+    (defmethod proof-t map (mapper)
+      (cond ((not (function? mapper)
+              (error! "(proof-transformer.map)" *e-arg-1* "function, got " (show mapper))))
+            :else (proof-t (.map (getf this 'stack)
+                                 (lambda (tt)
+                                  (.map tt mapper))))))
+    (defmethod proof-t flat-map (to-proof-mapper)
+      (cond ((not (function? to-proof-mapper)
+              (error! "(proof-transformer.flat-map/chain)" 
+                      *e-arg-1* 
+                      "function, got " 
+                      (show to-proof-mapper))))
+            :else (proof-t (.map (getf this 'stack)
+                                 (lambda (tt)
+                                  (.flat-map tt
+                                             (lambda (v))
+                                             (|> (to-proof-mapper v)
+                                                 (getf 'stack)
+                                                 (.run-io v))))))))
+    (setf proof-t 'prototype 'chain (getf proof-t 'prototype 'flat-map))
+    proof-t))
+
+
+
 ;; --- task
 (provide
   (deftype task (run-task)))
@@ -1325,7 +1473,7 @@
   "(task)") 
 
 (defmethod task concat (t-task)
-  (cond ((not (instance-of? t-task task))
+  (cond ((not (.is task t-task))
          (error! "(task.concat)" *e-arg-1* "instance of task, got " (show t-task)))
         :else (let ((run-self (getf this 'run-task))
                     (run-that (getf t-task 'run-task)))
@@ -1341,7 +1489,7 @@
                       (run-that (guard fail) (guard ok))))))))
 
 (defmethod task ap (t-task)
-  (cond ((not (instance-of? t-task task))
+  (cond ((not (.is task t-task))
          (error! "(task.ap)" *e-arg-1* "instance of task, got " (show t-task)))
         :else (let ((run-self (getf this 'run-task))
                     (run-that (getf t-task 'run-task)))
@@ -1401,10 +1549,110 @@
                               (ok (rhs-mapper value)))))))))
 
 (defmethod task alt (t-task)
-  (cond ((not (instance-of t-task task))
+  (cond ((not (.is task t-task))
          (error! "(task.alt)" *e-arg-1* "instance of task, got " (show t-task)))
         :else (let ((run-self (getf this 'run-task))
                     (run-that (getf t-task 'run-task)))
                 (task (lambda (fail ok)
                         (run-self (lambda () (run-that fail ok))
                                   ok))))))
+
+
+
+;;; --- transformer
+(provide
+  (defun task-transformer (t)
+    (deftype task-t (stack))
+    (setf task-t 'lift (lambda (v)
+                         (task-t (task.of (t.lift v)))))
+    (defmethod task-t map (mapper)
+      (cond ((not (function? mapper)
+              (error! "(task-transformer.map)" *e-arg-1* "function, got " (show mapper))))
+            :else (task-t (.map (getf this 'stack)
+                                (lambda (tt)
+                                  (.map tt mapper))))))
+    (defmethod task-t flat-map (to-task-mapper)
+      (cond ((not (function? to-task-mapper)
+              (error! "(task-transformer.flat-map/chain)" 
+                      *e-arg-1* 
+                      "function, got " 
+                      (show to-task-mapper))))
+            :else (task-t (.map (getf this 'stack)
+                                (lambda (tt)
+                                  (.flat-map tt
+                                             (lambda (v))
+                                             (|> (to-task-mapper v)
+                                                 (getf 'stack)
+                                                 (.run-io v))))))))
+    (setf task-t 'prototype 'chain (getf task-t 'prototype 'flat-map))
+    task-t))
+
+
+
+;;; DATA STRUCTURE COERCIONS
+(provide
+  (defun coyo-as-maybe (cyo)
+    (.reduce cyo 
+             (#(_ v) (maybe.lift v)) 
+             (nil))))
+
+(provide
+  (defun coyo-as-either (cyo)
+    (.reduce cyo 
+             (#(_ v) (either.lift v)) 
+             (nil))))
+
+(provide
+  (defun coyo-as-io (cyo)
+    (.reduce cyo 
+             (#(_ v) (io.lift v))
+             (nil))))
+
+(provide
+  (defun coyo-as-task (cyo)
+    (.reduce cyo 
+             (#(_ v) (task.lift v))
+             (nil))))
+
+(provide
+  (defun coyo-as-proof (cyo)
+    (.reduce cyo 
+             (#(_ v) (proof.lift v))
+             (nil))))
+
+(provide
+  (defun maybe-as-either (mbe)
+    (.match mbe (hash :nothing either.zero
+                      :just either.lift))))
+
+(provide
+  (defun maybe-as-proof (mbe)
+    (.match mbe (hash :nothing proof.zero
+                      :just proof.lift))))
+
+(provide
+  (defun maybe-as-task (mbe)
+    (.match mbe (hash :nothing task.zero
+                      :just task.lift))))
+
+(provide
+  (defun either-as-maybe (eth)
+    (.match eth (hash :left maybe.zero
+                      :right maybe.lift))))
+
+(provide
+  (defun either-as-proof (eth)
+    (.match eth (hash :left (#(e) (proof.lift e true))
+                      :right proof.lift))))
+
+(provide
+  (defun either-as-task (eth)
+    (.match eth (hash :left task.zero
+                      :right task.lift))))
+
+(provide
+  (defun io-as-task (eff ...args)
+    (task (#(fail ok))
+      (try (ok (.run eff ...args))
+           (fail (error "Failed to run " eff))))))
+
