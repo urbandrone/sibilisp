@@ -7,7 +7,7 @@ const _eArg3_ = " expects argument 3 to be a ";
 export const identity = (function(a) {
     return a;
 });
-export const thunk = (function(a) {
+export const constantly = (function(a) {
     return (function() {
       
     return a;
@@ -93,7 +93,7 @@ export const show = (function(x) {
     : Error.prototype.isPrototypeOf(x)
     ? ("(error " + x.name + ": " + x.message + ")")
     : typeof x === "string"
-    ? ("(string " + x + ")")
+    ? ("(string \"" + x + "\")")
     : (typeof x === "number" && !(Number.isNaN(x)))
     ? ("(number " + x + ")")
     : typeof x === "function"
@@ -132,7 +132,9 @@ export const show = (function(x) {
     ? ("(date" + x.getFullYear() + "-" + (1 + x.getMonth()) + "-" + x.getDate() + ")")
     : (!(null == x) && x.constructor === RegExp)
     ? ("(regex " + x.source + " :flags " + x.flags + ")")
-    : x.toString());
+    : typeof x.toString === "function"
+    ? x.toString()
+    : ("(" + x.constructor.name + ")"));
 });
 export const equals = (function(x, y) {
     return (x === null
@@ -186,10 +188,10 @@ export const equals = (function(x, y) {
     ? x.equals(y)
     : false);
 });
-export const concat = (function(x, y) {
+export const concatenate = (function(x, y) {
     return ((!(!(x == null)) || !(!(y == null)))
     ? (function() {
-    throw (new Error(("" + "(concat) cannot concatenate with a (void) or (nil) value")))
+    throw (new Error(("" + "(concatenate) cannot concatenate with a (void) or (nil) value")))
   }).call(this)
     : (typeof x === "string" && typeof y === "string")
     ? (x + y)
@@ -202,6 +204,8 @@ export const concat = (function(x, y) {
   })
     : (Array.isArray(x) && Array.isArray(y))
     ? x.concat(y)
+    : ((!(null == x) && x.constructor === Object) && (!(null == y) && y.constructor === Object))
+    ? Object.assign({  }, x, y)
     : ((!(null == x) && x.constructor === Set) && (!(null == y) && y.constructor === Set))
     ? (function() {
       
@@ -214,12 +218,21 @@ export const concat = (function(x, y) {
     }));
     return (new Set([]));
   }).call(this)
+    : ((!(null == x) && x.constructor === Map) && (!(null == y) && y.constructor === Map))
+    ? (function() {
+        values.forEach((function(dict$1) {
+            return dict$1.forEach((function(dictVal$1, dictKey$1) {
+                return (new Map([])).set(dictKey$1, dictVal$1);
+      }));
+    }));
+    return (new Map([]));
+  }).call(this)
     : ((!(null == x) && x.constructor === Promise) && (!(null == y) && y.constructor === Promise))
     ? Promise.all([ x, y ])
     : typeof x.concat === "function"
     ? x.concat(y)
     : (function() {
-    throw (new Error(("" + "(concat) needs both arguments to be in the same semigroup")))
+    throw (new Error(("" + "(concatenate) needs both arguments to be in the same semigroup")))
   }).call(this));
 });
 export const map = (function(x, mapper) {
@@ -318,6 +331,54 @@ export const ap = (function(x, applicable) {
     }));
     return y;
   })((new Set([])))
+    : ((!(null == x) && x.constructor === Object) && (!(null == applicable) && applicable.constructor === Object))
+    ? (function(f) {
+      
+    return Object.entries(x).reduce((function(a, k_v$7) {
+          
+      var k = k_v$7[0],
+          v = k_v$7[1];
+    
+      return f.reduce((function(r, l_f$1) {
+              
+        var l = l_f$1[0],
+            f = l_f$1[1];
+      
+        return (function() {
+          if (k === l) {
+            r[k] = f(v);
+            return r;
+          } else {
+            r[k] = v;
+            return r;
+          }
+        }).call(this);
+      }), a);
+    }), Object.create(null));
+  })(Object.entries(applicable))
+    : ((!(null == x) && x.constructor === Map) && (!(null == applicable) && applicable.constructor === Map))
+    ? (function(f) {
+      
+    return Array.from(x.entries()).reduce((function(a, k_v$8) {
+          
+      var k = k_v$8[0],
+          v = k_v$8[1];
+    
+      return f.reduce((function(r, l_f$2) {
+              
+        var l = l_f$2[0],
+            f = l_f$2[1];
+      
+        return (function() {
+          if (k === l) {
+            return r.set(k, f(v));
+          } else {
+            return r.set(k, v);
+          }
+        }).call(this);
+      }), a);
+    }), (new Map([])));
+  })(Array.from(applicable.entries()))
     : (function() {
     throw (new Error(("" + "(ap) needs the value to be a Functor")))
   }).call(this));
@@ -342,11 +403,32 @@ export const flatMap = (function(x, chainMapper) {
     ? x.then(chainMapper, identity)
     : typeof x.flatMap === "function"
     ? x.flatMap(chainMapper)
+    : typeof x.chain === "function"
+    ? x.chain(chainMapper)
     : Array.isArray(x)
     ? x.reduce((function(ls, v) {
       
     return ls.concat(v);
   }), [])
+    : (!(null == x) && x.constructor === Set)
+    ? (function(y) {
+      
+    x.forEach((function(v) {
+          
+      return y = (function() {
+              
+        chainMapper(v).forEach((function(mset$2) {
+                  
+          return mset$2.forEach((function(msetVal$2) {
+                      
+            return y.add(msetVal$2);
+          }));
+        }));
+        return y;
+      }).call(this);
+    }));
+    return y;
+  })((new Set([])))
     : (function() {
     throw (new Error(("" + "(flat-map|chain) needs the value to be a Chain")))
   }).call(this));
@@ -366,7 +448,10 @@ export const bimap = (function(x, lhsMapper, rhsMapper) {
     throw (new Error(("" + "(bimap)" + _eArg3_ + "function, got " + show(rhsMapper))))
   }).call(this)
     : (!(null == x) && x.constructor === Promise)
-    ? x.then(rhsMapper, lhsMapper)
+    ? x.then(rhsMapper, (function() {
+      
+    return Promise.resolve(lhsMapper());
+  }))
     : Array.isArray(x)
     ? (x.length < 1) ? [ lhsMapper() ] : x.map(rhsMapper)
     : (!(null == x) && x.constructor === Set)
@@ -443,6 +528,8 @@ export const foldMap = (function(x, liftMap) {
       return (a === null) ? liftMap(value) : a.concat(liftMap(value));
     }), null);
   })(Array.from(x.values()))
+    : typeof x.foldMap === "function"
+    ? x.foldMap(liftMap)
     : typeof x.reduce === "function"
     ? x.reduce((function(a, value) {
       
@@ -500,11 +587,11 @@ export const traverse = (function(x, lift, transformer) {
                   
           return (function() {
                       
-            x.forEach((function(mset$2) {
+            x.forEach((function(mset$3) {
                           
-              return mset$2.forEach((function(msetVal$2) {
+              return mset$3.forEach((function(msetVal$3) {
                               
-                return y.add(msetVal$2);
+                return y.add(msetVal$3);
               }));
             }));
             return y;
@@ -550,11 +637,11 @@ export const sequence = (function(x, lift) {
                   
           return (function() {
                       
-            x.forEach((function(mset$3) {
+            x.forEach((function(mset$4) {
                           
-              return mset$3.forEach((function(msetVal$3) {
+              return mset$4.forEach((function(msetVal$4) {
                               
-                return y.add(msetVal$3);
+                return y.add(msetVal$4);
               }));
             }));
             return y;
@@ -605,6 +692,46 @@ export const alt = (function(x, altern) {
     throw (new Error(("" + "(alt) expects both arguments to be Alternatives")))
   }).call(this));
 });
+export const clone = (function(x) {
+    return ((typeof x === "string" || (typeof x === "number" && !(Number.isNaN(x))) || typeof x === "function" || boolean__QUERY(x) || (null == x || Number.isNaN(x)))
+    ? x
+    : Array.isArray(x)
+    ? x.map((function(y) {
+      
+    return clone(y);
+  }))
+    : (!(null == x) && x.constructor === Set)
+    ? (new Set(Array.from(x).map((function(y) {
+      
+    return clone(y);
+  }))))
+    : (!(null == x) && x.constructor === Object)
+    ? Object.entries(x).reduce((function(a, k_v$9) {
+      
+    var k = k_v$9[0],
+        v = k_v$9[1];
+  
+    a[k] = clone(v);
+    return a;
+  }), Object.create(null))
+    : (!(null == x) && x.constructor === Map)
+    ? Array.from(x.entries()).reduce((function(a, k_v$10) {
+      
+    var k = k_v$10[0],
+        v = k_v$10[1];
+  
+    return a.set(k, clone(v));
+  }), (new Map([])))
+    : (!(null == x) && x.constructor === Date)
+    ? (new Date(Number(x)))
+    : (!(null == x) && x.constructor === RegExp)
+    ? (new RegExp(x.source, x.flags))
+    : typeof x.clone === "function"
+    ? x.clone()
+    : (function() {
+    throw (new Error(("" + "(clone) doesn't know how to clone " + show(x))))
+  }).call(this));
+});
 export const zip = (function(lsA, lsB) {
     return ((Array.isArray(lsA) && Array.isArray(lsB))
     ? (function(l, i, r) {
@@ -652,10 +779,10 @@ export const unzip = (function(ls) {
     return ((Array.isArray(ls) || (!(null == ls) && ls.constructor === Set))
     ? (function(ks, vs) {
       
-    ls.forEach((function(k_v$7) {
+    ls.forEach((function(k_v$11) {
           
-      var k = k_v$7[0],
-          v = k_v$7[1];
+      var k = k_v$11[0],
+          v = k_v$11[1];
     
       ks.push(k);
       return vs.push(v);
@@ -1007,25 +1134,52 @@ export const keep = (function(ls) {
 export const getKey = (function(obj, propChain) {
     var propChain = Array.prototype.slice.call(arguments, 1);
 
-  return (function(x, ps, i, l) {
+  return (!(((!(null == obj) && obj.constructor === Object) || (!(null == obj) && obj.constructor === Map)))
+    ? (function() {
+    throw (new Error(("" + "(get-key)" + _eArg1_ + "hash or dict, got " + show(obj))))
+  }).call(this)
+    : propChain.length < 1
+    ? (function() {
+    throw (new Error(("" + "(get-key)" + _eArg2_ + "at least one key, got 0")))
+  }).call(this)
+    : (function() {
       
-    (function() {
-      var while$7 = undefined;
-      while ((!(x == null) && i < l)) {
-        while$7 = (function() {
-          x = x[ps[i]];
-          return i += 1;
-        }).call(this);
+    return (function(step, args) {
+          
+      var args = Array.prototype.slice.call(arguments, 1);
+    
+      var looprecReturn$1 = step.apply(null, args);
+      while ((typeof looprecReturn$1 === "function" && looprecReturn$1.__sibilispRecur__)) {
+        looprecReturn$1 = looprecReturn$1();
       };
-      return while$7;
-    }).call(this);
-    return maybe.lift(x);
-  })(obj, propChain, 0, ps.length);
+      return looprecReturn$1;
+    })(function looprecStep(x, ps) {
+      return ((null == x || Number.isNaN(x))
+        ? maybe.nothing()
+        : ps.length < 1
+        ? maybe.lift(x)
+        : (function() {
+              
+        const jump$1 = (function() {
+                  
+          return looprecStep(((!(null == x) && x.constructor === Map)) ? x.get(ps[0]) : x[ps[0]], ps.slice(1));
+        });
+        return Object.defineProperties(jump$1, { "__sibilispRecur__": {
+          enumerable: true,
+          writable: false,
+          configurable: false,
+          value: true
+        } });
+      }).call(this));
+    }, obj, propChain);
+  }).call(this));
 });
 export const getKeys = (function(ob, propChains) {
-    return propChains.reduce((function(acc, pChain) {
+    var propChains = Array.prototype.slice.call(arguments, 1);
+
+  return propChains.reduce((function(acc, pChain) {
       
-    acc[pChain] = getKey(ob, pChain);
+    acc[pChain] = getKey(ob, pChain.split("."));
     return acc;
   }), Object.create(null));
 });
@@ -1167,14 +1321,14 @@ io.prototype.toString = (function() {
   })(this.unsafePerform);
 });
 io.prototype.equals = (function(tIo) {
-    return (!(tIo instanceof io)
+    return (!(io.is(tIo))
     ? (function() {
     throw (new Error(("" + "(io.equals)" + _eArg1_ + "io, got " + show(tIo))))
   }).call(this)
     : this.unsafePerform === tIo.unsafePerform);
 });
 io.prototype.concat = (function(tIo) {
-    return (!(tIo instanceof io)
+    return (!(io.is(tIo))
     ? (function() {
     throw (new Error(("" + "(io.concat)" + _eArg1_ + "io, got " + show(tIo))))
   }).call(this)
@@ -1230,7 +1384,7 @@ io.prototype.promap = (function(preMapper, postMapper) {
   })(this.unsafePerform));
 });
 io.prototype.ap = (function(tIo) {
-    return (!(tIo instanceof io)
+    return (!(io.is(tIo))
     ? (function() {
     throw (new Error(("" + "(io.ap)" + _eArg1_ + "io, got " + show(tIo))))
   }).call(this)
@@ -1254,7 +1408,7 @@ io.prototype.flatMap = (function(toIoMapper) {
 });
 io.prototype.chain = io.prototype.flatMap;
 io.prototype.compose = (function(tIo) {
-    return (!(tIo instanceof io)
+    return (!(io.is(tIo))
     ? (function() {
     throw (new Error(("" + "(io.compose)" + _eArg1_ + "io, got " + show(tIo))))
   }).call(this)
@@ -1566,38 +1720,101 @@ maybe.prototype.sequence = (function(lift) {
   }).call(this)
     : this.traverse(lift, identity));
 });
+export const maybeTransformer = (function(t) {
+    const maybeT = (function() {
+      
+    function type$3(stack) {
+      let self$5 = Object.create(type$3.prototype);
+      let argCount$5 = arguments.length;
+      (function() {
+        if (!(argCount$5 === 1)) {
+          return (function() {
+            throw (new Error(("" + "maybeT" + " received invalid number of arguments.")))
+          }).call(this);
+        }
+      }).call(this);
+      self$5.stack = stack;
+      return self$5;
+    };
+    type$3.is = (function(x$3) {
+          
+      return x$3 instanceof type$3;
+    });
+    return type$3;
+  }).call(this);
+  (function() {
+    if (!(typeof t === "function")) {
+      return (function() {
+        throw (new Error(("" + "(maybe-transformer)" + _eArg1_ + "function, got " + show(t))))
+      }).call(this);
+    }
+  }).call(this);
+  maybeT.lift = (function(v) {
+      
+    return (typeof t.lift === "function"
+      ? maybeT(t.lift(maybe.lift(v)))
+      : funtion__QUERY(t.of)
+      ? maybeT(t.of(maybe.lift(v)))
+      : (function() {
+      throw (new Error(("" + "(maybe-t.lift) cannot stack with " + t.name)))
+    }).call(this));
+  });
+  maybeT.prototype.map = (function(mapper) {
+      
+    return (!(typeof mapper === "function")
+      ? 
+      : maybeT(this.stack.map((function(tt) {
+          
+      return tt.map(mapper);
+    }))));
+  });
+  maybeT.prototype.flatMap = (function(toMaybeMapper) {
+      
+    return (!(typeof toMaybeMapper === "function")
+      ? 
+      : maybeT(this.stack.map((function(tt) {
+          
+      return tt.flatMap((function(v) {
+              
+        
+      }), toMaybeMapper(v).stack.runIo(v));
+    }))));
+  });
+  maybeT.prototype.chain = maybeT.prototype.flatMap;
+  return maybeT;
+});
 export const either = (function() {
     const sumtype$2 = Object.create(null);
   sumtype$2.prototype = { __sibilispType__: sumtype$2 };
   sumtype$2.left = function left(error) {
-    let self$5 = Object.create(sumtype$2.prototype);
-    let argCount$5 = arguments.length;
-    (function() {
-      if (!(argCount$5 === 1)) {
-        return (function() {
-          throw (new Error(("" + "Tagged constructor " + either + "." + left + "expects " + 1 + " arguments but got " + argCount$5)))
-        }).call(this);
-      }
-    }).call(this);
-    self$5.error = error;
-    self$5.constructor = left;
-    self$5.__sibilispTags__ = [ "error" ];
-    return self$5;
-  };;
-  sumtype$2.right = function right(value) {
     let self$6 = Object.create(sumtype$2.prototype);
     let argCount$6 = arguments.length;
     (function() {
       if (!(argCount$6 === 1)) {
         return (function() {
-          throw (new Error(("" + "Tagged constructor " + either + "." + right + "expects " + 1 + " arguments but got " + argCount$6)))
+          throw (new Error(("" + "Tagged constructor " + either + "." + left + "expects " + 1 + " arguments but got " + argCount$6)))
         }).call(this);
       }
     }).call(this);
-    self$6.value = value;
-    self$6.constructor = right;
-    self$6.__sibilispTags__ = [ "value" ];
+    self$6.error = error;
+    self$6.constructor = left;
+    self$6.__sibilispTags__ = [ "error" ];
     return self$6;
+  };;
+  sumtype$2.right = function right(value) {
+    let self$7 = Object.create(sumtype$2.prototype);
+    let argCount$7 = arguments.length;
+    (function() {
+      if (!(argCount$7 === 1)) {
+        return (function() {
+          throw (new Error(("" + "Tagged constructor " + either + "." + right + "expects " + 1 + " arguments but got " + argCount$7)))
+        }).call(this);
+      }
+    }).call(this);
+    self$7.value = value;
+    self$7.constructor = right;
+    self$7.__sibilispTags__ = [ "value" ];
+    return self$7;
   };;
   sumtype$2.prototype.match = (function(ctors) {
       
@@ -1856,38 +2073,101 @@ either.prototype.sequence = (function(lift) {
   }).call(this)
     : this.traverse(lift, identity));
 });
+export const eitherTransformer = (function(t) {
+    const eitherT = (function() {
+      
+    function type$4(stack) {
+      let self$8 = Object.create(type$4.prototype);
+      let argCount$8 = arguments.length;
+      (function() {
+        if (!(argCount$8 === 1)) {
+          return (function() {
+            throw (new Error(("" + "eitherT" + " received invalid number of arguments.")))
+          }).call(this);
+        }
+      }).call(this);
+      self$8.stack = stack;
+      return self$8;
+    };
+    type$4.is = (function(x$4) {
+          
+      return x$4 instanceof type$4;
+    });
+    return type$4;
+  }).call(this);
+  (function() {
+    if (!(typeof t === "function")) {
+      return (function() {
+        throw (new Error(("" + "(either-transformer)" + _eArg1_ + "function, got " + show(t))))
+      }).call(this);
+    }
+  }).call(this);
+  eitherT.lift = (function(v) {
+      
+    return (typeof t.lift === "function"
+      ? eitherT(t.lift(either.lift(v)))
+      : funtion__QUERY(t.of)
+      ? eitherT(t.of(either.lift(v)))
+      : (function() {
+      throw (new Error(("" + "(either-t.lift) cannot stack with " + t.name)))
+    }).call(this));
+  });
+  eitherT.prototype.map = (function(mapper) {
+      
+    return (!(typeof mapper === "function")
+      ? 
+      : eitherT(this.stack.map((function(tt) {
+          
+      return tt.map(mapper);
+    }))));
+  });
+  eitherT.prototype.flatMap = (function(toEitherMapper) {
+      
+    return (!(typeof toEitherMapper === "function")
+      ? 
+      : eitherT(this.stack.map((function(tt) {
+          
+      return tt.flatMap((function(v) {
+              
+        
+      }), toEitherMapper(v).stack.runIo(v));
+    }))));
+  });
+  eitherT.prototype.chain = eitherT.prototype.flatMap;
+  return eitherT;
+});
 export const proof = (function() {
     const sumtype$3 = Object.create(null);
   sumtype$3.prototype = { __sibilispType__: sumtype$3 };
   sumtype$3.falsy = function falsy(errors) {
-    let self$7 = Object.create(sumtype$3.prototype);
-    let argCount$7 = arguments.length;
+    let self$9 = Object.create(sumtype$3.prototype);
+    let argCount$9 = arguments.length;
     (function() {
-      if (!(argCount$7 === 1)) {
+      if (!(argCount$9 === 1)) {
         return (function() {
-          throw (new Error(("" + "Tagged constructor " + proof + "." + falsy + "expects " + 1 + " arguments but got " + argCount$7)))
+          throw (new Error(("" + "Tagged constructor " + proof + "." + falsy + "expects " + 1 + " arguments but got " + argCount$9)))
         }).call(this);
       }
     }).call(this);
-    self$7.errors = errors;
-    self$7.constructor = falsy;
-    self$7.__sibilispTags__ = [ "errors" ];
-    return self$7;
+    self$9.errors = errors;
+    self$9.constructor = falsy;
+    self$9.__sibilispTags__ = [ "errors" ];
+    return self$9;
   };;
   sumtype$3.truthy = function truthy(value) {
-    let self$8 = Object.create(sumtype$3.prototype);
-    let argCount$8 = arguments.length;
+    let self$10 = Object.create(sumtype$3.prototype);
+    let argCount$10 = arguments.length;
     (function() {
-      if (!(argCount$8 === 1)) {
+      if (!(argCount$10 === 1)) {
         return (function() {
-          throw (new Error(("" + "Tagged constructor " + proof + "." + truthy + "expects " + 1 + " arguments but got " + argCount$8)))
+          throw (new Error(("" + "Tagged constructor " + proof + "." + truthy + "expects " + 1 + " arguments but got " + argCount$10)))
         }).call(this);
       }
     }).call(this);
-    self$8.value = value;
-    self$8.constructor = truthy;
-    self$8.__sibilispTags__ = [ "value" ];
-    return self$8;
+    self$10.value = value;
+    self$10.constructor = truthy;
+    self$10.__sibilispTags__ = [ "value" ];
+    return self$10;
   };;
   sumtype$3.prototype.match = (function(ctors) {
       
@@ -2029,6 +2309,23 @@ proof.prototype.map = (function(mapper) {
     })
   }));
 });
+proof.prototype.flatMap = (function(toProofMapper) {
+    return (!(typeof toProofMapper === "function")
+    ? (function() {
+    throw (new Error(("" + "(proof.flat-map/chain)")))
+  }).call(this)
+    : this.match({
+    truthy: (function(value) {
+          
+      return toProofMapper(value);
+    }),
+    falsy: (function(errors) {
+          
+      return proof.falsy(errors);
+    })
+  }));
+});
+proof.prototype.chain = proof.prototype.flatMap;
 proof.prototype.bimap = (function(lhsMapper, rhsMapper) {
     return (!(typeof lhsMapper === "function")
     ? (function() {
@@ -2099,25 +2396,88 @@ proof.prototype.alt = (function(tProof) {
     })
   }));
 });
+export const proofTransformer = (function(t) {
+    const proofT = (function() {
+      
+    function type$5(stack) {
+      let self$11 = Object.create(type$5.prototype);
+      let argCount$11 = arguments.length;
+      (function() {
+        if (!(argCount$11 === 1)) {
+          return (function() {
+            throw (new Error(("" + "proofT" + " received invalid number of arguments.")))
+          }).call(this);
+        }
+      }).call(this);
+      self$11.stack = stack;
+      return self$11;
+    };
+    type$5.is = (function(x$5) {
+          
+      return x$5 instanceof type$5;
+    });
+    return type$5;
+  }).call(this);
+  (function() {
+    if (!(typeof t === "function")) {
+      return (function() {
+        throw (new Error(("" + "(proof-transformer)" + _eArg1_ + "function, got " + show(t))))
+      }).call(this);
+    }
+  }).call(this);
+  proofT.lift = (function(v) {
+      
+    return (typeof t.lift === "function"
+      ? proofT(t.lift(proof.lift(v)))
+      : funtion__QUERY(t.of)
+      ? proofT(t.of(proof.lift(v)))
+      : (function() {
+      throw (new Error(("" + "(proof-t.lift) cannot stack with " + t.name)))
+    }).call(this));
+  });
+  proofT.prototype.map = (function(mapper) {
+      
+    return (!(typeof mapper === "function")
+      ? 
+      : proofT(this.stack.map((function(tt) {
+          
+      return tt.map(mapper);
+    }))));
+  });
+  proofT.prototype.flatMap = (function(toProofMapper) {
+      
+    return (!(typeof toProofMapper === "function")
+      ? 
+      : proofT(this.stack.map((function(tt) {
+          
+      return tt.flatMap((function(v) {
+              
+        
+      }), toProofMapper(v).stack.runIo(v));
+    }))));
+  });
+  proofT.prototype.chain = proofT.prototype.flatMap;
+  return proofT;
+});
 export const task = (function() {
-    function type$3(runTask) {
-    let self$9 = Object.create(type$3.prototype);
-    let argCount$9 = arguments.length;
+    function type$6(runTask) {
+    let self$12 = Object.create(type$6.prototype);
+    let argCount$12 = arguments.length;
     (function() {
-      if (!(argCount$9 === 1)) {
+      if (!(argCount$12 === 1)) {
         return (function() {
           throw (new Error(("" + "task" + " received invalid number of arguments.")))
         }).call(this);
       }
     }).call(this);
-    self$9.runTask = runTask;
-    return self$9;
+    self$12.runTask = runTask;
+    return self$12;
   };
-  type$3.is = (function(x$3) {
+  type$6.is = (function(x$6) {
       
-    return x$3 instanceof type$3;
+    return x$6 instanceof type$6;
   });
-  return type$3;
+  return type$6;
 }).call(this);
 task.of = (function(value) {
     return task((function(fail, ok) {
@@ -2151,7 +2511,7 @@ task.prototype.toString = (function() {
     return "(task)";
 });
 task.prototype.concat = (function(tTask) {
-    return (!(tTask instanceof task)
+    return (!(task.is(tTask))
     ? (function() {
     throw (new Error(("" + "(task.concat)" + _eArg1_ + "instance of task, got " + show(tTask))))
   }).call(this)
@@ -2159,27 +2519,32 @@ task.prototype.concat = (function(tTask) {
       
     return task((function(fail, ok) {
           
-      return (function(done, guard) {
+      return (function() {
               
-        runSelf(guard(fail), guard(ok));
-        return runThat(guard(fail), guard(ok));
-      })(false, (function(f) {
-              
-        return (function(g) {
+        let done = false;
+        let guard = (function(f) {
                   
-          return (function() {
-            if (!(done)) {
-              done = true;
-              return f(g);
-            }
-          }).call(this);
+          return (function(g) {
+                      
+            return (function() {
+              if (!(done)) {
+                done = true;
+                return f(g);
+              }
+            }).call(this);
+          });
         });
-      }));
+        return (function() {
+                  
+          runSelf(guard(fail), guard(ok));
+          return runThat(guard(fail), guard(ok));
+        })();
+      }).call(this);
     }));
   })(this.runTask, tTask.runTask));
 });
 task.prototype.ap = (function(tTask) {
-    return (!(tTask instanceof task)
+    return (!(task.is(tTask))
     ? (function() {
     throw (new Error(("" + "(task.ap)" + _eArg1_ + "instance of task, got " + show(tTask))))
   }).call(this)
@@ -2187,44 +2552,54 @@ task.prototype.ap = (function(tTask) {
       
     return task((function(fail, ok) {
           
-      return (function(adone, bdone, aval, bval, rejected, rej, res) {
+      return (function() {
               
-        runSelf(rej, res((function(a) {
-                  
-          adone = true;
-          return aval = a;
-        })));
-        return runThat(rej, res((function(b) {
-                  
-          bdone = true;
-          return bval = b;
-        })));
-      })(false, false, false, false, false, (function(v) {
-              
-        return (function() {
-          if (!(rejected)) {
-            rejected = true;
-            return fail(v);
-          }
-        }).call(this);
-      }), (function(f) {
-              
-        return (function(v) {
+        let adone = false;
+        let bdone = false;
+        let aval = false;
+        let bval = false;
+        let rejected = false;
+        let rej = (function(v) {
                   
           return (function() {
             if (!(rejected)) {
-              f(v);
-              return (function() {
-                if ((adone && bdone)) {
-                  return ok(aval(bval));
-                } else {
-                  return v;
-                }
-              }).call(this);
+              rejected = true;
+              return fail(v);
             }
           }).call(this);
-        });
-      }));
+        }),
+            res((function(f) {
+                  
+          return (function(v) {
+                      
+            return (function() {
+              if (!(rejected)) {
+                f(v);
+                return (function() {
+                  if ((adone && bdone)) {
+                    return ok(aval(bval));
+                  } else {
+                    return v;
+                  }
+                }).call(this);
+              }
+            }).call(this);
+          });
+        })) = undefined;
+        return (function() {
+                  
+          runSelf(rej, res((function(a) {
+                      
+            adone = true;
+            return aval = a;
+          })));
+          return runThat(rej, res((function(b) {
+                      
+            bdone = true;
+            return bval = b;
+          })));
+        })();
+      }).call(this);
     }));
   })(this.runTask, tTask.runTask));
 });
@@ -2285,7 +2660,7 @@ task.prototype.bimap = (function(lhsMapper, rhsMapper) {
   })(this.runTask));
 });
 task.prototype.alt = (function(tTask) {
-    return (!(instanceOf(tTask, task))
+    return (!(task.is(tTask))
     ? (function() {
     throw (new Error(("" + "(task.alt)" + _eArg1_ + "instance of task, got " + show(tTask))))
   }).call(this)
@@ -2299,4 +2674,114 @@ task.prototype.alt = (function(tTask) {
       }), ok);
     }));
   })(this.runTask, tTask.runTask));
+});
+export const coyoAsMaybe = (function(cyo) {
+    return cyo.reduce((function(_, v) {
+      
+    return maybe.lift(v);
+  }), null);
+});
+export const coyoAsEither = (function(cyo) {
+    return cyo.reduce((function(_, v) {
+      
+    return either.lift(v);
+  }), null);
+});
+export const coyoAsIo = (function(cyo) {
+    return cyo.reduce((function(_, v) {
+      
+    return io.lift(v);
+  }), null);
+});
+export const coyoAsTask = (function(cyo) {
+    return cyo.reduce((function(_, v) {
+      
+    return task.lift(v);
+  }), null);
+});
+export const coyoAsProof = (function(cyo) {
+    return cyo.reduce((function(_, v) {
+      
+    return proof.lift(v);
+  }), null);
+});
+export const maybeAsEither = (function(mbe) {
+    return mbe.match({
+    nothing: either.zero,
+    just: either.lift
+  });
+});
+export const maybeAsProof = (function(mbe) {
+    return mbe.match({
+    nothing: proof.zero,
+    just: proof.lift
+  });
+});
+export const maybeAsTask = (function(mbe) {
+    return mbe.match({
+    nothing: task.zero,
+    just: task.lift
+  });
+});
+export const eitherAsMaybe = (function(eth) {
+    return eth.match({
+    left: maybe.zero,
+    right: maybe.lift
+  });
+});
+export const eitherAsProof = (function(eth) {
+    return eth.match({
+    left: (function(e) {
+          
+      return proof.lift(e, true);
+    }),
+    right: proof.lift
+  });
+});
+export const eitherAsTask = (function(eth) {
+    return eth.match({
+    left: task.zero,
+    right: task.lift
+  });
+});
+export const proofAsMaybe = (function(prf) {
+    return prf.match({
+    falsy: maybe.zero,
+    truthy: maybe.lift
+  });
+});
+export const proofAsEither = (function(prf) {
+    return prf.match({
+    falsy: (function(errs) {
+          
+      return either.left(errs[0]);
+    }),
+    truthy: either.lift
+  });
+});
+export const proofAsTask = (function(prf) {
+    return prf.match({
+    falsy: (function() {
+          
+      return task.zero((new Error(("" + arguments[0].reduce((function(a, e) {
+              
+        return (a + e.message + "\n");
+      }), "")))));
+    }),
+    truthy: task.lift
+  });
+});
+export const ioAsTask = (function(eff, args) {
+    var args = Array.prototype.slice.call(arguments, 1);
+
+  return task((function(fail, ok) {
+      
+    
+  }), (function() {
+    try {
+      return ok(eff.run(args));
+    } catch (e) {
+      return fail((new Error(("" + "Failed to run " + eff))));
+    }
+  }).call(this));
 });
