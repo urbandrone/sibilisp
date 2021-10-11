@@ -1133,24 +1133,24 @@
                                  (maybe-t (t.of (maybe.lift v))))
                                 :else (error! "(maybe-t.lift) cannot stack with " (getf t 'name)))))
     (defmethod maybe-t map (mapper)
-      (cond ((not (function? mapper)
-              (error! "(maybe-transformer.map)" *e-arg-1* "function, got " (show mapper))))
+      (cond ((not (function? mapper))
+             (error! "(maybe-transformer.map)" *e-arg-1* "function, got " (show mapper)))
             :else (maybe-t (.map (getf this 'stack)
                               (lambda (tt)
                                 (.map tt mapper))))))
     (defmethod maybe-t flat-map (to-maybe-mapper)
-      (cond ((not (function? to-maybe-mapper)
-              (error! "(maybe-transformer.flat-map/chain)" 
+      (cond ((not (function? to-maybe-mapper))
+             (error! "(maybe-transformer.flat-map/chain)" 
                       *e-arg-1* 
                       "function, got " 
-                      (show to-maybe-mapper))))
-            :else (maybe-t (.map (getf this 'stack)
+                      (show to-maybe-mapper)))
+            :else (maybe-t (.flat-map 
+                              (getf this 'stack)
                               (lambda (tt)
                                 (.flat-map tt
-                                           (lambda (v))
-                                           (|> (to-maybe-mapper v)
-                                               (getf 'stack)
-                                               (.run-io v))))))))
+                                           (lambda (v)
+                                            (|> (to-maybe-mapper v)
+                                                (getf 'stack)))))))))
     (setf maybe-t 'prototype 'chain (getf maybe-t 'prototype 'flat-map))
     maybe-t))
 
@@ -1298,24 +1298,24 @@
                                  (either-t (t.of (either.lift v))))
                                 :else (error! "(either-t.lift) cannot stack with " (getf t 'name)))))
     (defmethod either-t map (mapper)
-      (cond ((not (function? mapper)
-              (error! "(either-transformer.map)" *e-arg-1* "function, got " (show mapper))))
+      (cond ((not (function? mapper))
+             (error! "(either-transformer.map)" *e-arg-1* "function, got " (show mapper)))
             :else (either-t (.map (getf this 'stack)
                               (lambda (tt)
                                 (.map tt mapper))))))
     (defmethod either-t flat-map (to-either-mapper)
-      (cond ((not (function? to-either-mapper)
-              (error! "(either-transformer.flat-map/chain)" 
+      (cond ((not (function? to-either-mapper))
+             (error! "(either-transformer.flat-map/chain)" 
                       *e-arg-1* 
                       "function, got " 
-                      (show to-either-mapper))))
-            :else (either-t (.map (getf this 'stack)
+                      (show to-either-mapper)))
+            :else (either-t (.flat-map 
+                              (getf this 'stack)
                               (lambda (tt)
                                 (.flat-map tt
-                                           (lambda (v))
-                                           (|> (to-either-mapper v)
-                                               (getf 'stack)
-                                               (.run-io v))))))))
+                                           (lambda (v)
+                                            (|> (to-either-mapper v)
+                                                (getf 'stack)))))))))
     (setf either-t 'prototype 'chain (getf either-t 'prototype 'flat-map))
     either-t))
         
@@ -1456,24 +1456,23 @@
                                  (proof-t (t.of (proof.lift v))))
                                 :else (error! "(proof-t.lift) cannot stack with " (getf t 'name)))))
     (defmethod proof-t map (mapper)
-      (cond ((not (function? mapper)
-              (error! "(proof-transformer.map)" *e-arg-1* "function, got " (show mapper))))
+      (cond ((not (function? mapper))
+             (error! "(proof-transformer.map)" *e-arg-1* "function, got " (show mapper)))
             :else (proof-t (.map (getf this 'stack)
                                  (lambda (tt)
                                   (.map tt mapper))))))
     (defmethod proof-t flat-map (to-proof-mapper)
-      (cond ((not (function? to-proof-mapper)
-              (error! "(proof-transformer.flat-map/chain)" 
+      (cond ((not (function? to-proof-mapper))
+             (error! "(proof-transformer.flat-map/chain)" 
                       *e-arg-1* 
                       "function, got " 
-                      (show to-proof-mapper))))
+                      (show to-proof-mapper)))
             :else (proof-t (.map (getf this 'stack)
                                  (lambda (tt)
                                   (.flat-map tt
-                                             (lambda (v))
-                                             (|> (to-proof-mapper v)
-                                                 (getf 'stack)
-                                                 (.run-io v))))))))
+                                             (lambda (v)
+                                              (|> (to-proof-mapper v)
+                                                  (getf 'stack)))))))))
     (setf proof-t 'prototype 'chain (getf proof-t 'prototype 'flat-map))
     proof-t))
 
@@ -1542,14 +1541,14 @@
                            (rej (lambda (v)
                                   (when (not rejected)
                                     (assign rejected true)
-                                    (fail v)))
-                            (res (lambda (f)
+                                    (fail v))))
+                           (res (lambda (f)
                                   (lambda (v)
                                     (when (not rejected)
                                       (f v)
                                       (if (and adone bdone)
                                           (ok (call aval bval))
-                                          v)))))))
+                                          v))))))
                       (run-self rej (res (lambda (a)
                                           (assign adone true)
                                           (assign aval a))))

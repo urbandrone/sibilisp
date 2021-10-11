@@ -1762,7 +1762,9 @@ export const maybeTransformer = (function(t) {
   maybeT.prototype.map = (function(mapper) {
       
     return (!(typeof mapper === "function")
-      ? 
+      ? (function() {
+      throw (new Error(("" + "(maybe-transformer.map)" + _eArg1_ + "function, got " + show(mapper))))
+    }).call(this)
       : maybeT(this.stack.map((function(tt) {
           
       return tt.map(mapper);
@@ -1771,13 +1773,15 @@ export const maybeTransformer = (function(t) {
   maybeT.prototype.flatMap = (function(toMaybeMapper) {
       
     return (!(typeof toMaybeMapper === "function")
-      ? 
-      : maybeT(this.stack.map((function(tt) {
+      ? (function() {
+      throw (new Error(("" + "(maybe-transformer.flat-map/chain)" + _eArg1_ + "function, got " + show(toMaybeMapper))))
+    }).call(this)
+      : maybeT(this.stack.flatMap((function(tt) {
           
       return tt.flatMap((function(v) {
               
-        
-      }), toMaybeMapper(v).stack.runIo(v));
+        return toMaybeMapper(v).stack;
+      }));
     }))));
   });
   maybeT.prototype.chain = maybeT.prototype.flatMap;
@@ -2115,7 +2119,9 @@ export const eitherTransformer = (function(t) {
   eitherT.prototype.map = (function(mapper) {
       
     return (!(typeof mapper === "function")
-      ? 
+      ? (function() {
+      throw (new Error(("" + "(either-transformer.map)" + _eArg1_ + "function, got " + show(mapper))))
+    }).call(this)
       : eitherT(this.stack.map((function(tt) {
           
       return tt.map(mapper);
@@ -2124,13 +2130,15 @@ export const eitherTransformer = (function(t) {
   eitherT.prototype.flatMap = (function(toEitherMapper) {
       
     return (!(typeof toEitherMapper === "function")
-      ? 
-      : eitherT(this.stack.map((function(tt) {
+      ? (function() {
+      throw (new Error(("" + "(either-transformer.flat-map/chain)" + _eArg1_ + "function, got " + show(toEitherMapper))))
+    }).call(this)
+      : eitherT(this.stack.flatMap((function(tt) {
           
       return tt.flatMap((function(v) {
               
-        
-      }), toEitherMapper(v).stack.runIo(v));
+        return toEitherMapper(v).stack;
+      }));
     }))));
   });
   eitherT.prototype.chain = eitherT.prototype.flatMap;
@@ -2438,7 +2446,9 @@ export const proofTransformer = (function(t) {
   proofT.prototype.map = (function(mapper) {
       
     return (!(typeof mapper === "function")
-      ? 
+      ? (function() {
+      throw (new Error(("" + "(proof-transformer.map)" + _eArg1_ + "function, got " + show(mapper))))
+    }).call(this)
       : proofT(this.stack.map((function(tt) {
           
       return tt.map(mapper);
@@ -2447,13 +2457,15 @@ export const proofTransformer = (function(t) {
   proofT.prototype.flatMap = (function(toProofMapper) {
       
     return (!(typeof toProofMapper === "function")
-      ? 
+      ? (function() {
+      throw (new Error(("" + "(proof-transformer.flat-map/chain)" + _eArg1_ + "function, got " + show(toProofMapper))))
+    }).call(this)
       : proofT(this.stack.map((function(tt) {
           
       return tt.flatMap((function(v) {
               
-        
-      }), toProofMapper(v).stack.runIo(v));
+        return toProofMapper(v).stack;
+      }));
     }))));
   });
   proofT.prototype.chain = proofT.prototype.flatMap;
@@ -2567,8 +2579,8 @@ task.prototype.ap = (function(tTask) {
               return fail(v);
             }
           }).call(this);
-        }),
-            res((function(f) {
+        });
+        let res = (function(f) {
                   
           return (function(v) {
                       
@@ -2585,7 +2597,7 @@ task.prototype.ap = (function(tTask) {
               }
             }).call(this);
           });
-        })) = undefined;
+        });
         return (function() {
                   
           runSelf(rej, res((function(a) {

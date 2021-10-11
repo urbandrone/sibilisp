@@ -24,11 +24,6 @@
 
 
 ;;; ====== OPERATORS ======
-(delete-macro concat)
-(macro concat (a ...rst)
-  (.reduce rst (lambda (x y) `(.concat @x @y)) a)) ; string also implements concat
-  
-
 (macro eq? (a b)
        ; use loose == operator
        [(transpile a) " == " (transpile b)])
