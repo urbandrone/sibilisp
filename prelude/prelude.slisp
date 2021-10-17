@@ -80,6 +80,15 @@
           :else (and (dict? x)
                      (.every (.entries x) (lambda ([_ v]) (predicate v)))))))
 
+(provide 
+  ;; mset-of? :: ((mset _), (_ -> Boolean)) -> Boolean
+  ;; --- (mset-of? *items* (lambda (x) (string? x)))
+  (defun mset-of? (x predicate)
+    (cond ((not (function? predicate))
+           (error! "(mset-of?)" *e-arg-2* "function, got " predicate))
+          :else (and (mset? x)
+                     (.every (.entries x) (lambda ([_ v]) (predicate v)))))))
+
 
 
 ;;; FUNCTION FUNCTIONS
@@ -823,31 +832,79 @@
 
 
 
-;;; HASH/DICT RELATED
+;;; LENSES
+(defsum lens* ((lval value)
+               (lconst value)))
+(defmethod lens* map (f)
+  (match-sum this ((:lval (v) (lens*.lval (f v)))
+                   (:lconst (v) (lens*.lconst v)))))
 
 (provide
-  (defun get-key (obj ...prop-chain)
-    (cond ((not (or (hash? obj) (dict? obj)))
-           (error! "(get-key)" *e-arg-1* "hash or dict, got " (show obj)))
-          ((< (length prop-chain) 1)
-           (error! "(get-key)" *e-arg-2* "at least one key, got 0"))
-          :else (loop ((x obj) (ps prop-chain))
-                  (cond ((nothing? x) (maybe.nothing))
-                        ((< (length ps) 1) (maybe.lift x))
-                        :else (recur (ternary (dict? x) 
-                                              (.get x (first ps))
-                                              (getf x (first ps)))
-                                     (rest ps)))))))                         
+  (defun create-lens (gets sets)
+    (lambda (k)
+      (lambda (a f)
+        (map (f (gets k a)) (lambda (b) (sets k b a)))))))
+
+(setf create-lens
+      'hlens
+      (create-lens
+        (lambda (k a)
+          (let ((b (getf a k)))
+            (ternary (exists? b) b (nil))))
+        (lambda (k v a)
+          (let ((b (if (list? a)
+                       (list-clone a)
+                       (hash? a)
+                       (hash-clone a))))
+            (setf b k v)
+            b))))
+
+(setf create-lens
+      'dlens
+      (create-lens
+        (lambda (k a)
+          (ternary (.has a k) (.get a k) (nil)))
+        (lambda (k v a)
+          (let ((b (dict-clone a)))
+            (.set b k v)))))
+      
+                            
+      
 
 (provide
-  (defun get-keys (ob ...prop-chains)
-    (.reduce prop-chains
-             (#(acc p-chain)
-              (setf acc p-chain (get-key ob (.split p-chain ".")))
-              acc)
-             (hash-create))))
+  (defun hash-lens (...keys)
+    (.reduce keys
+             (lambda (a k)
+              (setf a k (create-lens.hlens k))
+              a)
+            (hash :nth (getf create-lens 'hlens)))))
 
+(provide
+  (defun dict-lens (...keys)
+    (.reduce keys
+             (lambda (a k)
+              (setf a k (create-lens.dlens k))
+              a)
+             (hash :nth (getf create-lens 'dlens)))))
 
+(provide
+  (defun lset (a l v)
+    (getf
+      (l a (lambda ()
+            (lens*.lval v)))
+      'value)))
+
+(provide
+  (defun lget (a l)
+    (getf (l a lens*.lconst) 'value)))
+
+(provide
+  (defun lmap (a l f)
+    (getf
+      (l a (lambda (x)
+            (lens*.lval (f x))))
+      'value)))
+          
 
 ;;; ALGEBRAIC TYPES
 
