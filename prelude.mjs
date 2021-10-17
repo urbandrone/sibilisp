@@ -46,6 +46,19 @@ export const dictOf__QUERY = (function(x, predicate) {
     return predicate(v);
   }))));
 });
+export const msetOf__QUERY = (function(x, predicate) {
+    return (!(typeof predicate === "function")
+    ? (function() {
+    throw (new Error(("" + "(mset-of?)" + _eArg2_ + "function, got " + predicate)))
+  }).call(this)
+    : ((!(null == x) && x.constructor === Set) && x.entries().every((function(v$3) {
+      
+    var _ = v$3[0],
+        v = v$3[1];
+  
+    return predicate(v);
+  }))));
+});
 export const converge = (function(combine, branches) {
     return (!(typeof combine === "function")
     ? (function() {
@@ -1131,72 +1144,168 @@ export const keep = (function(ls) {
     }), [])));
   })(Array.from(ls)));
 });
-export const getKey = (function(obj, propChain) {
-    var propChain = Array.prototype.slice.call(arguments, 1);
-
-  return (!(((!(null == obj) && obj.constructor === Object) || (!(null == obj) && obj.constructor === Map)))
-    ? (function() {
-    throw (new Error(("" + "(get-key)" + _eArg1_ + "hash or dict, got " + show(obj))))
-  }).call(this)
-    : propChain.length < 1
-    ? (function() {
-    throw (new Error(("" + "(get-key)" + _eArg2_ + "at least one key, got 0")))
-  }).call(this)
-    : (function() {
+const lens_ = (function() {
+    const sumtype$1 = Object.create(null);
+  sumtype$1.prototype = { __sibilispType__: sumtype$1 };
+  sumtype$1.lval = function lval(value) {
+    let self$1 = Object.create(sumtype$1.prototype);
+    let argCount$1 = arguments.length;
+    (function() {
+      if (!(argCount$1 === 1)) {
+        return (function() {
+          throw (new Error(("" + "Tagged constructor " + lens_ + "." + lval + "expects " + 1 + " arguments but got " + argCount$1)))
+        }).call(this);
+      }
+    }).call(this);
+    self$1.value = value;
+    self$1.constructor = lval;
+    self$1.__sibilispTags__ = [ "value" ];
+    return self$1;
+  };;
+  sumtype$1.lconst = function lconst(value) {
+    let self$2 = Object.create(sumtype$1.prototype);
+    let argCount$2 = arguments.length;
+    (function() {
+      if (!(argCount$2 === 1)) {
+        return (function() {
+          throw (new Error(("" + "Tagged constructor " + lens_ + "." + lconst + "expects " + 1 + " arguments but got " + argCount$2)))
+        }).call(this);
+      }
+    }).call(this);
+    self$2.value = value;
+    self$2.constructor = lconst;
+    self$2.__sibilispTags__ = [ "value" ];
+    return self$2;
+  };;
+  sumtype$1.prototype.match = (function(ctors) {
       
-    return (function(step, args) {
-          
-      var args = Array.prototype.slice.call(arguments, 1);
-    
-      var looprecReturn$1 = step.apply(null, args);
-      while ((typeof looprecReturn$1 === "function" && looprecReturn$1.__sibilispRecur__)) {
-        looprecReturn$1 = looprecReturn$1();
-      };
-      return looprecReturn$1;
-    })(function looprecStep(x, ps) {
-      return ((null == x || Number.isNaN(x))
-        ? maybe.nothing()
-        : ps.length < 1
-        ? maybe.lift(x)
-        : (function() {
-              
-        const jump$1 = (function() {
+    let self = this,
+        name = self.constructor.name,
+        ctor = ctors[name],
+        keys = self.__sibilispTags__;
+    return (function() {
+      if (typeof ctor === "function") {
+        return ctor.apply(self, keys.map((function(key) {
                   
-          return looprecStep(((!(null == x) && x.constructor === Map)) ? x.get(ps[0]) : x[ps[0]], ps.slice(1));
-        });
-        return Object.defineProperties(jump$1, { "__sibilispRecur__": {
-          enumerable: true,
-          writable: false,
-          configurable: false,
-          value: true
-        } });
-      }).call(this));
-    }, obj, propChain);
-  }).call(this));
-});
-export const getKeys = (function(ob, propChains) {
-    var propChains = Array.prototype.slice.call(arguments, 1);
-
-  return propChains.reduce((function(acc, pChain) {
+          return self[key];
+        })));
+      } else {
+        return (function() {
+          throw (new Error(("" + ".match :: Cannot find " + name + " in patterns " + ctors)))
+        }).call(this);
+      }
+    }).call(this);
+  });
+  sumtype$1.is = (function(x) {
       
-    acc[pChain] = getKey(ob, pChain.split("."));
-    return acc;
-  }), Object.create(null));
+    return (!(null == x) && x.__sibilispType__ === sumtype$1);
+  });
+  return sumtype$1;
+}).call(this);
+lens_.prototype.map = (function(f) {
+    return this.match({
+    lval: (function(v) {
+          
+      return lens_.lval(f(v));
+    }),
+    lconst: (function(v) {
+          
+      return lens_.lconst(v);
+    })
+  });
+});
+export const createLens = (function(gets, sets) {
+    return (function(k) {
+      
+    return (function(a, f) {
+          
+      return map(f(gets(k, a)), (function(b) {
+              
+        return sets(k, b, a);
+      }));
+    });
+  });
+});
+createLens.hlens = createLens((function(k, a) {
+    return (function(b) {
+      
+    return (!(b == null)) ? b : null;
+  })(a[k]);
+}), (function(k, v, a) {
+    return (function(b) {
+      
+    b[k] = v;
+    return b;
+  })((function() {
+    if (Array.isArray(a)) {
+      return a.slice();
+    } else if ((!(null == a) && a.constructor === Object)) {
+      return Object.assign({  }, a);
+    }
+  }).call(this));
+}));
+createLens.dlens = createLens((function(k, a) {
+    return (a.has(k)) ? a.get(k) : null;
+}), (function(k, v, a) {
+    return (function(b) {
+      
+    return b.set(k, v);
+  })((function() {
+        values.forEach((function(dict$1) {
+            return dict$1.forEach((function(dictVal$1, dictKey$1) {
+                return (new Map([])).set(dictKey$1, dictVal$1);
+      }));
+    }));
+    return (new Map([]));
+  }).call(this));
+}));
+export const hashLens = (function(keys) {
+    var keys = Array.prototype.slice.call(arguments, 0);
+
+  return keys.reduce((function(a, k) {
+      
+    a[k] = createLens.hlens(k);
+    return a;
+  }), { nth: createLens.hlens });
+});
+export const dictLens = (function(keys) {
+    var keys = Array.prototype.slice.call(arguments, 0);
+
+  return keys.reduce((function(a, k) {
+      
+    a[k] = createLens.dlens(k);
+    return a;
+  }), { nth: createLens.dlens });
+});
+export const lset = (function(a, l, v) {
+    return l(a, (function() {
+      
+    return lens_.lval(v);
+  })).value;
+});
+export const lget = (function(a, l) {
+    return l(a, lens_.lconst).value;
+});
+export const lmap = (function(a, l, f) {
+    return l(a, (function(x) {
+      
+    return lens_.lval(f(x));
+  })).value;
 });
 export const coyo = (function() {
     function type$1(value, mapper) {
-    let self$1 = Object.create(type$1.prototype);
-    let argCount$1 = arguments.length;
+    let self$3 = Object.create(type$1.prototype);
+    let argCount$3 = arguments.length;
     (function() {
-      if (!(argCount$1 === 2)) {
+      if (!(argCount$3 === 2)) {
         return (function() {
           throw (new Error(("" + "coyo" + " received invalid number of arguments.")))
         }).call(this);
       }
     }).call(this);
-    self$1.value = value;
-    self$1.mapper = mapper;
-    return self$1;
+    self$3.value = value;
+    self$3.mapper = mapper;
+    return self$3;
   };
   type$1.is = (function(x$1) {
       
@@ -1275,17 +1384,17 @@ coyo.prototype.reduce = (function(reducer, seed) {
 });
 export const io = (function() {
     function type$2(unsafePerform) {
-    let self$2 = Object.create(type$2.prototype);
-    let argCount$2 = arguments.length;
+    let self$4 = Object.create(type$2.prototype);
+    let argCount$4 = arguments.length;
     (function() {
-      if (!(argCount$2 === 1)) {
+      if (!(argCount$4 === 1)) {
         return (function() {
           throw (new Error(("" + "io" + " received invalid number of arguments.")))
         }).call(this);
       }
     }).call(this);
-    self$2.unsafePerform = unsafePerform;
-    return self$2;
+    self$4.unsafePerform = unsafePerform;
+    return self$4;
   };
   type$2.is = (function(x$2) {
       
@@ -1424,38 +1533,38 @@ io.prototype.runIo = (function(arg) {
     return this.unsafePerform(arg);
 });
 export const maybe = (function() {
-    const sumtype$1 = Object.create(null);
-  sumtype$1.prototype = { __sibilispType__: sumtype$1 };
-  sumtype$1.nothing = function nothing() {
-    let self$3 = Object.create(sumtype$1.prototype);
-    let argCount$3 = arguments.length;
+    const sumtype$2 = Object.create(null);
+  sumtype$2.prototype = { __sibilispType__: sumtype$2 };
+  sumtype$2.nothing = function nothing() {
+    let self$5 = Object.create(sumtype$2.prototype);
+    let argCount$5 = arguments.length;
     (function() {
-      if (!(argCount$3 === 0)) {
+      if (!(argCount$5 === 0)) {
         return (function() {
-          throw (new Error(("" + "Tagged constructor " + maybe + "." + nothing + "expects " + 0 + " arguments but got " + argCount$3)))
+          throw (new Error(("" + "Tagged constructor " + maybe + "." + nothing + "expects " + 0 + " arguments but got " + argCount$5)))
         }).call(this);
       }
     }).call(this);
-    self$3.constructor = nothing;
-    self$3.__sibilispTags__ = [];
-    return self$3;
+    self$5.constructor = nothing;
+    self$5.__sibilispTags__ = [];
+    return self$5;
   };;
-  sumtype$1.just = function just(value) {
-    let self$4 = Object.create(sumtype$1.prototype);
-    let argCount$4 = arguments.length;
+  sumtype$2.just = function just(value) {
+    let self$6 = Object.create(sumtype$2.prototype);
+    let argCount$6 = arguments.length;
     (function() {
-      if (!(argCount$4 === 1)) {
+      if (!(argCount$6 === 1)) {
         return (function() {
-          throw (new Error(("" + "Tagged constructor " + maybe + "." + just + "expects " + 1 + " arguments but got " + argCount$4)))
+          throw (new Error(("" + "Tagged constructor " + maybe + "." + just + "expects " + 1 + " arguments but got " + argCount$6)))
         }).call(this);
       }
     }).call(this);
-    self$4.value = value;
-    self$4.constructor = just;
-    self$4.__sibilispTags__ = [ "value" ];
-    return self$4;
+    self$6.value = value;
+    self$6.constructor = just;
+    self$6.__sibilispTags__ = [ "value" ];
+    return self$6;
   };;
-  sumtype$1.prototype.match = (function(ctors) {
+  sumtype$2.prototype.match = (function(ctors) {
       
     let self = this,
         name = self.constructor.name,
@@ -1474,11 +1583,11 @@ export const maybe = (function() {
       }
     }).call(this);
   });
-  sumtype$1.is = (function(x) {
+  sumtype$2.is = (function(x) {
       
-    return (!(null == x) && x.__sibilispType__ === sumtype$1);
+    return (!(null == x) && x.__sibilispType__ === sumtype$2);
   });
-  return sumtype$1;
+  return sumtype$2;
 }).call(this);
 maybe.of = (function(value) {
     return maybe.just(value);
@@ -1724,17 +1833,17 @@ export const maybeTransformer = (function(t) {
     const maybeT = (function() {
       
     function type$3(stack) {
-      let self$5 = Object.create(type$3.prototype);
-      let argCount$5 = arguments.length;
+      let self$7 = Object.create(type$3.prototype);
+      let argCount$7 = arguments.length;
       (function() {
-        if (!(argCount$5 === 1)) {
+        if (!(argCount$7 === 1)) {
           return (function() {
             throw (new Error(("" + "maybeT" + " received invalid number of arguments.")))
           }).call(this);
         }
       }).call(this);
-      self$5.stack = stack;
-      return self$5;
+      self$7.stack = stack;
+      return self$7;
     };
     type$3.is = (function(x$3) {
           
@@ -1788,39 +1897,39 @@ export const maybeTransformer = (function(t) {
   return maybeT;
 });
 export const either = (function() {
-    const sumtype$2 = Object.create(null);
-  sumtype$2.prototype = { __sibilispType__: sumtype$2 };
-  sumtype$2.left = function left(error) {
-    let self$6 = Object.create(sumtype$2.prototype);
-    let argCount$6 = arguments.length;
+    const sumtype$3 = Object.create(null);
+  sumtype$3.prototype = { __sibilispType__: sumtype$3 };
+  sumtype$3.left = function left(error) {
+    let self$8 = Object.create(sumtype$3.prototype);
+    let argCount$8 = arguments.length;
     (function() {
-      if (!(argCount$6 === 1)) {
+      if (!(argCount$8 === 1)) {
         return (function() {
-          throw (new Error(("" + "Tagged constructor " + either + "." + left + "expects " + 1 + " arguments but got " + argCount$6)))
+          throw (new Error(("" + "Tagged constructor " + either + "." + left + "expects " + 1 + " arguments but got " + argCount$8)))
         }).call(this);
       }
     }).call(this);
-    self$6.error = error;
-    self$6.constructor = left;
-    self$6.__sibilispTags__ = [ "error" ];
-    return self$6;
+    self$8.error = error;
+    self$8.constructor = left;
+    self$8.__sibilispTags__ = [ "error" ];
+    return self$8;
   };;
-  sumtype$2.right = function right(value) {
-    let self$7 = Object.create(sumtype$2.prototype);
-    let argCount$7 = arguments.length;
+  sumtype$3.right = function right(value) {
+    let self$9 = Object.create(sumtype$3.prototype);
+    let argCount$9 = arguments.length;
     (function() {
-      if (!(argCount$7 === 1)) {
+      if (!(argCount$9 === 1)) {
         return (function() {
-          throw (new Error(("" + "Tagged constructor " + either + "." + right + "expects " + 1 + " arguments but got " + argCount$7)))
+          throw (new Error(("" + "Tagged constructor " + either + "." + right + "expects " + 1 + " arguments but got " + argCount$9)))
         }).call(this);
       }
     }).call(this);
-    self$7.value = value;
-    self$7.constructor = right;
-    self$7.__sibilispTags__ = [ "value" ];
-    return self$7;
+    self$9.value = value;
+    self$9.constructor = right;
+    self$9.__sibilispTags__ = [ "value" ];
+    return self$9;
   };;
-  sumtype$2.prototype.match = (function(ctors) {
+  sumtype$3.prototype.match = (function(ctors) {
       
     let self = this,
         name = self.constructor.name,
@@ -1839,11 +1948,11 @@ export const either = (function() {
       }
     }).call(this);
   });
-  sumtype$2.is = (function(x) {
+  sumtype$3.is = (function(x) {
       
-    return (!(null == x) && x.__sibilispType__ === sumtype$2);
+    return (!(null == x) && x.__sibilispType__ === sumtype$3);
   });
-  return sumtype$2;
+  return sumtype$3;
 }).call(this);
 either.of = (function(value) {
     return either.right(value);
@@ -2081,17 +2190,17 @@ export const eitherTransformer = (function(t) {
     const eitherT = (function() {
       
     function type$4(stack) {
-      let self$8 = Object.create(type$4.prototype);
-      let argCount$8 = arguments.length;
+      let self$10 = Object.create(type$4.prototype);
+      let argCount$10 = arguments.length;
       (function() {
-        if (!(argCount$8 === 1)) {
+        if (!(argCount$10 === 1)) {
           return (function() {
             throw (new Error(("" + "eitherT" + " received invalid number of arguments.")))
           }).call(this);
         }
       }).call(this);
-      self$8.stack = stack;
-      return self$8;
+      self$10.stack = stack;
+      return self$10;
     };
     type$4.is = (function(x$4) {
           
@@ -2145,39 +2254,39 @@ export const eitherTransformer = (function(t) {
   return eitherT;
 });
 export const proof = (function() {
-    const sumtype$3 = Object.create(null);
-  sumtype$3.prototype = { __sibilispType__: sumtype$3 };
-  sumtype$3.falsy = function falsy(errors) {
-    let self$9 = Object.create(sumtype$3.prototype);
-    let argCount$9 = arguments.length;
+    const sumtype$4 = Object.create(null);
+  sumtype$4.prototype = { __sibilispType__: sumtype$4 };
+  sumtype$4.falsy = function falsy(errors) {
+    let self$11 = Object.create(sumtype$4.prototype);
+    let argCount$11 = arguments.length;
     (function() {
-      if (!(argCount$9 === 1)) {
+      if (!(argCount$11 === 1)) {
         return (function() {
-          throw (new Error(("" + "Tagged constructor " + proof + "." + falsy + "expects " + 1 + " arguments but got " + argCount$9)))
+          throw (new Error(("" + "Tagged constructor " + proof + "." + falsy + "expects " + 1 + " arguments but got " + argCount$11)))
         }).call(this);
       }
     }).call(this);
-    self$9.errors = errors;
-    self$9.constructor = falsy;
-    self$9.__sibilispTags__ = [ "errors" ];
-    return self$9;
+    self$11.errors = errors;
+    self$11.constructor = falsy;
+    self$11.__sibilispTags__ = [ "errors" ];
+    return self$11;
   };;
-  sumtype$3.truthy = function truthy(value) {
-    let self$10 = Object.create(sumtype$3.prototype);
-    let argCount$10 = arguments.length;
+  sumtype$4.truthy = function truthy(value) {
+    let self$12 = Object.create(sumtype$4.prototype);
+    let argCount$12 = arguments.length;
     (function() {
-      if (!(argCount$10 === 1)) {
+      if (!(argCount$12 === 1)) {
         return (function() {
-          throw (new Error(("" + "Tagged constructor " + proof + "." + truthy + "expects " + 1 + " arguments but got " + argCount$10)))
+          throw (new Error(("" + "Tagged constructor " + proof + "." + truthy + "expects " + 1 + " arguments but got " + argCount$12)))
         }).call(this);
       }
     }).call(this);
-    self$10.value = value;
-    self$10.constructor = truthy;
-    self$10.__sibilispTags__ = [ "value" ];
-    return self$10;
+    self$12.value = value;
+    self$12.constructor = truthy;
+    self$12.__sibilispTags__ = [ "value" ];
+    return self$12;
   };;
-  sumtype$3.prototype.match = (function(ctors) {
+  sumtype$4.prototype.match = (function(ctors) {
       
     let self = this,
         name = self.constructor.name,
@@ -2196,11 +2305,11 @@ export const proof = (function() {
       }
     }).call(this);
   });
-  sumtype$3.is = (function(x) {
+  sumtype$4.is = (function(x) {
       
-    return (!(null == x) && x.__sibilispType__ === sumtype$3);
+    return (!(null == x) && x.__sibilispType__ === sumtype$4);
   });
-  return sumtype$3;
+  return sumtype$4;
 }).call(this);
 proof.of = (function(value) {
     return proof.truthy(value);
@@ -2408,17 +2517,17 @@ export const proofTransformer = (function(t) {
     const proofT = (function() {
       
     function type$5(stack) {
-      let self$11 = Object.create(type$5.prototype);
-      let argCount$11 = arguments.length;
+      let self$13 = Object.create(type$5.prototype);
+      let argCount$13 = arguments.length;
       (function() {
-        if (!(argCount$11 === 1)) {
+        if (!(argCount$13 === 1)) {
           return (function() {
             throw (new Error(("" + "proofT" + " received invalid number of arguments.")))
           }).call(this);
         }
       }).call(this);
-      self$11.stack = stack;
-      return self$11;
+      self$13.stack = stack;
+      return self$13;
     };
     type$5.is = (function(x$5) {
           
@@ -2473,17 +2582,17 @@ export const proofTransformer = (function(t) {
 });
 export const task = (function() {
     function type$6(runTask) {
-    let self$12 = Object.create(type$6.prototype);
-    let argCount$12 = arguments.length;
+    let self$14 = Object.create(type$6.prototype);
+    let argCount$14 = arguments.length;
     (function() {
-      if (!(argCount$12 === 1)) {
+      if (!(argCount$14 === 1)) {
         return (function() {
           throw (new Error(("" + "task" + " received invalid number of arguments.")))
         }).call(this);
       }
     }).call(this);
-    self$12.runTask = runTask;
-    return self$12;
+    self$14.runTask = runTask;
+    return self$14;
   };
   type$6.is = (function(x$6) {
       
