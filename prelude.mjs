@@ -1,4 +1,4 @@
-// sibilispPrelude// -// MIT;
+// prelude;
 const _eNoValue_ = "E_NO_VALUE";
 const _eGuard_ = " guards agains (nil) and (void) values, got";
 const _eArg1_ = " expects argument 1 to be a ";
