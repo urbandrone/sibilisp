@@ -115,8 +115,17 @@
          (call (lambda () ...@body))))
 
 (macro defun (name args ...body)
-       ; function creation utility
-       `(defconstant @name (lambda @args ...@body)))
+  (var prms (.reduce args.contents
+                     (lambda (a arg)
+                       (if (node? arg 'expression)
+                           (do (.push a.args (first arg.contents))
+                               (.push a.dfts `(default @(first arg.contents) @(last arg.contents)))
+                               a)
+                           (do (.push a.args arg)
+                               a)))
+                     (hash args (list)
+                           dfts (list))))
+  `(defconstant @name (lambda @prms.args ...@prms.dfts ...@body)))
 
 (macro defprop (target ...pairs)
        (var ps (bulk-map pairs
@@ -276,7 +285,7 @@
                          (+ (.replace path.token (new RegExp "\\\"$") "") 
                             ".js\"")))
        ["import "
-        (if (and (node? alias) (= 'as alias.token))
+        (if (and (exists? alias) (= 'as alias.token))
             [" * as " alias-b]
             alias) " from " pth ";"])
 

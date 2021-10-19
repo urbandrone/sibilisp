@@ -1,4 +1,4 @@
-(comment sibilisp-prelude - MIT)
+(comment prelude)
 
 ;;;;                  PRELUDE - README
 ;;;; --------------------------------------------
@@ -378,7 +378,7 @@
           :else (error! "(bimap) needs the first argument to be a BiFunctor"))))
 
 (provide
-  ;; contramap :: 
+  ;; contramap :: Contrafunctor C. (C a b, (a -> c)) -> C c b
   (defun contramap (x lhs-mapper)
     (bimap x lhs-mapper identity)))
 
@@ -415,6 +415,7 @@
           :else (error! "(reduce) needs the first argument to be a Foldable"))))
 
 (provide
+  ;; fold-map :: Foldable F, Semigroup S. (F a, (a -> S b)) -> S b
   (defun fold-map (x lift-map)
     (cond ((not (exists? x))
            (error! "(reduce)" *e-guard* (show x)))
@@ -440,6 +441,7 @@
           :else (error! "(fold-map) needs the first argument to be a Foldable"))))
 
 (provide
+  ;; fold :: Foldable F, Semigroup S. (F a, (a -> S a)) -> S a
   (defun fold (x lift)
     (cond ((not (function? lift))
            (error! "(fold)" *e-arg-2* "function, got " (show lift)))
@@ -463,6 +465,7 @@
           :else (error! "(fold) needs the first argument to be a Foldable"))))
 
 (provide
+  ;; traverse :: Traversable T, Applicative A. (T a, (a -> A a), (a -> A b)) -> A T b
   (defun traverse (x lift transformer)
     (cond ((not (exists? x))
            (error! "(traverse)" *e-arg-1* "Traversable, got " (show x)))
@@ -496,6 +499,7 @@
           :else (error! "(traverse) needs the first argument to be a Traversable"))))
 
 (provide
+  ;; sequence :: Traversable T, Applicative A. (T A a, (a -> A a)) -> A T a
   (defun sequence (x lift)
     (cond ((not (exists? x))
            (error! "(sequence)" *e-arg-1* "Traversable, got " (show x)))
@@ -525,6 +529,7 @@
           :else (error! "(sequence) needs the first argument to be a Traversable"))))
 
 (provide
+  ;; alt :: Alt A. (A a, A a) -> A a
   (defun alt (x altern)
     (cond ((not (exists? x))
            (error! "(alt)" *e-arg-1* "Alternative, got " (show x)))
@@ -541,6 +546,7 @@
           :else (error! "(alt) expects both arguments to be Alternatives"))))
 
 (provide
+  ;; clone :: Clonable C. C a -> C a
   (defun clone (x)
     (cond ((or (string? x)
                (number? x)
@@ -575,6 +581,7 @@
 ;;; LIST/MSET RELATED
 
 (provide
+  ;; zip :: List|MSet LM. (LM a, LM b) -> LM LM a b
   (defun zip (ls-a ls-b)
     (cond ((list? ls-a ls-b)
            (let ((l (min (length ls-a) (length ls-b)))
@@ -867,9 +874,6 @@
         (lambda (k v a)
           (let ((b (dict-clone a)))
             (.set b k v)))))
-      
-                            
-      
 
 (provide
   (defun hash-lens (...keys)
