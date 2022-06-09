@@ -111,7 +111,7 @@ export const show = (function(x) {
     ? ("(number " + x + ")")
     : typeof x === "function"
     ? ("(function " + (x.name || "lambda") + ")")
-    : (!(null == x) && x.constructor === GeneratorFunction)
+    : (!(null == x) && x.constructor === (function * (){}).constructor)
     ? ("(generator " + x.name + ")")
     : Array.isArray(x)
     ? ("(list" + x.reduce((function(a, v) {
@@ -164,7 +164,7 @@ export const equals = (function(x, y) {
     ? (x.source === y.source && x.flag === y.flag)
     : ((!(null == x) && x.constructor === Date) && (!(null == y) && y.constructor === Date))
     ? Number(x) === Number(y)
-    : ((!(null == x) && x.constructor === GeneratorFunction) && (!(null == y) && y.constructor === GeneratorFunction))
+    : ((!(null == x) && x.constructor === (function * (){}).constructor) && (!(null == y) && y.constructor === (function * (){}).constructor))
     ? x === y
     : ((!(null == x) && x.constructor === Promise) && (!(null == y) && y.constructor === Promise))
     ? x === y

@@ -777,7 +777,8 @@
 (macro generator? (...values)
        `(and ...@(map values
                       (lambda (v)
-                            `(is-a @v GeneratorFunction)))))
+                            `(is-a @v @(hash type 'output
+                                             contents (list "(function * (){}).constructor")))))))
 
 (macro yields (value)
        ; creates a yield statement for use in generator functions
