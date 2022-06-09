@@ -1,6 +1,6 @@
 // prelude;
 const _eNoValue_ = "E_NO_VALUE";
-const _eGuard_ = " guards agains (nil) and (void) values, got";
+const _eGuard_ = " guards agains (nil) and (void) values, got ";
 const _eArg1_ = " expects argument 1 to be a ";
 const _eArg2_ = " expects argument 2 to be a ";
 const _eArg3_ = " expects argument 3 to be a ";
@@ -809,7 +809,7 @@ export const unzip = (function(ls) {
 export const find = (function(ls, predicate) {
     return (!(typeof predicate === "function")
     ? (function() {
-    throw (new Error(("" + "(find)" + _eArg2_ + "function, got" + show(predicate))))
+    throw (new Error(("" + "(find)" + _eArg2_ + "function, got " + show(predicate))))
   }).call(this)
     : (Array.isArray(ls) && typeof ls.find === "function")
     ? maybe.lift(ls.find(predicate))
@@ -879,7 +879,7 @@ export const reject = (function(ls, predicate) {
   }).call(this)
     : !(typeof predicate === "function")
     ? (function() {
-    throw (new Error(("" + "(reject)" + _eArg2_ + "function, got" + show(predicate))))
+    throw (new Error(("" + "(reject)" + _eArg2_ + "function, got " + show(predicate))))
   }).call(this)
     : filter(ls, (function(x) {
       
@@ -889,7 +889,7 @@ export const reject = (function(ls, predicate) {
 export const unique = (function(ls) {
     return (!((Array.isArray(ls) || (!(null == ls) && ls.constructor === Set)))
     ? (function() {
-    throw (new Error(("" + "(unique)" + _eArg1_ + "list or mset, got" + show(ls))))
+    throw (new Error(("" + "(unique)" + _eArg1_ + "list or mset, got " + show(ls))))
   }).call(this)
     : Array.isArray(ls)
     ? Array.from((new Set(ls)))
@@ -1413,6 +1413,8 @@ io.lift = (function(value) {
     ? (function() {
     throw (new Error(("" + "(io.lift)" + _eGuard_ + value)))
   }).call(this)
+    : typeof value === "function"
+    ? io(value)
     : io.of(value));
 });
 io.empty = (function() {

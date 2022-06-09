@@ -36,7 +36,7 @@
 
 ;;; CONSTANTS
 (defconstant *e-no-value* "E_NO_VALUE")
-(defconstant *e-guard* " guards agains (nil) and (void) values, got")
+(defconstant *e-guard* " guards agains (nil) and (void) values, got ")
 (defconstant *e-arg-1* " expects argument 1 to be a ")
 (defconstant *e-arg-2* " expects argument 2 to be a ")
 (defconstant *e-arg-3* " expects argument 3 to be a ")
@@ -617,7 +617,7 @@
 (provide
   (defun find (ls predicate)
     (cond ((not (function? predicate))
-           (error! "(find)" *e-arg-2* "function, got" (show predicate)))
+           (error! "(find)" *e-arg-2* "function, got " (show predicate)))
           ((and (list? ls) (function? (getf ls 'find)))
            (maybe.lift (.find ls predicate)))
           ((list? ls)
@@ -660,13 +660,13 @@
     (cond ((not (or (list? ls) (mset? ls)))
            (error! "(reject) expects the first argument to be a list or mset"))
           ((not (function? predicate))
-           (error! "(reject)" *e-arg-2* "function, got" (show predicate)))
+           (error! "(reject)" *e-arg-2* "function, got " (show predicate)))
           :else (filter ls (lambda (x) (not (predicate x)))))))
 
 (provide
   (defun unique (ls)
     (cond ((not (or (list? ls) (mset? ls)))
-           (error! "(unique)" *e-arg-1* "list or mset, got" (show ls)))
+           (error! "(unique)" *e-arg-1* "list or mset, got " (show ls)))
           ((list? ls)
            (as-list (mset ...ls)))
           :else ls)))
@@ -976,6 +976,8 @@
 (setf io 'lift (lambda (value)
                 (cond ((not (exists? value))
                        (error! "(io.lift)" *e-guard* value))
+                      ((function? value)
+                       (io value))
                       :else (io.of value))))
 
 (setf io 'empty (lambda ()
