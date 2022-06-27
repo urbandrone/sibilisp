@@ -1126,6 +1126,46 @@ export const partitionWith = (function(ls, partitioner) {
     }), null)));
   })(Array.from(ls)));
 });
+export const groupBy = (function(ls, grouper) {
+    return (!((Array.isArray(ls) || (!(null == ls) && ls.constructor === Set)))
+    ? (function() {
+    throw (new Error(("" + "(group-by)" + _eArg1_ + "list or mset, got " + show(ls))))
+  }).call(this)
+    : !(typeof grouper === "function")
+    ? (function() {
+    throw (new Error(("" + "(group-by)" + _eArg2_ + "function, got " + show(grouper))))
+  }).call(this)
+    : Array.isArray(ls)
+    ? xs.reduce((function(acc, x) {
+      
+    return (function(k) {
+          
+      (function() {
+        if (!(acc.hasOwnProperty(k))) {
+          return acc[k] = [];
+        }
+      }).call(this);
+      acc[k].push(x);
+      return acc;
+    })(String(grouper(x)));
+  }), Object.create(null))
+    : (function(, asList) {
+      
+    return xs.reduce((function(acc, x) {
+          
+      return (function(k) {
+              
+        (function() {
+          if (!(acc.hasOwnProperty(k))) {
+            return acc[k] = [];
+          }
+        }).call(this);
+        acc[k].push(x);
+        return acc;
+      })(String(grouper(x)));
+    }), Object.create(null));
+  })(, ls));
+});
 export const keep = (function(ls) {
     return (!((Array.isArray(ls) || (!(null == ls) && ls.constructor === Set)))
     ? (function() {
@@ -1142,6 +1182,28 @@ export const keep = (function(ls) {
           
       return ((!(x == null) && !(Number.isNaN(x)))) ? acc.concat(x) : acc;
     }), [])));
+  })(Array.from(ls)));
+});
+export const intersperse = (function(ls, separator) {
+    return (!((Array.isArray(ls) || (!(null == ls) && ls.constructor === Set)))
+    ? (function() {
+    throw (new Error(("" + "(intersperse)" + _eArg1_ + "list or mset, got " + show(ls))))
+  }).call(this)
+    : (null == separator || Number.isNaN(separator))
+    ? (function() {
+    throw (new Error(("" + "(intersperse)" + _eArg2_ + "to exist, got " + show(separator))))
+  }).call(this)
+    : Array.isArray(ls)
+    ? ls.reduce((function(acc, x) {
+      
+    return (acc.length < 1) ? acc.concat(x) : acc.concat([ separator, x ]);
+  }), [])
+    : (function(xs) {
+      
+    return xs.reduce((function(acc, x) {
+          
+      return (()) ? acc.concat(x) : acc.concat([ separator, x ]);
+    }), []);
   })(Array.from(ls)));
 });
 const lens_ = (function() {
