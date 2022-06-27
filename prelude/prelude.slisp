@@ -52,6 +52,7 @@
     (lambda () a)))
 
 
+
 ;;; LANGUAGE TYPE CHECK UTILITIES
 (provide
   ;; list-of? :: ([_], (_ -> Boolean)) -> Boolean
@@ -813,8 +814,29 @@
                                             :else (.concat acc (list (list x)))))
                                     (nil)))))))
 
-;; (provide
-;;   (defun group-with (ls grouper)))
+(provide
+  (defun group-by (ls grouper)
+    (cond ((not (or (list? ls) (mset? ls)))
+           (error! "(group-by)" *e-arg-1* "list or mset, got " (show ls)))
+          ((not (function? grouper))
+           (error! "(group-by)" *e-arg-2* "function, got " (show grouper)))
+          ((list? ls)
+           (.reduce xs (#(acc x)
+                        (let ((k (as-string (grouper x))))
+                          (when (not (has-key? acc k))
+                            (setf acc k (list)))
+                          (.push (getf acc k) x)
+                          acc))
+                       (hash-create)))
+          :else (let (xs (as-list ls))
+                  (.reduce xs (#(acc x)
+                                (let ((k (as-string (grouper x))))
+                                  (when (not (has-key? acc k))
+                                    (setf acc k (list)))
+                                  (.push (getf acc k) x)
+                                  acc))
+                              (hash-create))))))
+                               
 
 (provide
   (defun keep (ls)
@@ -836,6 +858,27 @@
                                                (.concat acc x)
                                                acc))
                                     (list)))))))
+
+(provide
+  (defun intersperse (ls separator)
+    (cond ((not (or (list? ls) (mset? ls)))
+           (error! "(intersperse)" *e-arg-1* "list or mset, got " (show ls)))
+          ((nothing? separator)
+           (error! "(intersperse)" *e-arg-2* "to exist, got " (show separator)))
+          ((list? ls)
+           (.reduce ls
+                    (#(acc x)
+                      (ternary (< (length acc) 1)
+                               (.concat acc x)
+                               (.concat acc (list separator x))))
+                    (list)))
+          :else (let ((xs (as-list ls)))
+                  (.reduce xs
+                           (#(acc x)
+                            (ternary (< (length acc 1))
+                                     (.concat acc x)
+                                     (.concat acc (list separator x))))
+                           (list))))))
 
 
 

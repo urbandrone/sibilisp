@@ -114,6 +114,16 @@
          ...@vars
          (call (lambda () ...@body))))
 
+
+
+(macro with-fields (value fields ...body)
+  (var fs (.map fields.contents
+                (lambda (f)
+                  `(@f (getf @value (quote @f))))))
+  `(let (...@fs) ...@body))
+
+
+
 (macro defun (name args ...body)
   (var prms (.reduce args.contents
                      (lambda (a arg)
@@ -138,6 +148,8 @@
                                                      (lambda (acc p)
                                                        (.assign Object acc p))
                                                      (hash))))
+
+
 
 ;;; ====== CLASSES ======
 (delete-macro instance-of?)
@@ -324,6 +336,16 @@
                   (do (assign in-else true)
                       (list))
                   (transpile a))))))
+
+(macro typecase (x ...branches)
+  (var b (.map branches 
+               (#(br)
+                 (var t (first br.contents))
+                 (if (= (getf t 'token) 'else)
+                     `(:default (scoped ...@(rest br.contents)))
+                     `(@t (scoped ...@(rest br.contents)))))))
+  `(switch (get @x 'constructor)
+     ...@b))
 
 (macro if* (...conditions-and-branches)
        (interleave " else "
