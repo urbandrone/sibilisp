@@ -16,14 +16,14 @@ export const constantly = (function(a) {
 export const listOf__QUERY = (function(x, predicate) {
     return (!(typeof predicate === "function")
     ? (function() {
-    throw (new Error(("" + "(list-of?)" + _eArg2_ + "function, got " + predicate)))
+    throw (new Error(("(list-of?)" + _eArg2_ + "function, got " + predicate)))
   }).call(this)
     : (Array.isArray(x) && x.every(predicate)));
 });
 export const hashOf__QUERY = (function(x, predicate) {
     return (!(typeof predicate === "function")
     ? (function() {
-    throw (new Error(("" + "(hash-of?)" + _eArg2_ + "function, got " + predicate)))
+    throw (new Error(("(hash-of?)" + _eArg2_ + "function, got " + predicate)))
   }).call(this)
     : ((!(null == x) && x.constructor === Object) && Object.entries(x).every((function(v$1) {
       
@@ -36,7 +36,7 @@ export const hashOf__QUERY = (function(x, predicate) {
 export const dictOf__QUERY = (function(x, predicate) {
     return (!(typeof predicate === "function")
     ? (function() {
-    throw (new Error(("" + "(dict-of?)" + _eArg2_ + "function, got " + predicate)))
+    throw (new Error(("(dict-of?)" + _eArg2_ + "function, got " + predicate)))
   }).call(this)
     : ((!(null == x) && x.constructor === Map) && x.entries().every((function(v$2) {
       
@@ -49,7 +49,7 @@ export const dictOf__QUERY = (function(x, predicate) {
 export const msetOf__QUERY = (function(x, predicate) {
     return (!(typeof predicate === "function")
     ? (function() {
-    throw (new Error(("" + "(mset-of?)" + _eArg2_ + "function, got " + predicate)))
+    throw (new Error(("(mset-of?)" + _eArg2_ + "function, got " + predicate)))
   }).call(this)
     : ((!(null == x) && x.constructor === Set) && x.entries().every((function(v$3) {
       
@@ -62,14 +62,14 @@ export const msetOf__QUERY = (function(x, predicate) {
 export const converge = (function(combine, branches) {
     return (!(typeof combine === "function")
     ? (function() {
-    throw (new Error(("" + "(converge)" + _eArg1_ + "function, got " + combine)))
+    throw (new Error(("(converge)" + _eArg1_ + "function, got " + combine)))
   }).call(this)
     : !(listOf__QUERY(branches, (function(v) {
       
     return typeof v === "function";
   })))
     ? (function() {
-    throw (new Error(("" + "(converge)" + _eArg2_ + "list of functions, got " + branches)))
+    throw (new Error(("(converge)" + _eArg2_ + "list of functions, got " + branches)))
   }).call(this)
     : (function(args) {
       
@@ -84,7 +84,7 @@ export const converge = (function(combine, branches) {
 export const memoize = (function(compute) {
     return (!(typeof compute === "function")
     ? (function() {
-    throw (new Error(("" + "(memoize)" + _eArg1_ + "function, got " + compute)))
+    throw (new Error(("(memoize)" + _eArg1_ + "function, got " + compute)))
   }).call(this)
     : (function(cache) {
       
@@ -204,7 +204,7 @@ export const equals = (function(x, y) {
 export const concatenate = (function(x, y) {
     return ((!(!(x == null)) || !(!(y == null)))
     ? (function() {
-    throw (new Error(("" + "(concatenate) cannot concatenate with a (void) or (nil) value")))
+    throw (new Error(("(concatenate) cannot concatenate with a (void) or (nil) value")))
   }).call(this)
     : (typeof x === "string" && typeof y === "string")
     ? (x + y)
@@ -245,17 +245,17 @@ export const concatenate = (function(x, y) {
     : typeof x.concat === "function"
     ? x.concat(y)
     : (function() {
-    throw (new Error(("" + "(concatenate) needs both arguments to be in the same semigroup")))
+    throw (new Error(("(concatenate) needs both arguments to be in the same semigroup")))
   }).call(this));
 });
 export const map = (function(x, mapper) {
     return (!(!(x == null))
     ? (function() {
-    throw (new Error(("" + "(map)" + _eGuard_ + show(x))))
+    throw (new Error(("(map)" + _eGuard_ + show(x))))
   }).call(this)
     : !(typeof mapper === "function")
     ? (function() {
-    throw (new Error(("" + "(map)" + _eArg1_ + "function, got " + show(mapper))))
+    throw (new Error(("(map)" + _eArg1_ + "function, got " + show(mapper))))
   }).call(this)
     : typeof x === "function"
     ? (function(args) {
@@ -298,17 +298,17 @@ export const map = (function(x, mapper) {
     return y;
   })((new Set([])))
     : (function() {
-    throw (new Error(("" + "(map) needs the value to be a Functor")))
+    throw (new Error(("(map) needs the value to be a Functor")))
   }).call(this));
 });
 export const ap = (function(x, applicable) {
     return (!(!(x == null))
     ? (function() {
-    throw (new Error(("" + "(ap)" + _eGuard_ + show(x))))
+    throw (new Error(("(ap)" + _eGuard_ + show(x))))
   }).call(this)
     : !((!(applicable == null) || typeof applicable === "function" || typeof applicable.ap === "function" || Array.isArray(applicable) || (!(null == applicable) && applicable.constructor === Set)))
     ? (function() {
-    throw (new Error(("" + "(ap)" + _eArg2_ + "Apply, got " + show(applicable))))
+    throw (new Error(("(ap)" + _eArg2_ + "Apply, got " + show(applicable))))
   }).call(this)
     : (typeof x === "function" && typeof applicable === "function")
     ? (function(args) {
@@ -393,17 +393,17 @@ export const ap = (function(x, applicable) {
     }), (new Map([])));
   })(Array.from(applicable.entries()))
     : (function() {
-    throw (new Error(("" + "(ap) needs the value to be a Functor")))
+    throw (new Error(("(ap) needs the value to be a Functor")))
   }).call(this));
 });
 export const flatMap = (function(x, chainMapper) {
     return (!(!(x == null))
     ? (function() {
-    throw (new Error(("" + "(flat-map|chain)" + _eGuard_ + show(x))))
+    throw (new Error(("(flat-map|chain)" + _eGuard_ + show(x))))
   }).call(this)
     : !(typeof chainMapper === "function")
     ? (function() {
-    throw (new Error(("" + "(flat-map|chain)" + _eArg2_ + "function, got " + show(chainMapper))))
+    throw (new Error(("(flat-map|chain)" + _eArg2_ + "function, got " + show(chainMapper))))
   }).call(this)
     : typeof x === "function"
     ? (function(args) {
@@ -443,22 +443,22 @@ export const flatMap = (function(x, chainMapper) {
     return y;
   })((new Set([])))
     : (function() {
-    throw (new Error(("" + "(flat-map|chain) needs the value to be a Chain")))
+    throw (new Error(("(flat-map|chain) needs the value to be a Chain")))
   }).call(this));
 });
 export const chain = flatMap;
 export const bimap = (function(x, lhsMapper, rhsMapper) {
     return (!(!(x == null))
     ? (function() {
-    throw (new Error(("" + "(bimap)" + _eGuard_ + show(x))))
+    throw (new Error(("(bimap)" + _eGuard_ + show(x))))
   }).call(this)
     : !(typeof lhsMapper === "function")
     ? (function() {
-    throw (new Error(("" + "(bimap)" + _eArg2_ + "function, got " + show(lhsMapper))))
+    throw (new Error(("(bimap)" + _eArg2_ + "function, got " + show(lhsMapper))))
   }).call(this)
     : !(typeof rhsMapper === "function")
     ? (function() {
-    throw (new Error(("" + "(bimap)" + _eArg3_ + "function, got " + show(rhsMapper))))
+    throw (new Error(("(bimap)" + _eArg3_ + "function, got " + show(rhsMapper))))
   }).call(this)
     : (!(null == x) && x.constructor === Promise)
     ? x.then(rhsMapper, (function() {
@@ -472,7 +472,7 @@ export const bimap = (function(x, lhsMapper, rhsMapper) {
     : typeof x.bimap === "function"
     ? x.bimap(lhsMapper, rhsMapper)
     : (function() {
-    throw (new Error(("" + "(bimap) needs the first argument to be a BiFunctor")))
+    throw (new Error(("(bimap) needs the first argument to be a BiFunctor")))
   }).call(this));
 });
 export const contramap = (function(x, lhsMapper) {
@@ -481,15 +481,15 @@ export const contramap = (function(x, lhsMapper) {
 export const promap = (function(x, preMapper, postMapper) {
     return (!(!(x == null))
     ? (function() {
-    throw (new Error(("" + "(promap)" + _eGuard_ + show(x))))
+    throw (new Error(("(promap)" + _eGuard_ + show(x))))
   }).call(this)
     : !(typeof preMapper === "function")
     ? (function() {
-    throw (new Error(("" + "(promap)" + _eArg2_ + "function, got " + show(preMapper))))
+    throw (new Error(("(promap)" + _eArg2_ + "function, got " + show(preMapper))))
   }).call(this)
     : !(typeof postMapper === "function")
     ? (function() {
-    throw (new Error(("" + "(promap)" + _eArg3_ + "function, got " + show(postMapper))))
+    throw (new Error(("(promap)" + _eArg3_ + "function, got " + show(postMapper))))
   }).call(this)
     : typeof x === "function"
     ? (function(args) {
@@ -501,17 +501,17 @@ export const promap = (function(x, preMapper, postMapper) {
     : typeof x.promap === "function"
     ? x.promap(preMapper, postMapper)
     : (function() {
-    throw (new Error(("" + "(promap) needs the first argument to be a ProFunctor")))
+    throw (new Error(("(promap) needs the first argument to be a ProFunctor")))
   }).call(this));
 });
 export const reduce = (function(x, reducer, seed) {
     return (!(!(x == null))
     ? (function() {
-    throw (new Error(("" + "(reduce)" + _eGuard_ + show(x))))
+    throw (new Error(("(reduce)" + _eGuard_ + show(x))))
   }).call(this)
     : !(typeof reducer === "function")
     ? (function() {
-    throw (new Error(("" + "(reduce)" + _eArg2_ + "function, got " + show(reducer))))
+    throw (new Error(("(reduce)" + _eArg2_ + "function, got " + show(reducer))))
   }).call(this)
     : (!(null == x) && x.constructor === Set)
     ? (function(y) {
@@ -521,17 +521,17 @@ export const reduce = (function(x, reducer, seed) {
     : typeof x.reduce === "function"
     ? x.reduce(reducer, seed)
     : (function() {
-    throw (new Error(("" + "(reduce) needs the first argument to be a Foldable")))
+    throw (new Error(("(reduce) needs the first argument to be a Foldable")))
   }).call(this));
 });
 export const foldMap = (function(x, liftMap) {
     return (!(!(x == null))
     ? (function() {
-    throw (new Error(("" + "(reduce)" + _eGuard_ + show(x))))
+    throw (new Error(("(reduce)" + _eGuard_ + show(x))))
   }).call(this)
     : !(typeof liftMap === "function")
     ? (function() {
-    throw (new Error(("" + "(fold-map)" + _eArg2_ + "function, got " + show(liftMap))))
+    throw (new Error(("(fold-map)" + _eArg2_ + "function, got " + show(liftMap))))
   }).call(this)
     : (!(null == x) && x.constructor === Set)
     ? (function(y) {
@@ -549,13 +549,13 @@ export const foldMap = (function(x, liftMap) {
     return (a === null) ? liftMap(value) : a.concat(liftMap(value));
   }), null)
     : (function() {
-    throw (new Error(("" + "(fold-map) needs the first argument to be a Foldable")))
+    throw (new Error(("(fold-map) needs the first argument to be a Foldable")))
   }).call(this));
 });
 export const fold = (function(x, lift) {
     return (!(typeof lift === "function")
     ? (function() {
-    throw (new Error(("" + "(fold)" + _eArg2_ + "function, got " + show(lift))))
+    throw (new Error(("(fold)" + _eArg2_ + "function, got " + show(lift))))
   }).call(this)
     : (!(null == x) && x.constructor === Set)
     ? (function(y) {
@@ -573,21 +573,21 @@ export const fold = (function(x, lift) {
     return (a === null) ? lift(value) : a.concat(lift(value));
   }), null)
     : (function() {
-    throw (new Error(("" + "(fold) needs the first argument to be a Foldable")))
+    throw (new Error(("(fold) needs the first argument to be a Foldable")))
   }).call(this));
 });
 export const traverse = (function(x, lift, transformer) {
     return (!(!(x == null))
     ? (function() {
-    throw (new Error(("" + "(traverse)" + _eArg1_ + "Traversable, got " + show(x))))
+    throw (new Error(("(traverse)" + _eArg1_ + "Traversable, got " + show(x))))
   }).call(this)
     : !(typeof lift === "function")
     ? (function() {
-    throw (new Error(("" + "(traverse)" + _eArg2_ + "function, got " + show(lift))))
+    throw (new Error(("(traverse)" + _eArg2_ + "function, got " + show(lift))))
   }).call(this)
     : !(typeof transformer === "function")
     ? (function() {
-    throw (new Error(("" + "(traverse)" + _eArg3_ + "function, got " + show(transformer))))
+    throw (new Error(("(traverse)" + _eArg3_ + "function, got " + show(transformer))))
   }).call(this)
     : (!(null == x) && x.constructor === Set)
     ? (function(y) {
@@ -627,17 +627,17 @@ export const traverse = (function(x, lift, transformer) {
     : typeof x.traverse === "function"
     ? x.traverse(lift, transformer)
     : (function() {
-    throw (new Error(("" + "(traverse) needs the first argument to be a Traversable")))
+    throw (new Error(("(traverse) needs the first argument to be a Traversable")))
   }).call(this));
 });
 export const sequence = (function(x, lift) {
     return (!(!(x == null))
     ? (function() {
-    throw (new Error(("" + "(sequence)" + _eArg1_ + "Traversable, got " + show(x))))
+    throw (new Error(("(sequence)" + _eArg1_ + "Traversable, got " + show(x))))
   }).call(this)
     : !(typeof lift === "function")
     ? (function() {
-    throw (new Error(("" + "(sequence)" + _eArg2_ + "function, got " + show(lift))))
+    throw (new Error(("(sequence)" + _eArg2_ + "function, got " + show(lift))))
   }).call(this)
     : (!(null == x) && x.constructor === Set)
     ? (function(y) {
@@ -677,17 +677,17 @@ export const sequence = (function(x, lift) {
     : typeof x.sequence === "function"
     ? x.sequence(lift, transformer)
     : (function() {
-    throw (new Error(("" + "(sequence) needs the first argument to be a Traversable")))
+    throw (new Error(("(sequence) needs the first argument to be a Traversable")))
   }).call(this));
 });
 export const alt = (function(x, altern) {
     return (!(!(x == null))
     ? (function() {
-    throw (new Error(("" + "(alt)" + _eArg1_ + "Alternative, got " + show(x))))
+    throw (new Error(("(alt)" + _eArg1_ + "Alternative, got " + show(x))))
   }).call(this)
     : !(!(altern == null))
     ? (function() {
-    throw (new Error(("" + "(alt)" + _eArg2_ + "Alternative, got " + show(altern))))
+    throw (new Error(("(alt)" + _eArg2_ + "Alternative, got " + show(altern))))
   }).call(this)
     : ((!(null == x) && x.constructor === Set) && (!(null == altern) && altern.constructor === Set))
     ? (function(l) {
@@ -702,11 +702,11 @@ export const alt = (function(x, altern) {
     : typeof x.alt === "function"
     ? x.alt(altern)
     : (function() {
-    throw (new Error(("" + "(alt) expects both arguments to be Alternatives")))
+    throw (new Error(("(alt) expects both arguments to be Alternatives")))
   }).call(this));
 });
 export const clone = (function(x) {
-    return ((typeof x === "string" || (typeof x === "number" && !(Number.isNaN(x))) || typeof x === "function" || boolean__QUERY(x) || (null == x || Number.isNaN(x)))
+    return ((typeof x === "string" || (typeof x === "number" && !(Number.isNaN(x))) || typeof x === "function" || (typeof x === "boolean") || (null == x || Number.isNaN(x)))
     ? x
     : Array.isArray(x)
     ? x.map((function(y) {
@@ -742,7 +742,7 @@ export const clone = (function(x) {
     : typeof x.clone === "function"
     ? x.clone()
     : (function() {
-    throw (new Error(("" + "(clone) doesn't know how to clone " + show(x))))
+    throw (new Error(("(clone) doesn't know how to clone " + show(x))))
   }).call(this));
 });
 export const zip = (function(lsA, lsB) {
@@ -785,7 +785,7 @@ export const zip = (function(lsA, lsB) {
     })();
   }).call(this)
     : (function() {
-    throw (new Error(("" + "(zip) expects both arguments to be a list or mset")))
+    throw (new Error(("(zip) expects both arguments to be a list or mset")))
   }).call(this));
 });
 export const unzip = (function(ls) {
@@ -803,13 +803,13 @@ export const unzip = (function(ls) {
     return [ ks, vs ];
   })([], [])
     : (function() {
-    throw (new Error(("" + "(unzip) expects the argument to be a list or mset")))
+    throw (new Error(("(unzip) expects the argument to be a list or mset")))
   }).call(this));
 });
 export const find = (function(ls, predicate) {
     return (!(typeof predicate === "function")
     ? (function() {
-    throw (new Error(("" + "(find)" + _eArg2_ + "function, got " + show(predicate))))
+    throw (new Error(("(find)" + _eArg2_ + "function, got " + show(predicate))))
   }).call(this)
     : (Array.isArray(ls) && typeof ls.find === "function")
     ? maybe.lift(ls.find(predicate))
@@ -852,13 +852,13 @@ export const find = (function(ls, predicate) {
     return maybe.lift(m);
   })(Array.from(ls), x.length, 0, null)
     : (function() {
-    throw (new Error(("" + "(find) expects the first argument to be a list or mset")))
+    throw (new Error(("(find) expects the first argument to be a list or mset")))
   }).call(this));
 });
 export const filter = (function(ls, predicate) {
     return (!(typeof predicate === "function")
     ? (function() {
-    throw (new Error(("" + "(filter)" + _eArg2_ + "function, got " + show(predicate))))
+    throw (new Error(("(filter)" + _eArg2_ + "function, got " + show(predicate))))
   }).call(this)
     : Array.isArray(ls)
     ? ls.filter(predicate)
@@ -868,18 +868,18 @@ export const filter = (function(ls, predicate) {
     return (new Set([ ls.filter(predicate) ]));
   })(Array.from(ls))
     : (function() {
-    throw (new Error(("" + "(filter) expects the first argument to be a list or mset")))
+    throw (new Error(("(filter) expects the first argument to be a list or mset")))
   }).call(this));
 });
 export const select = filter;
 export const reject = (function(ls, predicate) {
     return (!((Array.isArray(ls) || (!(null == ls) && ls.constructor === Set)))
     ? (function() {
-    throw (new Error(("" + "(reject) expects the first argument to be a list or mset")))
+    throw (new Error(("(reject) expects the first argument to be a list or mset")))
   }).call(this)
     : !(typeof predicate === "function")
     ? (function() {
-    throw (new Error(("" + "(reject)" + _eArg2_ + "function, got " + show(predicate))))
+    throw (new Error(("(reject)" + _eArg2_ + "function, got " + show(predicate))))
   }).call(this)
     : filter(ls, (function(x) {
       
@@ -889,7 +889,7 @@ export const reject = (function(ls, predicate) {
 export const unique = (function(ls) {
     return (!((Array.isArray(ls) || (!(null == ls) && ls.constructor === Set)))
     ? (function() {
-    throw (new Error(("" + "(unique)" + _eArg1_ + "list or mset, got " + show(ls))))
+    throw (new Error(("(unique)" + _eArg1_ + "list or mset, got " + show(ls))))
   }).call(this)
     : Array.isArray(ls)
     ? Array.from((new Set(ls)))
@@ -898,7 +898,7 @@ export const unique = (function(ls) {
 export const union = (function(lsA, lsB) {
     return (!(((Array.isArray(lsA) && Array.isArray(lsB)) || ((!(null == lsA) && lsA.constructor === Set) && (!(null == lsB) && lsB.constructor === Set))))
     ? (function() {
-    throw (new Error(("" + "(union) expects the arguments to both be lists or msets")))
+    throw (new Error(("(union) expects the arguments to both be lists or msets")))
   }).call(this)
     : (Array.isArray(lsA) && Array.isArray(lsB))
     ? (function(ab) {
@@ -910,7 +910,7 @@ export const union = (function(lsA, lsB) {
 export const intersection = (function(lsA, lsB) {
     return (!(((Array.isArray(lsA) && Array.isArray(lsB)) || ((!(null == lsA) && lsA.constructor === Set) && (!(null == lsB) && lsB.constructor === Set))))
     ? (function() {
-    throw (new Error(("" + "(intersection) expects the arguments to both be lists or msets")))
+    throw (new Error(("(intersection) expects the arguments to both be lists or msets")))
   }).call(this)
     : (Array.isArray(lsA) && Array.isArray(lsB))
     ? (function(a, b, ab) {
@@ -957,7 +957,7 @@ export const intersection = (function(lsA, lsB) {
 export const difference = (function(lsA, lsB) {
     return (!(((Array.isArray(lsA) && Array.isArray(lsB)) || ((!(null == lsA) && lsA.constructor === Set) && (!(null == lsB) && lsB.constructor === Set))))
     ? (function() {
-    throw (new Error(("" + "(difference) expects the arguments to both be lists or msets")))
+    throw (new Error(("(difference) expects the arguments to both be lists or msets")))
   }).call(this)
     : (Array.isArray(lsA) && Array.isArray(lsB))
     ? (function(a, b, ab) {
@@ -1004,11 +1004,11 @@ export const difference = (function(lsA, lsB) {
 export const take = (function(ls, count) {
     return (!((Array.isArray(ls) || (!(null == ls) && ls.constructor === Set)))
     ? (function() {
-    throw (new Error(("" + "(take)" + _eArg1_ + "list or mset, got " + show(ls))))
+    throw (new Error(("(take)" + _eArg1_ + "list or mset, got " + show(ls))))
   }).call(this)
     : !((typeof count === "number" && !(Number.isNaN(count))))
     ? (function() {
-    throw (new Error(("" + "(take)" + _eArg2_ + "number, got " + show(count))))
+    throw (new Error(("(take)" + _eArg2_ + "number, got " + show(count))))
   }).call(this)
     : Array.isArray(ls)
     ? (count <= ls.length) ? ls.slice(0, count) : ls
@@ -1025,11 +1025,11 @@ export const take = (function(ls, count) {
 export const drop = (function(ls, count) {
     return (!((Array.isArray(ls) || (!(null == ls) && ls.constructor === Set)))
     ? (function() {
-    throw (new Error(("" + "(drop)" + _eArg1_ + "list or mset, got " + show(ls))))
+    throw (new Error(("(drop)" + _eArg1_ + "list or mset, got " + show(ls))))
   }).call(this)
     : !((typeof count === "number" && !(Number.isNaN(count))))
     ? (function() {
-    throw (new Error(("" + "(drop)" + _eArg2_ + "number, got " + show(count))))
+    throw (new Error(("(drop)" + _eArg2_ + "number, got " + show(count))))
   }).call(this)
     : Array.isArray(ls)
     ? (count <= ls.length) ? ls.slice(count) : []
@@ -1046,11 +1046,11 @@ export const drop = (function(ls, count) {
 export const partition = (function(ls, count) {
     return (!((Array.isArray(ls) || (!(null == ls) && ls.constructor === Set)))
     ? (function() {
-    throw (new Error(("" + "(partition)" + _eArg1_ + "list or mset, got " + show(ls))))
+    throw (new Error(("(partition)" + _eArg1_ + "list or mset, got " + show(ls))))
   }).call(this)
     : !((typeof count === "number" && !(Number.isNaN(count))))
     ? (function() {
-    throw (new Error(("" + "(partition)" + _eArg2_ + "number, got " + show(count))))
+    throw (new Error(("(partition)" + _eArg2_ + "number, got " + show(count))))
   }).call(this)
     : Array.isArray(ls)
     ? (function(xs) {
@@ -1091,11 +1091,11 @@ export const partition = (function(ls, count) {
 export const partitionWith = (function(ls, partitioner) {
     return (!((Array.isArray(ls) || (!(null == ls) && ls.constructor === Set)))
     ? (function() {
-    throw (new Error(("" + "(partition-with)" + _eArg1_ + "list or mset, got " + show(ls))))
+    throw (new Error(("(partition-with)" + _eArg1_ + "list or mset, got " + show(ls))))
   }).call(this)
     : !(typeof partitioner === "function")
     ? (function() {
-    throw (new Error(("" + "(partition-with)" + _eArg2_ + "list or mset, got " + show(ls))))
+    throw (new Error(("(partition-with)" + _eArg2_ + "list or mset, got " + show(ls))))
   }).call(this)
     : Array.isArray(ls)
     ? ls.reduce((function(acc, a) {
@@ -1129,11 +1129,11 @@ export const partitionWith = (function(ls, partitioner) {
 export const groupBy = (function(ls, grouper) {
     return (!((Array.isArray(ls) || (!(null == ls) && ls.constructor === Set)))
     ? (function() {
-    throw (new Error(("" + "(group-by)" + _eArg1_ + "list or mset, got " + show(ls))))
+    throw (new Error(("(group-by)" + _eArg1_ + "list or mset, got " + show(ls))))
   }).call(this)
     : !(typeof grouper === "function")
     ? (function() {
-    throw (new Error(("" + "(group-by)" + _eArg2_ + "function, got " + show(grouper))))
+    throw (new Error(("(group-by)" + _eArg2_ + "function, got " + show(grouper))))
   }).call(this)
     : Array.isArray(ls)
     ? xs.reduce((function(acc, x) {
@@ -1169,7 +1169,7 @@ export const groupBy = (function(ls, grouper) {
 export const keep = (function(ls) {
     return (!((Array.isArray(ls) || (!(null == ls) && ls.constructor === Set)))
     ? (function() {
-    throw (new Error(("" + "(keep)" + _eArg1_ + "list or mset, got " + show(ls))))
+    throw (new Error(("(keep)" + _eArg1_ + "list or mset, got " + show(ls))))
   }).call(this)
     : Array.isArray(ls)
     ? ls.reduce((function(acc, a) {
@@ -1187,11 +1187,11 @@ export const keep = (function(ls) {
 export const intersperse = (function(ls, separator) {
     return (!((Array.isArray(ls) || (!(null == ls) && ls.constructor === Set)))
     ? (function() {
-    throw (new Error(("" + "(intersperse)" + _eArg1_ + "list or mset, got " + show(ls))))
+    throw (new Error(("(intersperse)" + _eArg1_ + "list or mset, got " + show(ls))))
   }).call(this)
     : (null == separator || Number.isNaN(separator))
     ? (function() {
-    throw (new Error(("" + "(intersperse)" + _eArg2_ + "to exist, got " + show(separator))))
+    throw (new Error(("(intersperse)" + _eArg2_ + "to exist, got " + show(separator))))
   }).call(this)
     : Array.isArray(ls)
     ? ls.reduce((function(acc, x) {
@@ -1215,7 +1215,7 @@ const lens_ = (function() {
     (function() {
       if (!(argCount$1 === 1)) {
         return (function() {
-          throw (new Error(("" + "Tagged constructor " + lens_ + "." + lval + "expects " + 1 + " arguments but got " + argCount$1)))
+          throw (new Error(("Tagged constructor " + lens_ + "." + lval + "expects " + 1 + " arguments but got " + argCount$1)))
         }).call(this);
       }
     }).call(this);
@@ -1230,7 +1230,7 @@ const lens_ = (function() {
     (function() {
       if (!(argCount$2 === 1)) {
         return (function() {
-          throw (new Error(("" + "Tagged constructor " + lens_ + "." + lconst + "expects " + 1 + " arguments but got " + argCount$2)))
+          throw (new Error(("Tagged constructor " + lens_ + "." + lconst + "expects " + 1 + " arguments but got " + argCount$2)))
         }).call(this);
       }
     }).call(this);
@@ -1253,7 +1253,7 @@ const lens_ = (function() {
         })));
       } else {
         return (function() {
-          throw (new Error(("" + ".match :: Cannot find " + name + " in patterns " + ctors)))
+          throw (new Error((".match :: Cannot find " + name + " in patterns " + ctors)))
         }).call(this);
       }
     }).call(this);
@@ -1361,7 +1361,7 @@ export const coyo = (function() {
     (function() {
       if (!(argCount$3 === 2)) {
         return (function() {
-          throw (new Error(("" + "coyo" + " received invalid number of arguments.")))
+          throw (new Error(("coyo" + " received invalid number of arguments.")))
         }).call(this);
       }
     }).call(this);
@@ -1381,7 +1381,7 @@ coyo.of = (function(value) {
 coyo.lift = (function(value) {
     return (!(!(value == null))
     ? (function() {
-    throw (new Error(("" + "(coyo.lift)" + _eGuard_ + value)))
+    throw (new Error(("(coyo.lift)" + _eGuard_ + value)))
   }).call(this)
     : coyo.of(value));
 });
@@ -1394,7 +1394,7 @@ coyo.prototype.toString = (function() {
 coyo.prototype.map = (function(mapper) {
     return (!(typeof mapper === "function")
     ? (function() {
-    throw (new Error(("" + "(coyo.map)" + _eArg1_ + "function, got " + show(mapper))))
+    throw (new Error(("(coyo.map)" + _eArg1_ + "function, got " + show(mapper))))
   }).call(this)
     : (function(value, runSelf) {
       
@@ -1409,17 +1409,17 @@ coyo.prototype.lower = (function() {
       
     return (!(typeof mapper === "function")
       ? (function() {
-      throw (new Error(("" + "(coyo.lower) requires the coyo:mapper property\n" +
+      throw (new Error(("(coyo.lower) requires the coyo:mapper property\n" +
       "                   to hold a function, but it holds " + show(mapper))))
     }).call(this)
       : !(!(value == null))
       ? (function() {
-      throw (new Error(("" + "(coyo.lower) requires the coyo:value property\n" +
+      throw (new Error(("(coyo.lower) requires the coyo:value property\n" +
       "                   to hold a non (void) or (nil) value, but it holds " + show(value))))
     }).call(this)
       : !(typeof value.map === "function")
       ? (function() {
-      throw (new Error(("" + "(coyo.lower) requires the coyo:value property\n" +
+      throw (new Error(("(coyo.lower) requires the coyo:value property\n" +
       "                   to implement the functor typeclass but it doesn't")))
     }).call(this)
       : coyo(value.map(mapper), identity));
@@ -1430,11 +1430,11 @@ coyo.prototype.reduce = (function(reducer, seed) {
       
     return (!(typeof reducer === "function")
       ? (function() {
-      throw (new Error(("" + "(coyo.reduce)" + _eArg1_ + "function, got " + show(reducer))))
+      throw (new Error(("(coyo.reduce)" + _eArg1_ + "function, got " + show(reducer))))
     }).call(this)
       : !(typeof seed !== "undefined")
       ? (function() {
-      throw (new Error(("" + "(coyo.reduce)" + _eArg2_ + "non (void) value, got " + show(seed))))
+      throw (new Error(("(coyo.reduce)" + _eArg2_ + "non (void) value, got " + show(seed))))
     }).call(this)
       : typeof value.reduce === "function"
       ? value.reduce((function(acc, val) {
@@ -1451,7 +1451,7 @@ export const io = (function() {
     (function() {
       if (!(argCount$4 === 1)) {
         return (function() {
-          throw (new Error(("" + "io" + " received invalid number of arguments.")))
+          throw (new Error(("io" + " received invalid number of arguments.")))
         }).call(this);
       }
     }).call(this);
@@ -1473,7 +1473,7 @@ io.of = (function(value) {
 io.lift = (function(value) {
     return (!(!(value == null))
     ? (function() {
-    throw (new Error(("" + "(io.lift)" + _eGuard_ + value)))
+    throw (new Error(("(io.lift)" + _eGuard_ + value)))
   }).call(this)
     : typeof value === "function"
     ? io(value)
@@ -1496,14 +1496,14 @@ io.prototype.toString = (function() {
 io.prototype.equals = (function(tIo) {
     return (!(io.is(tIo))
     ? (function() {
-    throw (new Error(("" + "(io.equals)" + _eArg1_ + "io, got " + show(tIo))))
+    throw (new Error(("(io.equals)" + _eArg1_ + "io, got " + show(tIo))))
   }).call(this)
     : this.unsafePerform === tIo.unsafePerform);
 });
 io.prototype.concat = (function(tIo) {
     return (!(io.is(tIo))
     ? (function() {
-    throw (new Error(("" + "(io.concat)" + _eArg1_ + "io, got " + show(tIo))))
+    throw (new Error(("(io.concat)" + _eArg1_ + "io, got " + show(tIo))))
   }).call(this)
     : (function(runSelf, runThat) {
       
@@ -1516,7 +1516,7 @@ io.prototype.concat = (function(tIo) {
 io.prototype.map = (function(mapper) {
     return (!(typeof mapper === "function")
     ? (function() {
-    throw (new Error(("" + "(io.map)" + _eArg1_ + "function, got " + show(mapper))))
+    throw (new Error(("(io.map)" + _eArg1_ + "function, got " + show(mapper))))
   }).call(this)
     : (function(runSelf) {
       
@@ -1529,7 +1529,7 @@ io.prototype.map = (function(mapper) {
 io.prototype.contramap = (function(preMapper) {
     return (!(typeof preMapper === "function")
     ? (function() {
-    throw (new Error(("" + "(io.contramp)" + _eArg1_ + "function, got " + show(preMapper))))
+    throw (new Error(("(io.contramp)" + _eArg1_ + "function, got " + show(preMapper))))
   }).call(this)
     : (function(runSelf) {
       
@@ -1542,11 +1542,11 @@ io.prototype.contramap = (function(preMapper) {
 io.prototype.promap = (function(preMapper, postMapper) {
     return (!(typeof preMapper === "function")
     ? (function() {
-    throw (new Error(("" + "(io.promap)" + _eArg1_ + "function, got " + show(preMapper))))
+    throw (new Error(("(io.promap)" + _eArg1_ + "function, got " + show(preMapper))))
   }).call(this)
     : !(typeof postMapper === "function")
     ? (function() {
-    throw (new Error(("" + "(io.promap)" + _eArg2_ + "function, got " + show(postMapper))))
+    throw (new Error(("(io.promap)" + _eArg2_ + "function, got " + show(postMapper))))
   }).call(this)
     : (function(runSelf) {
       
@@ -1559,7 +1559,7 @@ io.prototype.promap = (function(preMapper, postMapper) {
 io.prototype.ap = (function(tIo) {
     return (!(io.is(tIo))
     ? (function() {
-    throw (new Error(("" + "(io.ap)" + _eArg1_ + "io, got " + show(tIo))))
+    throw (new Error(("(io.ap)" + _eArg1_ + "io, got " + show(tIo))))
   }).call(this)
     : (function(runSelf) {
       
@@ -1569,7 +1569,7 @@ io.prototype.ap = (function(tIo) {
 io.prototype.flatMap = (function(toIoMapper) {
     return (!(typeof toIoMapper === "function")
     ? (function() {
-    throw (new Error(("" + "(io.flat-map | io.chain)" + _eArg1_ + "io returning function, got " + show(toIoMapper))))
+    throw (new Error(("(io.flat-map | io.chain)" + _eArg1_ + "io returning function, got " + show(toIoMapper))))
   }).call(this)
     : (function(runSelf) {
       
@@ -1583,7 +1583,7 @@ io.prototype.chain = io.prototype.flatMap;
 io.prototype.compose = (function(tIo) {
     return (!(io.is(tIo))
     ? (function() {
-    throw (new Error(("" + "(io.compose)" + _eArg1_ + "io, got " + show(tIo))))
+    throw (new Error(("(io.compose)" + _eArg1_ + "io, got " + show(tIo))))
   }).call(this)
     : (function(runSelf, runThat) {
       
@@ -1605,7 +1605,7 @@ export const maybe = (function() {
     (function() {
       if (!(argCount$5 === 0)) {
         return (function() {
-          throw (new Error(("" + "Tagged constructor " + maybe + "." + nothing + "expects " + 0 + " arguments but got " + argCount$5)))
+          throw (new Error(("Tagged constructor " + maybe + "." + nothing + "expects " + 0 + " arguments but got " + argCount$5)))
         }).call(this);
       }
     }).call(this);
@@ -1619,7 +1619,7 @@ export const maybe = (function() {
     (function() {
       if (!(argCount$6 === 1)) {
         return (function() {
-          throw (new Error(("" + "Tagged constructor " + maybe + "." + just + "expects " + 1 + " arguments but got " + argCount$6)))
+          throw (new Error(("Tagged constructor " + maybe + "." + just + "expects " + 1 + " arguments but got " + argCount$6)))
         }).call(this);
       }
     }).call(this);
@@ -1642,7 +1642,7 @@ export const maybe = (function() {
         })));
       } else {
         return (function() {
-          throw (new Error(("" + ".match :: Cannot find " + name + " in patterns " + ctors)))
+          throw (new Error((".match :: Cannot find " + name + " in patterns " + ctors)))
         }).call(this);
       }
     }).call(this);
@@ -1683,7 +1683,7 @@ maybe.prototype.equals = (function(tMaybe) {
     (function() {
     if (!(maybe.is(tMaybe))) {
       return (function() {
-        throw (new Error(("" + "(maybe.equals)" + _eArg1_ + "instance of maybe, got " + show(tMaybe))))
+        throw (new Error(("(maybe.equals)" + _eArg1_ + "instance of maybe, got " + show(tMaybe))))
       }).call(this);
     }
   }).call(this);
@@ -1726,7 +1726,7 @@ maybe.prototype.concat = (function(tMaybe) {
     (function() {
     if (!(maybe.is(tMaybe))) {
       return (function() {
-        throw (new Error(("" + "(maybe.concat)" + _eArg1_ + "instance of maybe, got " + show(tMaybe))))
+        throw (new Error(("(maybe.concat)" + _eArg1_ + "instance of maybe, got " + show(tMaybe))))
       }).call(this);
     }
   }).call(this);
@@ -1749,7 +1749,7 @@ maybe.prototype.concat = (function(tMaybe) {
             (function() {
               if (!(typeof cnt === "function")) {
                 return (function() {
-                  throw (new Error(("" + "(maybe.concat) can only concat when both of the carried values implement the semigroup typeclass")))
+                  throw (new Error(("(maybe.concat) can only concat when both of the carried values implement the semigroup typeclass")))
                 }).call(this);
               }
             }).call(this);
@@ -1763,7 +1763,7 @@ maybe.prototype.concat = (function(tMaybe) {
 maybe.prototype.map = (function(mapper) {
     return (!(typeof mapper === "function")
     ? (function() {
-    throw (new Error(("" + "(maybe.map)" + _eArg1_ + "function, got " + show(mapper))))
+    throw (new Error(("(maybe.map)" + _eArg1_ + "function, got " + show(mapper))))
   }).call(this)
     : this.match({
     nothing: (function() {
@@ -1780,7 +1780,7 @@ maybe.prototype.ap = (function(tMaybe) {
     (function() {
     if (!(maybe.is(tMaybe))) {
       return (function() {
-        throw (new Error(("" + "(maybe.ap)" + _eArg1_ + "instance of maybe, got " + show(tMaybe))))
+        throw (new Error(("(maybe.ap)" + _eArg1_ + "instance of maybe, got " + show(tMaybe))))
       }).call(this);
     }
   }).call(this);
@@ -1798,7 +1798,7 @@ maybe.prototype.ap = (function(tMaybe) {
 maybe.prototype.flatMap = (function(toMaybeMapper) {
     return (!(typeof toMaybeMapper === "function")
     ? (function() {
-    throw (new Error(("" + "(maybe.flat-map|maybe.chain)" + _eArg1_ + "function, got " + show(toMaybeMapper))))
+    throw (new Error(("(maybe.flat-map|maybe.chain)" + _eArg1_ + "function, got " + show(toMaybeMapper))))
   }).call(this)
     : this.match({
     nothing: (function() {
@@ -1815,11 +1815,11 @@ maybe.prototype.chain = maybe.prototype.flatMap;
 maybe.prototype.bimap = (function(transformNothing, transformJust) {
     return (!(typeof transformNothing === "function")
     ? (function() {
-    throw (new Error(("" + "(maybe.bimap)" + _eArg1_ + "function, got " + show(transformNothing))))
+    throw (new Error(("(maybe.bimap)" + _eArg1_ + "function, got " + show(transformNothing))))
   }).call(this)
     : !(typeof transformJust === "function")
     ? (function() {
-    throw (new Error(("" + "(maybe.bimap)" + _eArg2_ + "function, got " + show(transformJust))))
+    throw (new Error(("(maybe.bimap)" + _eArg2_ + "function, got " + show(transformJust))))
   }).call(this)
     : this.match({
     nothing: (function() {
@@ -1835,7 +1835,7 @@ maybe.prototype.bimap = (function(transformNothing, transformJust) {
 maybe.prototype.alt = (function(tMaybe) {
     return (!(maybe.is(tMaybe))
     ? (function() {
-    throw (new Error(("" + "(maybe.alt)" + _eArg1_ + "instance of maybe, got " + show(tMaybe))))
+    throw (new Error(("(maybe.alt)" + _eArg1_ + "instance of maybe, got " + show(tMaybe))))
   }).call(this)
     : this.match({
     nothing: (function() {
@@ -1851,11 +1851,11 @@ maybe.prototype.alt = (function(tMaybe) {
 maybe.prototype.reduce = (function(reducer, seed) {
     return (!(typeof reducer === "function")
     ? (function() {
-    throw (new Error(("" + "(maybe.reduce)" + _eArg1_ + "function, got " + show(reducer))))
+    throw (new Error(("(maybe.reduce)" + _eArg1_ + "function, got " + show(reducer))))
   }).call(this)
     : !(typeof seed !== "undefined")
     ? (function() {
-    throw (new Error(("" + "(maybe.reduce)" + _eArg2_ + "non (void) value, got " + show(seed))))
+    throw (new Error(("(maybe.reduce)" + _eArg2_ + "non (void) value, got " + show(seed))))
   }).call(this)
     : this.match({
     nothing: (function() {
@@ -1871,7 +1871,7 @@ maybe.prototype.reduce = (function(reducer, seed) {
 maybe.prototype.traverse = (function(lift, transformer) {
     return (!(typeof lift === "function")
     ? (function() {
-    throw (new Error(("" + "(maybe.traverse)" + _eArg1_ + "function, got " + show(lift))))
+    throw (new Error(("(maybe.traverse)" + _eArg1_ + "function, got " + show(lift))))
   }).call(this)
     : not
     ? typeof transformer === "function"
@@ -1889,7 +1889,7 @@ maybe.prototype.traverse = (function(lift, transformer) {
 maybe.prototype.sequence = (function(lift) {
     return (!(typeof lift === "function")
     ? (function() {
-    throw (new Error(("" + "(maybe.sequence)" + _eArg1_ + "function, got " + show(lift))))
+    throw (new Error(("(maybe.sequence)" + _eArg1_ + "function, got " + show(lift))))
   }).call(this)
     : this.traverse(lift, identity));
 });
@@ -1902,7 +1902,7 @@ export const maybeTransformer = (function(t) {
       (function() {
         if (!(argCount$7 === 1)) {
           return (function() {
-            throw (new Error(("" + "maybeT" + " received invalid number of arguments.")))
+            throw (new Error(("maybeT" + " received invalid number of arguments.")))
           }).call(this);
         }
       }).call(this);
@@ -1918,7 +1918,7 @@ export const maybeTransformer = (function(t) {
   (function() {
     if (!(typeof t === "function")) {
       return (function() {
-        throw (new Error(("" + "(maybe-transformer)" + _eArg1_ + "function, got " + show(t))))
+        throw (new Error(("(maybe-transformer)" + _eArg1_ + "function, got " + show(t))))
       }).call(this);
     }
   }).call(this);
@@ -1929,14 +1929,14 @@ export const maybeTransformer = (function(t) {
       : funtion__QUERY(t.of)
       ? maybeT(t.of(maybe.lift(v)))
       : (function() {
-      throw (new Error(("" + "(maybe-t.lift) cannot stack with " + t.name)))
+      throw (new Error(("(maybe-t.lift) cannot stack with " + t.name)))
     }).call(this));
   });
   maybeT.prototype.map = (function(mapper) {
       
     return (!(typeof mapper === "function")
       ? (function() {
-      throw (new Error(("" + "(maybe-transformer.map)" + _eArg1_ + "function, got " + show(mapper))))
+      throw (new Error(("(maybe-transformer.map)" + _eArg1_ + "function, got " + show(mapper))))
     }).call(this)
       : maybeT(this.stack.map((function(tt) {
           
@@ -1947,7 +1947,7 @@ export const maybeTransformer = (function(t) {
       
     return (!(typeof toMaybeMapper === "function")
       ? (function() {
-      throw (new Error(("" + "(maybe-transformer.flat-map/chain)" + _eArg1_ + "function, got " + show(toMaybeMapper))))
+      throw (new Error(("(maybe-transformer.flat-map/chain)" + _eArg1_ + "function, got " + show(toMaybeMapper))))
     }).call(this)
       : maybeT(this.stack.flatMap((function(tt) {
           
@@ -1969,7 +1969,7 @@ export const either = (function() {
     (function() {
       if (!(argCount$8 === 1)) {
         return (function() {
-          throw (new Error(("" + "Tagged constructor " + either + "." + left + "expects " + 1 + " arguments but got " + argCount$8)))
+          throw (new Error(("Tagged constructor " + either + "." + left + "expects " + 1 + " arguments but got " + argCount$8)))
         }).call(this);
       }
     }).call(this);
@@ -1984,7 +1984,7 @@ export const either = (function() {
     (function() {
       if (!(argCount$9 === 1)) {
         return (function() {
-          throw (new Error(("" + "Tagged constructor " + either + "." + right + "expects " + 1 + " arguments but got " + argCount$9)))
+          throw (new Error(("Tagged constructor " + either + "." + right + "expects " + 1 + " arguments but got " + argCount$9)))
         }).call(this);
       }
     }).call(this);
@@ -2007,7 +2007,7 @@ export const either = (function() {
         })));
       } else {
         return (function() {
-          throw (new Error(("" + ".match :: Cannot find " + name + " in patterns " + ctors)))
+          throw (new Error((".match :: Cannot find " + name + " in patterns " + ctors)))
         }).call(this);
       }
     }).call(this);
@@ -2023,7 +2023,7 @@ either.of = (function(value) {
 });
 either.lift = (function(value, isLeft__QUERY) {
     return (!(!(value == null))
-    ? either.left((new Error(("" + ""))))
+    ? either.left((new Error((""))))
     : (Error.prototype.isPrototypeOf(value) || isLeft__QUERY)
     ? either.left(value)
     : either.of(value));
@@ -2032,7 +2032,7 @@ either.empty = (function() {
     return either.right([]);
 });
 either.zero = (function() {
-    return either.left((new Error(("" + "either-zero"))));
+    return either.left((new Error(("either-zero"))));
 });
 either.prototype.toString = (function() {
     return this.match({
@@ -2049,7 +2049,7 @@ either.prototype.toString = (function() {
 either.prototype.equals = (function(tEither) {
     return (!(either.is(tEither))
     ? (function() {
-    throw (new Error(("" + "(either.equals)" + _eArg1_ + "instance of either, got " + show(tEither))))
+    throw (new Error(("(either.equals)" + _eArg1_ + "instance of either, got " + show(tEither))))
   }).call(this)
     : this.match({
     left: (function() {
@@ -2083,7 +2083,7 @@ either.prototype.equals = (function(tEither) {
 either.prototype.concat = (function(tEither) {
     return (!(either.is(tEither))
     ? (function() {
-    throw (new Error(("" + "(either.concat)" + _eArg1_ + "either, got " + show(tEither))))
+    throw (new Error(("(either.concat)" + _eArg1_ + "either, got " + show(tEither))))
   }).call(this)
     : this.match({
     left: (function(error) {
@@ -2104,7 +2104,7 @@ either.prototype.concat = (function(tEither) {
             (function() {
               if (!(typeof cnt === "function")) {
                 return (function() {
-                  throw (new Error(("" + "(either.concat) cannot concat when both of the carried values implement the semigroup typeclass")))
+                  throw (new Error(("(either.concat) cannot concat when both of the carried values implement the semigroup typeclass")))
                 }).call(this);
               }
             }).call(this);
@@ -2118,7 +2118,7 @@ either.prototype.concat = (function(tEither) {
 either.prototype.map = (function(mapper) {
     return (!(typeof mapper === "function")
     ? (function() {
-    throw (new Error(("" + "(either.map)" + _eArg1_ + "function, got " + show(mapper))))
+    throw (new Error(("(either.map)" + _eArg1_ + "function, got " + show(mapper))))
   }).call(this)
     : this.match({
     left: (function(error) {
@@ -2135,7 +2135,7 @@ either.prototype.ap = (function(tEither) {
     (function() {
     if (!(either.is(tEither))) {
       return (function() {
-        throw (new Error(("" + "(either.ap)" + _eArg1_ + "instance of either, got " + show(tEither))))
+        throw (new Error(("(either.ap)" + _eArg1_ + "instance of either, got " + show(tEither))))
       }).call(this);
     }
   }).call(this);
@@ -2153,7 +2153,7 @@ either.prototype.ap = (function(tEither) {
 either.prototype.flatMap = (function(toEitherMapper) {
     return (!(typeof toEitherMapper === "function")
     ? (function() {
-    throw (new Error(("" + "(either.flat-map|either.chain)" + _eArg1_ + "function, got " + show(toEitherMapper))))
+    throw (new Error(("(either.flat-map|either.chain)" + _eArg1_ + "function, got " + show(toEitherMapper))))
   }).call(this)
     : this.match({
     left: (function(error) {
@@ -2170,11 +2170,11 @@ either.prototype.chain = either.prototype.flatMap;
 either.prototype.bimap = (function(transformLeft, transformRight) {
     return (!(typeof transformLeft === "function")
     ? (function() {
-    throw (new Error(("" + "(either.bimap)" + _eArg1_ + "function, got " + show(transformLeft))))
+    throw (new Error(("(either.bimap)" + _eArg1_ + "function, got " + show(transformLeft))))
   }).call(this)
     : !(typeof transformRight === "function")
     ? (function() {
-    throw (new Error(("" + "(either.bimap)" + _eArg2_ + "function, got " + show(transformRight))))
+    throw (new Error(("(either.bimap)" + _eArg2_ + "function, got " + show(transformRight))))
   }).call(this)
     : this.match({
     left: (function(error) {
@@ -2190,7 +2190,7 @@ either.prototype.bimap = (function(transformLeft, transformRight) {
 either.prototype.alt = (function(tEither) {
     return (!(either.is(tEither))
     ? (function() {
-    throw (new Error(("" + "(either.alt)" + _eArg1_ + "instance of either, got " + show(tEither))))
+    throw (new Error(("(either.alt)" + _eArg1_ + "instance of either, got " + show(tEither))))
   }).call(this)
     : this.match({
     left: (function() {
@@ -2206,11 +2206,11 @@ either.prototype.alt = (function(tEither) {
 either.prototype.reduce = (function(reducer, seed) {
     return (!(typeof reducer === "function")
     ? (function() {
-    throw (new Error(("" + "(either.reduce)" + _eArg1_ + "function, got " + show(reducer))))
+    throw (new Error(("(either.reduce)" + _eArg1_ + "function, got " + show(reducer))))
   }).call(this)
     : !(typeof seed !== "undefined")
     ? (function() {
-    throw (new Error(("" + "(either.reduce)" + _eArg2_ + "non (void) value, got " + show(seed))))
+    throw (new Error(("(either.reduce)" + _eArg2_ + "non (void) value, got " + show(seed))))
   }).call(this)
     : this.match({
     left: (function() {
@@ -2226,11 +2226,11 @@ either.prototype.reduce = (function(reducer, seed) {
 either.prototype.traverse = (function(lift, transformer) {
     return (!(typeof lift === "function")
     ? (function() {
-    throw (new Error(("" + "(either.traverse)" + _eArg1_ + "function, got " + show(lift))))
+    throw (new Error(("(either.traverse)" + _eArg1_ + "function, got " + show(lift))))
   }).call(this)
     : !(typeof transformer === "function")
     ? (function() {
-    throw (new Error(("" + "(either.traverse)" + _eArg2_ + "function, got " + show(transformer))))
+    throw (new Error(("(either.traverse)" + _eArg2_ + "function, got " + show(transformer))))
   }).call(this)
     : this.match({
     left: (function(error) {
@@ -2246,7 +2246,7 @@ either.prototype.traverse = (function(lift, transformer) {
 either.prototype.sequence = (function(lift) {
     return (!(typeof lift === "function")
     ? (function() {
-    throw (new Error(("" + "(either.sequence)" + _eArg1_ + "function, got " + show(lift))))
+    throw (new Error(("(either.sequence)" + _eArg1_ + "function, got " + show(lift))))
   }).call(this)
     : this.traverse(lift, identity));
 });
@@ -2259,7 +2259,7 @@ export const eitherTransformer = (function(t) {
       (function() {
         if (!(argCount$10 === 1)) {
           return (function() {
-            throw (new Error(("" + "eitherT" + " received invalid number of arguments.")))
+            throw (new Error(("eitherT" + " received invalid number of arguments.")))
           }).call(this);
         }
       }).call(this);
@@ -2275,7 +2275,7 @@ export const eitherTransformer = (function(t) {
   (function() {
     if (!(typeof t === "function")) {
       return (function() {
-        throw (new Error(("" + "(either-transformer)" + _eArg1_ + "function, got " + show(t))))
+        throw (new Error(("(either-transformer)" + _eArg1_ + "function, got " + show(t))))
       }).call(this);
     }
   }).call(this);
@@ -2286,14 +2286,14 @@ export const eitherTransformer = (function(t) {
       : funtion__QUERY(t.of)
       ? eitherT(t.of(either.lift(v)))
       : (function() {
-      throw (new Error(("" + "(either-t.lift) cannot stack with " + t.name)))
+      throw (new Error(("(either-t.lift) cannot stack with " + t.name)))
     }).call(this));
   });
   eitherT.prototype.map = (function(mapper) {
       
     return (!(typeof mapper === "function")
       ? (function() {
-      throw (new Error(("" + "(either-transformer.map)" + _eArg1_ + "function, got " + show(mapper))))
+      throw (new Error(("(either-transformer.map)" + _eArg1_ + "function, got " + show(mapper))))
     }).call(this)
       : eitherT(this.stack.map((function(tt) {
           
@@ -2304,7 +2304,7 @@ export const eitherTransformer = (function(t) {
       
     return (!(typeof toEitherMapper === "function")
       ? (function() {
-      throw (new Error(("" + "(either-transformer.flat-map/chain)" + _eArg1_ + "function, got " + show(toEitherMapper))))
+      throw (new Error(("(either-transformer.flat-map/chain)" + _eArg1_ + "function, got " + show(toEitherMapper))))
     }).call(this)
       : eitherT(this.stack.flatMap((function(tt) {
           
@@ -2326,7 +2326,7 @@ export const proof = (function() {
     (function() {
       if (!(argCount$11 === 1)) {
         return (function() {
-          throw (new Error(("" + "Tagged constructor " + proof + "." + falsy + "expects " + 1 + " arguments but got " + argCount$11)))
+          throw (new Error(("Tagged constructor " + proof + "." + falsy + "expects " + 1 + " arguments but got " + argCount$11)))
         }).call(this);
       }
     }).call(this);
@@ -2341,7 +2341,7 @@ export const proof = (function() {
     (function() {
       if (!(argCount$12 === 1)) {
         return (function() {
-          throw (new Error(("" + "Tagged constructor " + proof + "." + truthy + "expects " + 1 + " arguments but got " + argCount$12)))
+          throw (new Error(("Tagged constructor " + proof + "." + truthy + "expects " + 1 + " arguments but got " + argCount$12)))
         }).call(this);
       }
     }).call(this);
@@ -2364,7 +2364,7 @@ export const proof = (function() {
         })));
       } else {
         return (function() {
-          throw (new Error(("" + ".match :: Cannot find " + name + " in patterns " + ctors)))
+          throw (new Error((".match :: Cannot find " + name + " in patterns " + ctors)))
         }).call(this);
       }
     }).call(this);
@@ -2380,7 +2380,7 @@ proof.of = (function(value) {
 });
 proof.lift = (function(value, isFalsy__QUERY) {
     return ((null == value || Number.isNaN(value))
-    ? proof.falsy([ (new Error(("" + _eNoValue_))) ])
+    ? proof.falsy([ (new Error((_eNoValue_))) ])
     : (Error.prototype.isPrototypeOf(value) || isFalsy__QUERY)
     ? proof.falsy([ value ])
     : proof.truthy(value));
@@ -2389,7 +2389,7 @@ proof.empty = (function() {
     return proof.truthy(true);
 });
 proof.zero = (function() {
-    return proof.falsy([ (new Error(("" + "ProofZero"))) ]);
+    return proof.falsy([ (new Error(("ProofZero"))) ]);
 });
 proof.prototype.toString = (function() {
     return this.match({
@@ -2406,7 +2406,7 @@ proof.prototype.toString = (function() {
 proof.prototype.equals = (function(tProof) {
     return (!(proof.is(tProof))
     ? (function() {
-    throw (new Error(("" + "(proof.equals)" + _eArg1_ + "instance of proof, got " + show(tProof))))
+    throw (new Error(("(proof.equals)" + _eArg1_ + "instance of proof, got " + show(tProof))))
   }).call(this)
     : this.match({
     truthy: (function(value) {
@@ -2443,7 +2443,7 @@ proof.prototype.equals = (function(tProof) {
 proof.prototype.concat = (function(tProof) {
     return (!(proof.is(tProof))
     ? (function() {
-    throw (new Error(("" + "(proof.concat)" + _eArg1_ + "proof, got " + show(tProof))))
+    throw (new Error(("(proof.concat)" + _eArg1_ + "proof, got " + show(tProof))))
   }).call(this)
     : this.match({
     truthy: (function(value) {
@@ -2477,7 +2477,7 @@ proof.prototype.concat = (function(tProof) {
 proof.prototype.map = (function(mapper) {
     return (!(typeof mapper === "function")
     ? (function() {
-    throw (new Error(("" + "(proof.map)" + _eArg1_ + "function, got " + show(mapper))))
+    throw (new Error(("(proof.map)" + _eArg1_ + "function, got " + show(mapper))))
   }).call(this)
     : this.match({
     truthy: (function(value) {
@@ -2493,7 +2493,7 @@ proof.prototype.map = (function(mapper) {
 proof.prototype.flatMap = (function(toProofMapper) {
     return (!(typeof toProofMapper === "function")
     ? (function() {
-    throw (new Error(("" + "(proof.flat-map/chain)")))
+    throw (new Error(("(proof.flat-map/chain)")))
   }).call(this)
     : this.match({
     truthy: (function(value) {
@@ -2510,11 +2510,11 @@ proof.prototype.chain = proof.prototype.flatMap;
 proof.prototype.bimap = (function(lhsMapper, rhsMapper) {
     return (!(typeof lhsMapper === "function")
     ? (function() {
-    throw (new Error(("" + "(proof.bimap)" + _eArg1_ + "function, got " + show(lhsMapper))))
+    throw (new Error(("(proof.bimap)" + _eArg1_ + "function, got " + show(lhsMapper))))
   }).call(this)
     : !(typeof rhsMapper === "function")
     ? (function() {
-    throw (new Error(("" + "(proof.bimap)" + _eArg2_ + "function, got " + show(rhsMapper))))
+    throw (new Error(("(proof.bimap)" + _eArg2_ + "function, got " + show(rhsMapper))))
   }).call(this)
     : this.match({
     truthy: (function(value) {
@@ -2530,7 +2530,7 @@ proof.prototype.bimap = (function(lhsMapper, rhsMapper) {
 proof.prototype.ap = (function(tProof) {
     return (!(proof.is(tProof))
     ? (function() {
-    throw (new Error(("" + "(proof.ap)" + _eArg1_ + "proof, got " + show(tProof))))
+    throw (new Error(("(proof.ap)" + _eArg1_ + "proof, got " + show(tProof))))
   }).call(this)
     : this.match({
     truthy: (function(value) {
@@ -2564,7 +2564,7 @@ proof.prototype.ap = (function(tProof) {
 proof.prototype.alt = (function(tProof) {
     return (!(proof.is(tProof))
     ? (function() {
-    throw (new Error(("" + "(proof.alt)" + _eArg1_ + "proof, got " + show(tProof))))
+    throw (new Error(("(proof.alt)" + _eArg1_ + "proof, got " + show(tProof))))
   }).call(this)
     : this.match({
     truthy: (function(value) {
@@ -2586,7 +2586,7 @@ export const proofTransformer = (function(t) {
       (function() {
         if (!(argCount$13 === 1)) {
           return (function() {
-            throw (new Error(("" + "proofT" + " received invalid number of arguments.")))
+            throw (new Error(("proofT" + " received invalid number of arguments.")))
           }).call(this);
         }
       }).call(this);
@@ -2602,7 +2602,7 @@ export const proofTransformer = (function(t) {
   (function() {
     if (!(typeof t === "function")) {
       return (function() {
-        throw (new Error(("" + "(proof-transformer)" + _eArg1_ + "function, got " + show(t))))
+        throw (new Error(("(proof-transformer)" + _eArg1_ + "function, got " + show(t))))
       }).call(this);
     }
   }).call(this);
@@ -2613,14 +2613,14 @@ export const proofTransformer = (function(t) {
       : funtion__QUERY(t.of)
       ? proofT(t.of(proof.lift(v)))
       : (function() {
-      throw (new Error(("" + "(proof-t.lift) cannot stack with " + t.name)))
+      throw (new Error(("(proof-t.lift) cannot stack with " + t.name)))
     }).call(this));
   });
   proofT.prototype.map = (function(mapper) {
       
     return (!(typeof mapper === "function")
       ? (function() {
-      throw (new Error(("" + "(proof-transformer.map)" + _eArg1_ + "function, got " + show(mapper))))
+      throw (new Error(("(proof-transformer.map)" + _eArg1_ + "function, got " + show(mapper))))
     }).call(this)
       : proofT(this.stack.map((function(tt) {
           
@@ -2631,7 +2631,7 @@ export const proofTransformer = (function(t) {
       
     return (!(typeof toProofMapper === "function")
       ? (function() {
-      throw (new Error(("" + "(proof-transformer.flat-map/chain)" + _eArg1_ + "function, got " + show(toProofMapper))))
+      throw (new Error(("(proof-transformer.flat-map/chain)" + _eArg1_ + "function, got " + show(toProofMapper))))
     }).call(this)
       : proofT(this.stack.map((function(tt) {
           
@@ -2651,7 +2651,7 @@ export const task = (function() {
     (function() {
       if (!(argCount$14 === 1)) {
         return (function() {
-          throw (new Error(("" + "task" + " received invalid number of arguments.")))
+          throw (new Error(("task" + " received invalid number of arguments.")))
         }).call(this);
       }
     }).call(this);
@@ -2673,7 +2673,7 @@ task.of = (function(value) {
 task.zero = (function(value) {
     return task((function(fail) {
       
-    return fail((Error.prototype.isPrototypeOf(value)) ? value : (new Error(("" + "TaskZero" + value))));
+    return fail((Error.prototype.isPrototypeOf(value)) ? value : (new Error(("TaskZero" + value))));
   }));
 });
 task.lift = (function(value) {
@@ -2698,7 +2698,7 @@ task.prototype.toString = (function() {
 task.prototype.concat = (function(tTask) {
     return (!(task.is(tTask))
     ? (function() {
-    throw (new Error(("" + "(task.concat)" + _eArg1_ + "instance of task, got " + show(tTask))))
+    throw (new Error(("(task.concat)" + _eArg1_ + "instance of task, got " + show(tTask))))
   }).call(this)
     : (function(runSelf, runThat) {
       
@@ -2731,7 +2731,7 @@ task.prototype.concat = (function(tTask) {
 task.prototype.ap = (function(tTask) {
     return (!(task.is(tTask))
     ? (function() {
-    throw (new Error(("" + "(task.ap)" + _eArg1_ + "instance of task, got " + show(tTask))))
+    throw (new Error(("(task.ap)" + _eArg1_ + "instance of task, got " + show(tTask))))
   }).call(this)
     : (function(runSelf, runThat) {
       
@@ -2791,7 +2791,7 @@ task.prototype.ap = (function(tTask) {
 task.prototype.map = (function(mapper) {
     return (!(typeof mapper === "function")
     ? (function() {
-    throw (new Error(("" + "(task.map)" + _eArg1_ + "function, got " + show(mapper))))
+    throw (new Error(("(task.map)" + _eArg1_ + "function, got " + show(mapper))))
   }).call(this)
     : (function(run) {
       
@@ -2807,7 +2807,7 @@ task.prototype.map = (function(mapper) {
 task.prototype.flatMap = (function(toTaskMapper) {
     return (!(typeof toTaskMapper === "function")
     ? (function() {
-    throw (new Error(("" + "(task.flat-map)" + _eArg1_ + "function, got " + show(toTaskMapper))))
+    throw (new Error(("(task.flat-map)" + _eArg1_ + "function, got " + show(toTaskMapper))))
   }).call(this)
     : (function(run) {
       
@@ -2824,11 +2824,11 @@ task.prototype.chain = task.prototype.flatMap;
 task.prototype.bimap = (function(lhsMapper, rhsMapper) {
     return (!(typeof lhsMapper === "function")
     ? (function() {
-    throw (new Error(("" + "(task.bimap)" + _eArg1_ + "function, got " + show(lhsMapper))))
+    throw (new Error(("(task.bimap)" + _eArg1_ + "function, got " + show(lhsMapper))))
   }).call(this)
     : !(typeof rhsMapper === "function")
     ? (function() {
-    throw (new Error(("" + "(task.bimap)" + _eArg2_ + "function, got " + show(rhsMapper))))
+    throw (new Error(("(task.bimap)" + _eArg2_ + "function, got " + show(rhsMapper))))
   }).call(this)
     : (function(run) {
       
@@ -2847,7 +2847,7 @@ task.prototype.bimap = (function(lhsMapper, rhsMapper) {
 task.prototype.alt = (function(tTask) {
     return (!(task.is(tTask))
     ? (function() {
-    throw (new Error(("" + "(task.alt)" + _eArg1_ + "instance of task, got " + show(tTask))))
+    throw (new Error(("(task.alt)" + _eArg1_ + "instance of task, got " + show(tTask))))
   }).call(this)
     : (function(runSelf, runThat) {
       
@@ -2948,7 +2948,7 @@ export const proofAsTask = (function(prf) {
     return prf.match({
     falsy: (function() {
           
-      return task.zero((new Error(("" + arguments[0].reduce((function(a, e) {
+      return task.zero((new Error((arguments[0].reduce((function(a, e) {
               
         return (a + e.message + "\n");
       }), "")))));
@@ -2966,7 +2966,7 @@ export const ioAsTask = (function(eff, args) {
     try {
       return ok(eff.run(args));
     } catch (e) {
-      return fail((new Error(("" + "Failed to run " + eff))));
+      return fail((new Error(("Failed to run " + eff))));
     }
   }).call(this));
 });
