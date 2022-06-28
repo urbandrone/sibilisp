@@ -63,9 +63,9 @@
 
 
 
-(macro error (...msg)
+(macro error (msg ...msgs)
        ; creates new error instances
-       `(new Error (+ "" ...@msg)))
+       `(new Error (+ @msg ...@msgs)))
 
 (macro error! (...msg)
        ; creates and immediatly throws a new error instance
@@ -582,6 +582,13 @@
 
 (macro as-string (value)
        `(String @value))
+
+
+
+(macro boolean? (...values)
+  ; tests if given values are all booleans
+  `(and ...@(map values (lambda (v)
+                          `(parens (eql? (typeof @v) "boolean"))))))
 
 
 
