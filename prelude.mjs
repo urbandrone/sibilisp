@@ -1149,7 +1149,7 @@ export const groupBy = (function(ls, grouper) {
       return acc;
     })(String(grouper(x)));
   }), Object.create(null))
-    : (function(, asList) {
+    : (function(xs) {
       
     return xs.reduce((function(acc, x) {
           
@@ -1164,7 +1164,7 @@ export const groupBy = (function(ls, grouper) {
         return acc;
       })(String(grouper(x)));
     }), Object.create(null));
-  })(, ls));
+  })(Array.from(ls)));
 });
 export const keep = (function(ls) {
     return (!((Array.isArray(ls) || (!(null == ls) && ls.constructor === Set)))
