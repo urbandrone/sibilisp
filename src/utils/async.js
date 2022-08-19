@@ -31,5 +31,5 @@ const run = (rej, res) => promise => promise.then(res).catch(rej);
 
 
 module.exports = {
-	of, empty, zero, is, lift, map, chain, ap, concat, bimap, alt, run
+	of, combined, empty, zero, is, lift, map, chain, ap, concat, bimap, alt, run
 };

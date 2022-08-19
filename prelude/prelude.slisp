@@ -828,7 +828,7 @@
                           (.push (getf acc k) x)
                           acc))
                        (hash-create)))
-          :else (let (xs (as-list ls))
+          :else (let ((xs (as-list ls)))
                   (.reduce xs (#(acc x)
                                 (let ((k (as-string (grouper x))))
                                   (when (not (has-key? acc k))
