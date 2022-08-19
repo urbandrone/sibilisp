@@ -1202,7 +1202,7 @@ export const intersperse = (function(ls, separator) {
       
     return xs.reduce((function(acc, x) {
           
-      return (()) ? acc.concat(x) : acc.concat([ separator, x ]);
+      return (acc.length < 1) ? acc.concat(x) : acc.concat([ separator, x ]);
     }), []);
   })(Array.from(ls)));
 });
