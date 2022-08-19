@@ -875,7 +875,7 @@
           :else (let ((xs (as-list ls)))
                   (.reduce xs
                            (#(acc x)
-                            (ternary (< (length acc 1))
+                            (ternary (< (length acc) 1)
                                      (.concat acc x)
                                      (.concat acc (list separator x))))
                            (list))))))
