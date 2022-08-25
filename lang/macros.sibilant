@@ -195,6 +195,7 @@
                             (var self (gensym "self")
                                  arit (gensym "argCount")
                                  type (transpile (first vartype.contents))
+                                 cname (list "\"" (get (get type 'source) 'token) "\"")
                                  pkeys undefined
                                  alen 0
                                  args "")
@@ -218,6 +219,7 @@
                                                                                `(set @self (quote @p) @p)))
                                                        (list))
                                                (set @self 'constructor @type)
+                                               (set @self '**sibilisp-ctor** @cname)
                                                (set @self '**sibilisp-tags** (list ...@(map pkeys (lambda (k) `(quote @k)))))
                                                @self))
                                             "}"])))
@@ -232,7 +234,7 @@
                       (list `(set @tself (quote @sname) @(get subctors index)))))
            (set (get @tself 'prototype) 'match (lambda (ctors)
                                                   (defvar self this
-                                                          name (get self 'constructor 'name)
+                                                          name (get self '**sibilisp-ctor**)
                                                           ctor (get ctors name)
                                                           keys (get self '**sibilisp-tags**))
                                                   (if (function? ctor)
@@ -240,6 +242,11 @@
                                                               self
                                                               (.map keys (lambda (key)
                                                                            (get self key))))
+                                                      (function? (get ctors 'else))
+                                                      (.apply (get ctors 'else)
+                                                              self
+                                                              (.map keys (lambda (key)
+                                                                          (get self key))))
                                                       (error! ".match :: Cannot find "
                                                               name
                                                               " in patterns "

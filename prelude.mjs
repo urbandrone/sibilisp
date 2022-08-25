@@ -1221,6 +1221,7 @@ const lens_ = (function() {
     }).call(this);
     self$1.value = value;
     self$1.constructor = lval;
+    self$1.__sibilispCtor__ = "lval";
     self$1.__sibilispTags__ = [ "value" ];
     return self$1;
   };;
@@ -1236,18 +1237,24 @@ const lens_ = (function() {
     }).call(this);
     self$2.value = value;
     self$2.constructor = lconst;
+    self$2.__sibilispCtor__ = "lconst";
     self$2.__sibilispTags__ = [ "value" ];
     return self$2;
   };;
   sumtype$1.prototype.match = (function(ctors) {
       
     let self = this,
-        name = self.constructor.name,
+        name = self.__sibilispCtor__,
         ctor = ctors[name],
         keys = self.__sibilispTags__;
     return (function() {
       if (typeof ctor === "function") {
         return ctor.apply(self, keys.map((function(key) {
+                  
+          return self[key];
+        })));
+      } else if (typeof ctors.else === "function") {
+        return ctors.else.apply(self, keys.map((function(key) {
                   
           return self[key];
         })));
@@ -1610,6 +1617,7 @@ export const maybe = (function() {
       }
     }).call(this);
     self$5.constructor = nothing;
+    self$5.__sibilispCtor__ = "nothing";
     self$5.__sibilispTags__ = [];
     return self$5;
   };;
@@ -1625,18 +1633,24 @@ export const maybe = (function() {
     }).call(this);
     self$6.value = value;
     self$6.constructor = just;
+    self$6.__sibilispCtor__ = "just";
     self$6.__sibilispTags__ = [ "value" ];
     return self$6;
   };;
   sumtype$2.prototype.match = (function(ctors) {
       
     let self = this,
-        name = self.constructor.name,
+        name = self.__sibilispCtor__,
         ctor = ctors[name],
         keys = self.__sibilispTags__;
     return (function() {
       if (typeof ctor === "function") {
         return ctor.apply(self, keys.map((function(key) {
+                  
+          return self[key];
+        })));
+      } else if (typeof ctors.else === "function") {
+        return ctors.else.apply(self, keys.map((function(key) {
                   
           return self[key];
         })));
@@ -1975,6 +1989,7 @@ export const either = (function() {
     }).call(this);
     self$8.error = error;
     self$8.constructor = left;
+    self$8.__sibilispCtor__ = "left";
     self$8.__sibilispTags__ = [ "error" ];
     return self$8;
   };;
@@ -1990,18 +2005,24 @@ export const either = (function() {
     }).call(this);
     self$9.value = value;
     self$9.constructor = right;
+    self$9.__sibilispCtor__ = "right";
     self$9.__sibilispTags__ = [ "value" ];
     return self$9;
   };;
   sumtype$3.prototype.match = (function(ctors) {
       
     let self = this,
-        name = self.constructor.name,
+        name = self.__sibilispCtor__,
         ctor = ctors[name],
         keys = self.__sibilispTags__;
     return (function() {
       if (typeof ctor === "function") {
         return ctor.apply(self, keys.map((function(key) {
+                  
+          return self[key];
+        })));
+      } else if (typeof ctors.else === "function") {
+        return ctors.else.apply(self, keys.map((function(key) {
                   
           return self[key];
         })));
@@ -2332,6 +2353,7 @@ export const proof = (function() {
     }).call(this);
     self$11.errors = errors;
     self$11.constructor = falsy;
+    self$11.__sibilispCtor__ = "falsy";
     self$11.__sibilispTags__ = [ "errors" ];
     return self$11;
   };;
@@ -2347,18 +2369,24 @@ export const proof = (function() {
     }).call(this);
     self$12.value = value;
     self$12.constructor = truthy;
+    self$12.__sibilispCtor__ = "truthy";
     self$12.__sibilispTags__ = [ "value" ];
     return self$12;
   };;
   sumtype$4.prototype.match = (function(ctors) {
       
     let self = this,
-        name = self.constructor.name,
+        name = self.__sibilispCtor__,
         ctor = ctors[name],
         keys = self.__sibilispTags__;
     return (function() {
       if (typeof ctor === "function") {
         return ctor.apply(self, keys.map((function(key) {
+                  
+          return self[key];
+        })));
+      } else if (typeof ctors.else === "function") {
+        return ctors.else.apply(self, keys.map((function(key) {
                   
           return self[key];
         })));
