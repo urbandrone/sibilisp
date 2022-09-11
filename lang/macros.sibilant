@@ -278,6 +278,19 @@
                          (list)))
        `(.match @x (hash ...@pts)))
 
+;;; ====== INCLUDE FIX ======
+(macro includes (...files)
+  (pipe files
+        (.map (#(file)
+                (sibilant.with-default-search-path
+                  (#>
+                    (pipe file
+                          transpile
+                          output-formatter
+                          eval
+                          sibilant.include)))))
+        (interleave "\n")))
+
 ;;; ====== ES2015+ MODULE SYSTEM ======
 (macro use (path ...as)
        ; imports named module exports

@@ -22,6 +22,8 @@ const pjoin = path.join.bind(path);
 
 const pnormal = path.normalize.bind(path);
 
+const presolve = path.resolve.bind(path);
+
 const getMacroPath = () => pjoin(__dirname, '..', 'lang', MACRO_FILE);
 
 /* ====== HELPER FUNCTIONS ====== */
@@ -149,6 +151,7 @@ module.exports = {
   COMMENT_REGEX,
   pjoin,
   pnormal,
+  presolve,
   getCwd,
   getMacroPath,
   isSLispFile,
