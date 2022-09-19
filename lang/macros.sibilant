@@ -33,6 +33,12 @@
        [(transpile a) " === " (transpile b)])
 
 
+(macro incf (v n)
+  `(assign @v (+ @v @(or n 1))))
+
+(macro decf (v n)
+  `(assign @v (- @v @(or n 1))))
+
 
 (macro setf (x ...ps-vl)
        ; allows setting a nested propertie's value
@@ -277,19 +283,6 @@
                                             `(lambda @snd ...@rst))))
                          (list)))
        `(.match @x (hash ...@pts)))
-
-;;; ====== INCLUDE FIX ======
-(macro includes (...files)
-  (pipe files
-        (.map (#(file)
-                (sibilant.with-default-search-path
-                  (#>
-                    (pipe file
-                          transpile
-                          output-formatter
-                          eval
-                          sibilant.include)))))
-        (interleave "\n")))
 
 ;;; ====== ES2015+ MODULE SYSTEM ======
 (macro use (path ...as)
