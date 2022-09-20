@@ -22,6 +22,10 @@
 (macro butlast (ls)
        `(.slice @ls 0 (- (length @ls) 1)))
 
+(delete-macro length)
+(macro length (x)
+  (list "((" x ".size || " x ".length) || 0)"))
+
 
 ;;; ====== OPERATORS ======
 (macro eq? (a b)
@@ -34,21 +38,21 @@
 
 
 (macro incf (v n)
-  `(assign @v (+ @v @(or n 1))))
-
+  (list "(" v " += " (or n 1) ")"))
+  
 (macro decf (v n)
-  `(assign @v (- @v @(or n 1))))
+  (list "(" v " -= " (or n 1) ")"))
 
 
 (macro setf (x ...ps-vl)
-       ; allows setting a nested propertie's value
+       ; allows setting a nested property value
        (var val (last ps-vl)
-              keys (.slice ps-vl 0 -1)
-              key (.pop keys))
+            keys (.slice ps-vl 0 -1)
+            key (.pop keys))
        `(set (get @x ...@keys) @key @val))
 
 (macro getf (x ...ps)
-       ; just an alias to sibilant's (get) for symmetry with our (setf)
+       ; just an alias to sibilant's (get) for symmetry with (setf)
        `(get @x ...@ps))
 
 
@@ -656,6 +660,14 @@
        ; creates a list of key/value pairs from objects
        `(.entries Object @value))
 
+(macro hash-keys (value)
+       ; creates a list of keys from an object
+       `(.keys Object @value))
+
+(macro hash-values (value)
+       ; creates a list of values from an object
+       `(.values Object @value))
+
 (macro hash-merge! (...values)
        ; unsafely merges multiples objects into one
        ; objects to the right override previous objects
@@ -771,6 +783,10 @@
 (macro dict-pairs (value)
        ; transforms a map into a list of pairs
        `(as-list (.entries @value)))
+
+(macro dict-keys (value)
+       ; transforms a map into a list of values
+       `(as-list (.keys @value)))
 
 (macro dict-values (value)
        ; transforms a map into a list of values
@@ -889,8 +905,8 @@
 (macro loop (variables ...body)
        ; allows to use single and multiple direct recursion
        ; through trampolining. performance is generally ok
-       ; up to and above 7500 iterations, which should be
-       ; good enough for most use cases.
+       ; up to 7500 iterations, which should be good enough 
+       ; for most use cases.
        (var retv (gensym "looprecReturn")
             vars (map variables.contents
                       (lambda (pair) (first pair.contents)))
