@@ -169,7 +169,7 @@ export const equals = (function(x, y) {
     : ((!(null == x) && x.constructor === Promise) && (!(null == y) && y.constructor === Promise))
     ? x === y
     : (Array.isArray(x) && Array.isArray(y))
-    ? (x.length === y.length && x.every((function(va, i) {
+    ? (((x.size || x.length) || 0) === ((y.size || y.length) || 0) && x.every((function(va, i) {
       
     return equals(va, y[i]);
   })))
@@ -178,7 +178,7 @@ export const equals = (function(x, y) {
     : ((!(null == x) && x.constructor === Object) && (!(null == y) && y.constructor === Object))
     ? (function(pa, pb) {
       
-    return (pa.length === pb.length && pa.every((function(k_v$3) {
+    return (((pa.size || pa.length) || 0) === ((pb.size || pb.length) || 0) && pa.every((function(k_v$3) {
           
       var k = k_v$3[0],
           v = k_v$3[1];
@@ -189,7 +189,7 @@ export const equals = (function(x, y) {
     : ((!(null == x) && x.constructor === Map) && (!(null == y) && y.constructor === Map))
     ? (function(pa, pb) {
       
-    return (pa.length === pb.length && pa.every((function(k_v$4) {
+    return (((pa.size || pa.length) || 0) === ((pb.size || pb.length) || 0) && pa.every((function(k_v$4) {
           
       var k = k_v$4[0],
           v = k_v$4[1];
@@ -466,7 +466,7 @@ export const bimap = (function(x, lhsMapper, rhsMapper) {
     return Promise.resolve(lhsMapper());
   }))
     : Array.isArray(x)
-    ? (x.length < 1) ? [ lhsMapper() ] : x.map(rhsMapper)
+    ? (((x.size || x.length) || 0) < 1) ? [ lhsMapper() ] : x.map(rhsMapper)
     : (!(null == x) && x.constructor === Set)
     ? (x.size < 1) ? (new Set([ lhsMapper() ])) : (new Set(Array.from(x).map(rhsMapper)))
     : typeof x.bimap === "function"
@@ -698,7 +698,7 @@ export const alt = (function(x, altern) {
     ? (function(l) {
       
     return (l < 1) ? altern : x;
-  })(x.length)
+  })(((x.size || x.length) || 0))
     : typeof x.alt === "function"
     ? x.alt(altern)
     : (function() {
@@ -760,13 +760,13 @@ export const zip = (function(lsA, lsB) {
       return while$1;
     }).call(this);
     return r;
-  })(Math.min(lsA.length, lsB.length), 0, [])
+  })(Math.min(((lsA.size || lsA.length) || 0), ((lsB.size || lsB.length) || 0)), 0, [])
     : ((!(null == lsA) && lsA.constructor === Set) && (!(null == lsB) && lsB.constructor === Set))
     ? (function() {
       
     let a = Array.from(lsA);
     let b = Array.from(lsB);
-    let l = Math.min(a.length, b.length);
+    let l = Math.min(((a.size || a.length) || 0), ((b.size || b.length) || 0));
     let i = 0;
     let r = (new Set([]));
     return (function() {
@@ -831,7 +831,7 @@ export const find = (function(ls, predicate) {
       return while$3;
     }).call(this);
     return maybe.lift(m);
-  })(ls.length, 0, null)
+  })(((ls.size || ls.length) || 0), 0, null)
     : (!(null == ls) && ls.constructor === Set)
     ? (function(x, l, i, m) {
       
@@ -850,7 +850,7 @@ export const find = (function(ls, predicate) {
       return while$4;
     }).call(this);
     return maybe.lift(m);
-  })(Array.from(ls), x.length, 0, null)
+  })(Array.from(ls), ((x.size || x.length) || 0), 0, null)
     : (function() {
     throw (new Error(("(find) expects the first argument to be a list or mset")))
   }).call(this));
@@ -1011,7 +1011,7 @@ export const take = (function(ls, count) {
     throw (new Error(("(take)" + _eArg2_ + "number, got " + show(count))))
   }).call(this)
     : Array.isArray(ls)
-    ? (count <= ls.length) ? ls.slice(0, count) : ls
+    ? (count <= ((ls.size || ls.length) || 0)) ? ls.slice(0, count) : ls
     : (count <= ls.size) ? (function() {
       
     let xs = Array.from(ls);
@@ -1032,7 +1032,7 @@ export const drop = (function(ls, count) {
     throw (new Error(("(drop)" + _eArg2_ + "number, got " + show(count))))
   }).call(this)
     : Array.isArray(ls)
-    ? (count <= ls.length) ? ls.slice(count) : []
+    ? (count <= ((ls.size || ls.length) || 0)) ? ls.slice(count) : []
     : (count <= ls.size) ? (function() {
       
     let xs = Array.from(ls);
@@ -1069,7 +1069,7 @@ export const partition = (function(ls, count) {
       return while$6;
     }).call(this);
     return xs;
-  })(l(ls.length))
+  })(l(((ls.size || ls.length) || 0)))
     : (function(xs, ys, i, l) {
       
     (function() {
@@ -1086,7 +1086,7 @@ export const partition = (function(ls, count) {
       return while$5;
     }).call(this);
     return (new Set(ys));
-  })(Array.from(ls), [], 0, xs.length));
+  })(Array.from(ls), [], 0, ((xs.size || xs.length) || 0)));
 });
 export const partitionWith = (function(ls, partitioner) {
     return (!((Array.isArray(ls) || (!(null == ls) && ls.constructor === Set)))
@@ -1107,7 +1107,7 @@ export const partitionWith = (function(ls, partitioner) {
           
       b.push(a);
       return acc;
-    })(acc[(acc.length - 1)])
+    })(acc[(((acc.size || acc.length) || 0) - 1)])
       : acc.concat([ [ a ] ]));
   }), null)
     : (function(xs) {
@@ -1121,7 +1121,7 @@ export const partitionWith = (function(ls, partitioner) {
               
         b.push(a);
         return acc;
-      })(acc[(acc.length - 1)])
+      })(acc[(((acc.size || acc.length) || 0) - 1)])
         : acc.concat([ [ x ] ]));
     }), null)));
   })(Array.from(ls)));
@@ -1196,13 +1196,13 @@ export const intersperse = (function(ls, separator) {
     : Array.isArray(ls)
     ? ls.reduce((function(acc, x) {
       
-    return (acc.length < 1) ? acc.concat(x) : acc.concat([ separator, x ]);
+    return (((acc.size || acc.length) || 0) < 1) ? acc.concat(x) : acc.concat([ separator, x ]);
   }), [])
     : (function(xs) {
       
     return xs.reduce((function(acc, x) {
           
-      return (acc.length < 1) ? acc.concat(x) : acc.concat([ separator, x ]);
+      return (((acc.size || acc.length) || 0) < 1) ? acc.concat(x) : acc.concat([ separator, x ]);
     }), []);
   })(Array.from(ls)));
 });
@@ -1211,7 +1211,7 @@ const lens_ = (function() {
   sumtype$1.prototype = { __sibilispType__: sumtype$1 };
   sumtype$1.lval = function lval(value) {
     let self$1 = Object.create(sumtype$1.prototype);
-    let argCount$1 = arguments.length;
+    let argCount$1 = ((arguments.size || arguments.length) || 0);
     (function() {
       if (!(argCount$1 === 1)) {
         return (function() {
@@ -1227,7 +1227,7 @@ const lens_ = (function() {
   };;
   sumtype$1.lconst = function lconst(value) {
     let self$2 = Object.create(sumtype$1.prototype);
-    let argCount$2 = arguments.length;
+    let argCount$2 = ((arguments.size || arguments.length) || 0);
     (function() {
       if (!(argCount$2 === 1)) {
         return (function() {
@@ -1364,7 +1364,7 @@ export const lmap = (function(a, l, f) {
 export const coyo = (function() {
     function type$1(value, mapper) {
     let self$3 = Object.create(type$1.prototype);
-    let argCount$3 = arguments.length;
+    let argCount$3 = ((arguments.size || arguments.length) || 0);
     (function() {
       if (!(argCount$3 === 2)) {
         return (function() {
@@ -1454,7 +1454,7 @@ coyo.prototype.reduce = (function(reducer, seed) {
 export const io = (function() {
     function type$2(unsafePerform) {
     let self$4 = Object.create(type$2.prototype);
-    let argCount$4 = arguments.length;
+    let argCount$4 = ((arguments.size || arguments.length) || 0);
     (function() {
       if (!(argCount$4 === 1)) {
         return (function() {
@@ -1608,7 +1608,7 @@ export const maybe = (function() {
   sumtype$2.prototype = { __sibilispType__: sumtype$2 };
   sumtype$2.nothing = function nothing() {
     let self$5 = Object.create(sumtype$2.prototype);
-    let argCount$5 = arguments.length;
+    let argCount$5 = ((arguments.size || arguments.length) || 0);
     (function() {
       if (!(argCount$5 === 0)) {
         return (function() {
@@ -1623,7 +1623,7 @@ export const maybe = (function() {
   };;
   sumtype$2.just = function just(value) {
     let self$6 = Object.create(sumtype$2.prototype);
-    let argCount$6 = arguments.length;
+    let argCount$6 = ((arguments.size || arguments.length) || 0);
     (function() {
       if (!(argCount$6 === 1)) {
         return (function() {
@@ -1912,7 +1912,7 @@ export const maybeTransformer = (function(t) {
       
     function type$3(stack) {
       let self$7 = Object.create(type$3.prototype);
-      let argCount$7 = arguments.length;
+      let argCount$7 = ((arguments.size || arguments.length) || 0);
       (function() {
         if (!(argCount$7 === 1)) {
           return (function() {
@@ -1979,7 +1979,7 @@ export const either = (function() {
   sumtype$3.prototype = { __sibilispType__: sumtype$3 };
   sumtype$3.left = function left(error) {
     let self$8 = Object.create(sumtype$3.prototype);
-    let argCount$8 = arguments.length;
+    let argCount$8 = ((arguments.size || arguments.length) || 0);
     (function() {
       if (!(argCount$8 === 1)) {
         return (function() {
@@ -1995,7 +1995,7 @@ export const either = (function() {
   };;
   sumtype$3.right = function right(value) {
     let self$9 = Object.create(sumtype$3.prototype);
-    let argCount$9 = arguments.length;
+    let argCount$9 = ((arguments.size || arguments.length) || 0);
     (function() {
       if (!(argCount$9 === 1)) {
         return (function() {
@@ -2276,7 +2276,7 @@ export const eitherTransformer = (function(t) {
       
     function type$4(stack) {
       let self$10 = Object.create(type$4.prototype);
-      let argCount$10 = arguments.length;
+      let argCount$10 = ((arguments.size || arguments.length) || 0);
       (function() {
         if (!(argCount$10 === 1)) {
           return (function() {
@@ -2343,7 +2343,7 @@ export const proof = (function() {
   sumtype$4.prototype = { __sibilispType__: sumtype$4 };
   sumtype$4.falsy = function falsy(errors) {
     let self$11 = Object.create(sumtype$4.prototype);
-    let argCount$11 = arguments.length;
+    let argCount$11 = ((arguments.size || arguments.length) || 0);
     (function() {
       if (!(argCount$11 === 1)) {
         return (function() {
@@ -2359,7 +2359,7 @@ export const proof = (function() {
   };;
   sumtype$4.truthy = function truthy(value) {
     let self$12 = Object.create(sumtype$4.prototype);
-    let argCount$12 = arguments.length;
+    let argCount$12 = ((arguments.size || arguments.length) || 0);
     (function() {
       if (!(argCount$12 === 1)) {
         return (function() {
@@ -2610,7 +2610,7 @@ export const proofTransformer = (function(t) {
       
     function type$5(stack) {
       let self$13 = Object.create(type$5.prototype);
-      let argCount$13 = arguments.length;
+      let argCount$13 = ((arguments.size || arguments.length) || 0);
       (function() {
         if (!(argCount$13 === 1)) {
           return (function() {
@@ -2675,7 +2675,7 @@ export const proofTransformer = (function(t) {
 export const task = (function() {
     function type$6(runTask) {
     let self$14 = Object.create(type$6.prototype);
-    let argCount$14 = arguments.length;
+    let argCount$14 = ((arguments.size || arguments.length) || 0);
     (function() {
       if (!(argCount$14 === 1)) {
         return (function() {
