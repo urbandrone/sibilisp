@@ -415,10 +415,14 @@
            (.reduce x reducer seed))
           :else (error! "(reduce) needs the first argument to be a Foldable"))))
 
-((x lift-map)
+
+(provide
+  ;; fold-map :: Foldable F, Semigroup S. (F a, (a -> S b)) -> S b
+  (defun fold-map (x lift-map)
     (cond ((not (exists? x))
            (error! "(reduce)" *e-guard* (show x)))
-          ((not (" *e-arg-2* "function, got " (show lift-map)))
+          ((not (function? lift-map))
+           (error! "(fold-map)" *e-arg-2* "function, got " (show lift-map)))
           ((mset? x)
            (let ((y (mset-values x)))
             (.reduce y
@@ -426,15 +430,19 @@
                       (ternary (nil? a)
                                (lift-map value)
                                (.concat a (lift-map value))))
-                 (
-           (.map f x lift-map))
+                     (nil))))
+          ((method? x fold-map)
+           (.fold-map x lift-map))
           ((method? x reduce)
            (.reduce x
                     (lambda (a value)
                       (ternary (nil? a)
                                (lift-map value)
                                (.concat a (lift-map value))))
-                    ((rovide
+                    (nil)))
+          :else (error! "(fold-map) needs the first argument to be a Foldable"))))
+          
+(provide
   ;; fold :: Foldable F, Semigroup S. (F a, (a -> S a)) -> S a
   (defun fold (x lift)
     (cond ((not (function? lift))
@@ -1323,7 +1331,7 @@
 
 (setf either 'lift (lambda (value is-left?)
                     (cond ((not (exists? value))
-                           (either.left null))
+                           (either.left (error "")))
                           ((or (error? value) is-left?)
                            (either.left value))
                           :else (either.of value))))
