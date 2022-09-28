@@ -415,13 +415,10 @@
            (.reduce x reducer seed))
           :else (error! "(reduce) needs the first argument to be a Foldable"))))
 
-(provide
-  ;; fold-map :: Foldable F, Semigroup S. (F a, (a -> S b)) -> S b
-  (defun fold-map (x lift-map)
+((x lift-map)
     (cond ((not (exists? x))
            (error! "(reduce)" *e-guard* (show x)))
-          ((not (function? lift-map))
-           (error! "(fold-map)" *e-arg-2* "function, got " (show lift-map)))
+          ((not (" *e-arg-2* "function, got " (show lift-map)))
           ((mset? x)
            (let ((y (mset-values x)))
             (.reduce y
@@ -429,19 +426,15 @@
                       (ternary (nil? a)
                                (lift-map value)
                                (.concat a (lift-map value))))
-                     (nil))))
-          ((method? x fold-map)
-           (.fold-map x lift-map))
+                 (
+           (.map f x lift-map))
           ((method? x reduce)
            (.reduce x
                     (lambda (a value)
                       (ternary (nil? a)
                                (lift-map value)
                                (.concat a (lift-map value))))
-                    (nil)))
-          :else (error! "(fold-map) needs the first argument to be a Foldable"))))
-
-(provide
+                    ((rovide
   ;; fold :: Foldable F, Semigroup S. (F a, (a -> S a)) -> S a
   (defun fold (x lift)
     (cond ((not (function? lift))
@@ -1009,6 +1002,64 @@
           :else (reducer seed (mapper value)))))
 
 
+
+;; --- free
+(provide
+  (defsum free ((result value)
+                (compute value run))))
+
+(setf free 'of (lambda (value)
+                (free.result value)))
+
+(setf free 'lift (lambda (type)
+                  (free.compute type free.result)))
+
+(defmethod free map (f)
+  (cond ((not (function? f))
+         (error! "(free.map)" *e-arg-1* "function, got " (show f)))
+        :else (.match this (hash :result (#(value)
+                                          (free.result (f value)))
+                                 :compute (#(value run)
+                                            (free.compute value
+                                                          (#(x) (.map (run x) f))))))))
+
+(defmethod free ap (t-free)
+  (cond ((not (method? t-free map))
+         (error! "(free.ap)" *e-arg-1* "functor, got " (show t-free)))
+        :else (.match this (hash :result (#(value)
+                                          (.map t-free value))
+                                 :compute (#(value run)
+                                            (free.compute value
+                                                          (#(x) (.ap (run x) t-free))))))))
+
+(defmethod free flat-map (f)
+  (cond ((not (function? f))
+         (error! "(free.flat-map | free.chain)" *e-arg-1* "function, got " (show f)))
+        :else (.match this (hash :result (#(value) (f value))
+                                 :compute (#(value run)
+                                            (free.compute value
+                                                          (#(x) (.flat-map (run x) f))))))))
+
+(setf free 'prototype 'chain (getf free 'prototype 'flat-map))
+
+(defmethod free fold-map (f pointed)
+  (cond ((not (function? f))
+         (error! "(free.fold-map | free.interpret)" *e-arg-1* "function, got " (show f)))
+        ((not (function? (getf pointed 'of)))
+         (error! "(free.fold-map | free.interpret)" *e-arg-2* "Pointed, got " (show pointed)))
+        :else (.match this (hash :result (#(value) (pointed.of value))
+                                 :compute (#(value run)
+                                            (ternary (nothing? value)
+                                                     (.fold-map (run) f pointed)
+                                                     (pipe 
+                                                      (f value)
+                                                      (.flat-map (#(x)
+                                                                  (.fold-map (run x) 
+                                                                             f 
+                                                                             pointed))))))))))
+
+(setf free 'prototype 'interpret (getf free 'prototype 'fold-map))
+
 ;; --- io
 (provide
   (deftype io (unsafe-perform)))
@@ -1272,7 +1323,7 @@
 
 (setf either 'lift (lambda (value is-left?)
                     (cond ((not (exists? value))
-                           (either.left (error "")))
+                           (either.left null))
                           ((or (error? value) is-left?)
                            (either.left value))
                           :else (either.of value))))

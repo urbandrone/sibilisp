@@ -5,6 +5,7 @@ const { COMMENT_REGEX, replace, getMacroPath, presolve, getCwd, pjoin } = requir
 
 
 // ------ SIBILANT FIXUPS ------
+const CACHE_INCLUDES = {};
 sibilant.include = (file) => {
   // This fixes sibilant's inability to include macro files that are part of an
   // NPM package from someone else. Basically, the "else" branch in the
@@ -19,13 +20,20 @@ sibilant.include = (file) => {
   } else {
     file = presolve(pjoin(getCwd(), 'node_modules'), file)
   }
+  if (CACHE_INCLUDES.hasOwnProperty(file)) {
+    // we speed up compilation time by memoizing previously included file contents
+    // so the compiler doesn't have to "re-include" for every use of "(include)"
+    return CACHE_INCLUDES[file].c;
+  }
+
+  const c = (CACHE_INCLUDES[file] = { c: '' });
   try {
     rfile = require.resolve(file);
   } catch (error) {
     throw new Error('sibilant.include: Failed to resolve file for inclusion: ' + file);
   }
   sibilant.recordDependency(sibilant.file, file);
-  return sibilant({ file: rfile }).output;
+  return c.c = sibilant({ file: rfile }).output;
 };
 
 

@@ -43,13 +43,17 @@
 (macro decf (v n)
   (list "(" v " -= " (or n 1) ")"))
 
-
-(macro setf (x ...ps-vl)
-       ; allows setting a nested property value
-       (var val (last ps-vl)
-            keys (.slice ps-vl 0 -1)
-            key (.pop keys))
-       `(set (get @x ...@keys) @key @val))
+(macro setf (x y ...rst)
+  ; generalized assignment via setf, maps to either setting a nested property/array index,
+  ; or variable assignment depending on the number of given arguments (exactly 2 = assignment)
+  ; future versions might support multiple variable assignments (we'll see)
+  (var mode (ternary (< (length rst) 1) 'assign 'set)
+       val (ternary (= mode 'set) (last rst) y)
+       keys (ternary (= mode 'set) (.concat (list y) (.slice rst 0 -1)) ())
+       key (ternary (= mode 'set) (.pop keys) ()))
+  (if (= mode 'set)
+      `(set (get @x ...@keys) @key @val)
+      `(assign @x @val)))
 
 (macro getf (x ...ps)
        ; just an alias to sibilant's (get) for symmetry with (setf)
@@ -145,7 +149,7 @@
                                a)))
                      (hash args (list)
                            dfts (list))))
-  `(defconstant @name (lambda @prms.args ...@prms.dfts ...@body)))
+  `(defvar @name (lambda @prms.args ...@prms.dfts ...@body)))
 
 (macro defprop (target ...pairs)
        (var ps (bulk-map pairs
@@ -176,24 +180,24 @@
             alen (length pkeys.contents)
             x (gensym "x")
             emsg "\" received invalid number of arguments.\"")
-       `(defconstant @tname (scoped
-                              @{ type 'output
-                                contents [
-                                          "function " type "(" args ") {"
-                                          (indent
-                                            `(do
-                                              (defvar @self (.create Object (get @type 'prototype)))
-                                              (defvar @arit (length arguments))
-                                              (when (not (eql? @arit @alen))
-                                                (error! (quote @tname) @emsg))
-                                              ...@(map pkeys.contents
-                                                      (lambda (p)
-                                                        `(set @self (quote @p) @p)))
-                                              @self))
-                                          "}"]}
-                              (set @type 'is (lambda (@x) (instance-of? @x @type)))
-                              @type)))
-                              
+       `(defvar @tname (scoped
+                        @{ type 'output
+                          contents [
+                                    "function " type "(" args ") {"
+                                    (indent
+                                      `(do
+                                        (defconstant @self (.create Object (get @type 'prototype)))
+                                        (defconstant @arit (length arguments))
+                                        (when (not (eql? @arit @alen))
+                                          (error! (quote @tname) @emsg))
+                                        ...@(map pkeys.contents
+                                                (lambda (p)
+                                                  `(set @self (quote @p) @p)))
+                                        @self))
+                                    "}"]}
+                        (set @type 'is (lambda (@x) (instance-of? @x @type)))
+                        @type)))
+                        
                                          
                                          
 
@@ -218,8 +222,8 @@
                                             "function " type "(" args ") {"
                                             (indent
                                              `(do
-                                               (defvar @self (.create Object (get @tself 'prototype)))
-                                               (defvar @arit (length arguments))
+                                               (defconstant @self (.create Object (get @tself 'prototype)))
+                                               (defconstant @arit (length arguments))
                                                (when (not (eql? @arit @alen))
                                                  (error! "Tagged constructor " @tname "." @type
                                                          "expects " @alen " arguments but got "
@@ -235,7 +239,7 @@
                                             "}"])))
             subnames (map variants.contents
                           (lambda (vartype) (first vartype.contents))))
-       `(defconstant @tname
+       `(defvar @tname
           (scoped
            (defconstant @tself (.create Object (nil)))
            (set @tself 'prototype (hash **sibilisp-type** @tself))
@@ -243,10 +247,10 @@
                     (lambda (sname index)
                       (list `(set @tself (quote @sname) @(get subctors index)))))
            (set (get @tself 'prototype) 'match (lambda (ctors)
-                                                  (defvar self this
-                                                          name (get self '**sibilisp-ctor**)
-                                                          ctor (get ctors name)
-                                                          keys (get self '**sibilisp-tags**))
+                                                  (defconstant self this
+                                                               name (get self '**sibilisp-ctor**)
+                                                               keys (get self '**sibilisp-tags**)
+                                                               ctor (get ctors name))
                                                   (if (function? ctor)
                                                       (.apply ctor
                                                               self
