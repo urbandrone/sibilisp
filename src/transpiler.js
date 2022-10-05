@@ -18,7 +18,7 @@ sibilant.include = (file) => {
   if (/^\.{1,2}/g.test(file)) {
     file = presolve(getCwd(), file);
   } else {
-    file = presolve(pjoin(getCwd(), 'node_modules'), file)
+    file = presolve(pjoin(getCwd(), 'node_modules'), file);
   }
   if (CACHE_INCLUDES.hasOwnProperty(file)) {
     // we speed up compilation time by memoizing previously included file contents

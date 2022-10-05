@@ -1483,7 +1483,112 @@
                                                 (getf 'stack)))))))))
     (setf either-t 'prototype 'chain (getf either-t 'prototype 'flat-map))
     either-t))
+
+
+
+;; --- seq
+(provide
+  (deftype seq (ls)))
+
+(setf seq 'of (lambda (...values)
+                (seq values)))
+
+(setf seq 'lift (lambda (value)
+                  (cond ((nothing? value)
+                         (seq.empty))
+                        ((list? value)
+                         (seq value))
+                        ((or (mset? value)
+                             (and (exists? (getf value 'length))
+                                  (not (function? value))))
+                         (seq (as-list value)))
+                        ((generator? value)
+                         (seq (as-list (value))))
+                        :else (seq (list value)))))
+
+(setf seq 'empty (lambda ()
+                  (seq (list))))
+
+(defmethod seq to-string ()
+  (+ "(seq " (show (getf this 'ls)) ")"))
+
+(defmethod seq length ()
+  (getf this 'ls 'length))
+
+(defmethod seq concat (t-seq)
+  (cond ((not (.is seq t-seq))
+         (error! "(seq.concat)" *e-arg-1* "instance of seq, got " (show t-seq)))
+        :else (let ((ls (getf this 'ls))
+                    (ks (getf t-seq 'ls)))
+                (seq (.concat ls ks)))))
+
+(defmethod seq map (f)
+  (cond ((not (function? f))
+         (error! "(seq.map)" *e-arg-1* "function, got " (show f)))
+        :else (seq (.map (getf this 'ls) f))))
+
+(defmethod seq flat-map (f)
+  (cond ((not (function? f))
+         (error! "(seq.flat-map|seq.chain)" *e-arg-1* "function, got " (show f)))
+        :else (seq (.flat-map (getf this 'ls)
+                              (lambda (v)
+                                (getf (f v) 'ls))))))
+
+(setf seq 'chain (getf seq 'flat-map))
+
+(defmethod seq ap (t-seq)
+  (cond ((not (.is seq t-seq))
+         (error! "(seq.ap)" *e-arg-1* "instance of seq, got " (show t-seq)))
+        :else (seq (.flat-map (getf this 'ls)
+                              (lambda (f)
+                                (|> (.map t-seq f)
+                                    (getf 'ls)))))))
+
+(defmethod seq reduce (reducer seed)
+  (cond ((not (function? reducer))
+         (error! "(seq.reduce)" *e-arg-1* "function, got " (show reducer)))
+        ((not (exists? seed))
+         (error! "(seq.reduce)" *e-arg-2* "non-nil value, got " (show seed)))
+        :else (.reduce (getf this 'ls) reducer seed)))
+
+(defmethod seq fold-map (lift-map)
+  (cond ((not (function? lift-map))
+         (error! "(seq.fold-map)" *e-arg-1* "function, got " (show lift-map)))
+        :else (.reduce (getf this 'ls)
+                       (lambda (a x)
+                        (ternary (nil? a)
+                                 (lift-map x)
+                                 (.concat a (lift-map x))))
+                       (nil))))
+
+(defmethod seq fold (lift)
+  (cond ((not (function? lift))
+         (error! "(seq.fold)" *e-arg-1* "function, got" (show lift)))
+        :else (.reduce (getf this 'ls)
+                       (lambda (a x)
+                        (ternary (nil? a)
+                                 (lift x)
+                                 (.concat a (lift x))))
+                       (nil))))
+
+(defmethod seq traverse (lift transformer)
+  (cond ((not (function? lift))
+         (error! "(seq.traverse)" *e-arg-1* "function, got " (show lift)))
+        ((not (function? transformer))
+         (error! "(seq.traverse)" *e-arg-2* "function, got " (show transformer)))
+        :else (.reduce (getf this 'ls)
+                       (lambda (a x)
+                        (|> (transformer x)
+                            (.map (lambda (v)
+                                    (lambda (w)
+                                      (.concat w v))))
+                            (.ap a)))
+                       (lift (seq.empty)))))
         
+(defmethod seq sequence (lift)
+  (cond ((not (function? lift))
+         (error! "(seq.sequence)" *e-arg-1* "function, got " (show lift)))
+        :else (.traverse this lift (lambda (x) x))))
 
 
 ;; --- proof
