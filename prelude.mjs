@@ -2531,6 +2531,7 @@ seq.lift = (function(value) {
 seq.empty = (function() {
     return seq([]);
 });
+seq.zero = seq.empty;
 seq.prototype.toString = (function() {
     return ("(seq " + show(this.ls) + ")");
 });
