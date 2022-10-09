@@ -1509,11 +1509,19 @@
 (setf seq 'empty (lambda ()
                   (seq (list))))
 
+(setf seq 'zero (getf seq 'empty))
+
 (defmethod seq to-string ()
   (+ "(seq " (show (getf this 'ls)) ")"))
 
 (defmethod seq length ()
   (getf this 'ls 'length))
+
+(defmethod seq equals (t-seq)
+  (cond ((not (.is seq t-seq))
+         (error! "(seq.equals)" *e-arg-1* "instance of seq, got " (show t-seq)))
+        :else (equals (getf this 'ls)
+                      (getf t-seq 'ls))))
 
 (defmethod seq concat (t-seq)
   (cond ((not (.is seq t-seq))
@@ -1589,6 +1597,127 @@
   (cond ((not (function? lift))
          (error! "(seq.sequence)" *e-arg-1* "function, got " (show lift)))
         :else (.traverse this lift (lambda (x) x))))
+
+(defmethod seq alt (t-seq)
+  (cond ((not (.is seq t-seq))
+         (error! "(seq.alt)" *e-arg-1* "instance of seq, got " (show t-seq)))
+        :else (ternary (= (.length this) 0)
+                       t-seq
+                       this)))
+
+(defmethod seq filter (f)
+  (cond ((not (function? f))
+         (error! "(seq.filter)" *e-arg-1* "function, got " (show f)))
+        :else (seq (.filter (getf this 'ls) f))))
+
+(defmethod seq find (f T)
+  (default T maybe)
+  (cond ((not (function? f))
+         (error! "(seq.find)" *e-arg-1* "function, got " (show f)))
+        ((method? (getf this 'ls) find)
+         (T.lift (.find (getf this 'ls) f)))
+        :else (T.lift (.reduce (getf this 'ls) 
+                               (#(acc x)
+                                (ternary (and (not (nil? acc))
+                                              (f x))
+                                         x
+                                         acc))
+                               (nil)))))
+
+(defmethod seq cons (x)
+  (seq (.concat (list x) (getf this 'ls))))
+
+(defmethod seq snoc (x)
+  (seq (.concat (getf this 'ls) x)))
+
+(defmethod seq take (n)
+  (cond ((not (number? n))
+         (error! "(seq.take)" *e-arg-1* "positive number, got " (show n)))
+        :else (seq (.slice (getf this 'ls) 
+                           0 
+                           (min (abs n) 
+                                (length (getf this 'ls)))))))
+
+(defmethod seq take-while (f)
+  (cond ((not (function? f))
+         (error! "(seq.take-while)" *e-arg-1* "function, got " (show f)))
+        :else (let ((taking true))
+                (seq (.reduce (getf this 'ls)
+                              (#(acc x)
+                                (if (not taking)
+                                    acc
+                                    (do (assign taking (f x))
+                                        (ternary taking
+                                                 (.concat acc x)
+                                                 acc))))
+                              (list))))))
+
+(defmethod seq drop (n)
+  (cond ((not (number? n))
+         (error! "(seq.drop)" *e-arg-1* "positive number, got " (show n)))
+        :else (seq (.slice (getf this 'ls) 
+                           (min (abs n) 
+                                (length (getf this 'ls)))))))
+
+(defmethod seq drop-while (f)
+  (cond ((not (function? f))
+         (error! "(seq.drop-while)" *e-arg-1* "function, got " (show f)))
+        :else (let ((dropping true))
+                (seq (.reduce (getf this 'ls)
+                              (#(acc x)
+                                (if dropping
+                                    (do (assign dropping (f x))
+                                        (ternary dropping
+                                                 acc
+                                                 (.concat acc x)))
+                                    (.concat acc x)))
+                              (list))))))
+
+(defmethod seq reverse ()
+  (seq (.reverse (.slice (getf this 'ls)))))
+
+
+;;; --- transformer
+
+(provide
+  (defun seq-transformer ()
+    (deftype seq-t (stack))
+    (when (not (function? t))
+      (error! "(seq-transformer)" *e-arg-1* "function, got " (show t)))
+    (setf seq-t 'lift (lambda (v)
+                          (cond ((function? (getf t 'lift))
+                                 (seq-t (t.lift (seq.lift v))))
+                                ((funtion? (getf t 'of))
+                                 (seq-t (t.of (seq.lift v))))
+                                :else (error! "(seq-t.lift) cannot stack with " (getf t 'name)))))
+    (defmethod seq-t map (mapper)
+      (cond ((not (function? mapper))
+             (error! "(seq-transformer.map)" *e-arg-1* "function, got " (show mapper)))
+            :else (seq-t (.map (getf this 'stack
+                                 (lambda (tt)
+                                  (.map tt mapper)))))))
+    (defmethod seq-t flat-map (to-seq-mapper)
+      (cond ((not (function? to-seq-mapper))
+             (error! "(seq-transformer.flat-map/chain)" 
+                      *e-arg-1* 
+                      "function, got " 
+                      (show to-seq-mapper)))
+            :else (seq-t (.flat-map (getf this 'stack)
+                                    (lambda (tt)
+                                      (.reduce tt
+                                               (lambda (a v)
+                                                (pipe
+                                                  (to-seq-mapper v)
+                                                  (getf 'stack)
+                                                  (.flat-map (#(vt)
+                                                              (.map a
+                                                                    (#(va)
+                                                                      (.concat va vt)))))))
+                                               (call (or (getf t 'lift)
+                                                         (getf t 'of))
+                                                     (seq.empty))))))))
+    (setf seq-t 'prototype 'chain (getf seq-t 'prototype 'flat-map))
+    seq-t))
 
 
 ;; --- proof

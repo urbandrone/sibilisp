@@ -2492,40 +2492,354 @@ export let eitherTransformer = (function(t) {
   eitherT.prototype.chain = eitherT.prototype.flatMap;
   return eitherT;
 });
-export let proof = (function() {
-    const sumtype$5 = Object.create(null);
-  sumtype$5.prototype = { __sibilispType__: sumtype$5 };
-  sumtype$5.falsy = function falsy(errors) {
-    const self$13 = Object.create(sumtype$5.prototype);
+export let seq = (function() {
+    function type$5(ls) {
+    const self$13 = Object.create(type$5.prototype);
     const argCount$13 = ((arguments.size || arguments.length) || 0);
     (function() {
       if (!(argCount$13 === 1)) {
         return (function() {
-          throw (new Error(("Tagged constructor " + proof + "." + falsy + "expects " + 1 + " arguments but got " + argCount$13)))
+          throw (new Error(("seq" + " received invalid number of arguments.")))
         }).call(this);
       }
     }).call(this);
-    self$13.errors = errors;
-    self$13.constructor = falsy;
-    self$13.__sibilispCtor__ = "falsy";
-    self$13.__sibilispTags__ = [ "errors" ];
+    self$13.ls = ls;
     return self$13;
+  };
+  type$5.is = (function(x$5) {
+      
+    return x$5 instanceof type$5;
+  });
+  return type$5;
+}).call(this);
+seq.of = (function(values) {
+    var values = Array.prototype.slice.call(arguments, 0);
+
+  return seq(values);
+});
+seq.lift = (function(value) {
+    return ((null == value || Number.isNaN(value))
+    ? seq.empty()
+    : Array.isArray(value)
+    ? seq(value)
+    : ((!(null == value) && value.constructor === Set) || (!(value.length == null) && !(typeof value === "function")))
+    ? seq(Array.from(value))
+    : (!(null == value) && value.constructor === (function * (){}).constructor)
+    ? seq(Array.from(value()))
+    : seq([ value ]));
+});
+seq.empty = (function() {
+    return seq([]);
+});
+seq.prototype.toString = (function() {
+    return ("(seq " + show(this.ls) + ")");
+});
+seq.prototype.length = (function() {
+    return this.ls.length;
+});
+seq.prototype.equals = (function(tSeq) {
+    return (!(seq.is(tSeq))
+    ? (function() {
+    throw (new Error(("(seq.equals)" + _eArg1_ + "instance of seq, got " + show(tSeq))))
+  }).call(this)
+    : equals(this.ls, tSeq.ls));
+});
+seq.prototype.concat = (function(tSeq) {
+    return (!(seq.is(tSeq))
+    ? (function() {
+    throw (new Error(("(seq.concat)" + _eArg1_ + "instance of seq, got " + show(tSeq))))
+  }).call(this)
+    : (function(ls, ks) {
+      
+    return seq(ls.concat(ks));
+  })(this.ls, tSeq.ls));
+});
+seq.prototype.map = (function(f) {
+    return (!(typeof f === "function")
+    ? (function() {
+    throw (new Error(("(seq.map)" + _eArg1_ + "function, got " + show(f))))
+  }).call(this)
+    : seq(this.ls.map(f)));
+});
+seq.prototype.flatMap = (function(f) {
+    return (!(typeof f === "function")
+    ? (function() {
+    throw (new Error(("(seq.flat-map|seq.chain)" + _eArg1_ + "function, got " + show(f))))
+  }).call(this)
+    : seq(this.ls.flatMap((function(v) {
+      
+    return f(v).ls;
+  }))));
+});
+seq.chain = seq.flatMap;
+seq.prototype.ap = (function(tSeq) {
+    return (!(seq.is(tSeq))
+    ? (function() {
+    throw (new Error(("(seq.ap)" + _eArg1_ + "instance of seq, got " + show(tSeq))))
+  }).call(this)
+    : seq(this.ls.flatMap((function(f) {
+      
+    return tSeq.map(f).ls;
+  }))));
+});
+seq.prototype.reduce = (function(reducer, seed) {
+    return (!(typeof reducer === "function")
+    ? (function() {
+    throw (new Error(("(seq.reduce)" + _eArg1_ + "function, got " + show(reducer))))
+  }).call(this)
+    : !(!(seed == null))
+    ? (function() {
+    throw (new Error(("(seq.reduce)" + _eArg2_ + "non-nil value, got " + show(seed))))
+  }).call(this)
+    : this.ls.reduce(reducer, seed));
+});
+seq.prototype.foldMap = (function(liftMap) {
+    return (!(typeof liftMap === "function")
+    ? (function() {
+    throw (new Error(("(seq.fold-map)" + _eArg1_ + "function, got " + show(liftMap))))
+  }).call(this)
+    : this.ls.reduce((function(a, x) {
+      
+    return (a === null) ? liftMap(x) : a.concat(liftMap(x));
+  }), null));
+});
+seq.prototype.fold = (function(lift) {
+    return (!(typeof lift === "function")
+    ? (function() {
+    throw (new Error(("(seq.fold)" + _eArg1_ + "function, got" + show(lift))))
+  }).call(this)
+    : this.ls.reduce((function(a, x) {
+      
+    return (a === null) ? lift(x) : a.concat(lift(x));
+  }), null));
+});
+seq.prototype.traverse = (function(lift, transformer) {
+    return (!(typeof lift === "function")
+    ? (function() {
+    throw (new Error(("(seq.traverse)" + _eArg1_ + "function, got " + show(lift))))
+  }).call(this)
+    : !(typeof transformer === "function")
+    ? (function() {
+    throw (new Error(("(seq.traverse)" + _eArg2_ + "function, got " + show(transformer))))
+  }).call(this)
+    : this.ls.reduce((function(a, x) {
+      
+    return transformer(x).map((function(v) {
+          
+      return (function(w) {
+              
+        return w.concat(v);
+      });
+    })).ap(a);
+  }), lift(seq.empty())));
+});
+seq.prototype.sequence = (function(lift) {
+    return (!(typeof lift === "function")
+    ? (function() {
+    throw (new Error(("(seq.sequence)" + _eArg1_ + "function, got " + show(lift))))
+  }).call(this)
+    : this.traverse(lift, (function(x) {
+      
+    return x;
+  })));
+});
+seq.prototype.alt = (function(tSeq) {
+    return (!(seq.is(tSeq))
+    ? (function() {
+    throw (new Error(("(seq.alt)" + _eArg1_ + "instance of seq, got " + show(tSeq))))
+  }).call(this)
+    : (this.length() === 0) ? tSeq : this);
+});
+seq.prototype.filter = (function(f) {
+    return (!(typeof f === "function")
+    ? (function() {
+    throw (new Error(("(seq.filter)" + _eArg1_ + "function, got " + show(f))))
+  }).call(this)
+    : seq(this.ls.filter(f)));
+});
+seq.prototype.find = (function(f, T) {
+    T = (typeof T !== "undefined") ? T : maybe;
+  return (!(typeof f === "function")
+    ? (function() {
+    throw (new Error(("(seq.find)" + _eArg1_ + "function, got " + show(f))))
+  }).call(this)
+    : typeof this.ls.find === "function"
+    ? T.lift(this.ls.find(f))
+    : T.lift(this.ls.reduce((function(acc, x) {
+      
+    return ((!(acc === null) && f(x))) ? x : acc;
+  }), null)));
+});
+seq.prototype.cons = (function(x) {
+    return seq([ x ].concat(this.ls));
+});
+seq.prototype.snoc = (function(x) {
+    return seq(this.ls.concat(x));
+});
+seq.prototype.take = (function(n) {
+    return (!((typeof n === "number" && !(Number.isNaN(n))))
+    ? (function() {
+    throw (new Error(("(seq.take)" + _eArg1_ + "positive number, got " + show(n))))
+  }).call(this)
+    : seq(this.ls.slice(0, Math.min(Math.abs(n), ((this.ls.size || this.ls.length) || 0)))));
+});
+seq.prototype.takeWhile = (function(f) {
+    return (!(typeof f === "function")
+    ? (function() {
+    throw (new Error(("(seq.take-while)" + _eArg1_ + "function, got " + show(f))))
+  }).call(this)
+    : (function(taking) {
+      
+    return seq(this.ls.reduce((function(acc, x) {
+          
+      return (function() {
+        if (!(taking)) {
+          return acc;
+        } else {
+          taking = f(x);
+          return (taking) ? acc.concat(x) : acc;
+        }
+      }).call(this);
+    }), []));
+  })(true));
+});
+seq.prototype.drop = (function(n) {
+    return (!((typeof n === "number" && !(Number.isNaN(n))))
+    ? (function() {
+    throw (new Error(("(seq.drop)" + _eArg1_ + "positive number, got " + show(n))))
+  }).call(this)
+    : seq(this.ls.slice(Math.min(Math.abs(n), ((this.ls.size || this.ls.length) || 0)))));
+});
+seq.prototype.dropWhile = (function(f) {
+    return (!(typeof f === "function")
+    ? (function() {
+    throw (new Error(("(seq.drop-while)" + _eArg1_ + "function, got " + show(f))))
+  }).call(this)
+    : (function(dropping) {
+      
+    return seq(this.ls.reduce((function(acc, x) {
+          
+      return (function() {
+        if (dropping) {
+          dropping = f(x);
+          return (dropping) ? acc : acc.concat(x);
+        } else {
+          return acc.concat(x);
+        }
+      }).call(this);
+    }), []));
+  })(true));
+});
+seq.prototype.reverse = (function() {
+    return seq(this.ls.slice().reverse());
+});
+export let seqTransformer = (function() {
+    let seqT = (function() {
+      
+    function type$6(stack) {
+      const self$14 = Object.create(type$6.prototype);
+      const argCount$14 = ((arguments.size || arguments.length) || 0);
+      (function() {
+        if (!(argCount$14 === 1)) {
+          return (function() {
+            throw (new Error(("seqT" + " received invalid number of arguments.")))
+          }).call(this);
+        }
+      }).call(this);
+      self$14.stack = stack;
+      return self$14;
+    };
+    type$6.is = (function(x$6) {
+          
+      return x$6 instanceof type$6;
+    });
+    return type$6;
+  }).call(this);
+  (function() {
+    if (!(typeof t === "function")) {
+      return (function() {
+        throw (new Error(("(seq-transformer)" + _eArg1_ + "function, got " + show(t))))
+      }).call(this);
+    }
+  }).call(this);
+  seqT.lift = (function(v) {
+      
+    return (typeof t.lift === "function"
+      ? seqT(t.lift(seq.lift(v)))
+      : funtion__QUERY(t.of)
+      ? seqT(t.of(seq.lift(v)))
+      : (function() {
+      throw (new Error(("(seq-t.lift) cannot stack with " + t.name)))
+    }).call(this));
+  });
+  seqT.prototype.map = (function(mapper) {
+      
+    return (!(typeof mapper === "function")
+      ? (function() {
+      throw (new Error(("(seq-transformer.map)" + _eArg1_ + "function, got " + show(mapper))))
+    }).call(this)
+      : seqT(this.stack[(function(tt) {
+          
+      return tt.map(mapper);
+    })].map()));
+  });
+  seqT.prototype.flatMap = (function(toSeqMapper) {
+      
+    return (!(typeof toSeqMapper === "function")
+      ? (function() {
+      throw (new Error(("(seq-transformer.flat-map/chain)" + _eArg1_ + "function, got " + show(toSeqMapper))))
+    }).call(this)
+      : seqT(this.stack.flatMap((function(tt) {
+          
+      return tt.reduce((function(a, v) {
+              
+        return toSeqMapper(v).stack.flatMap((function(vt) {
+                  
+          return a.map((function(va) {
+                      
+            return va.concat(vt);
+          }));
+        }));
+      }), (t.lift || t.of)(seq.empty()));
+    }))));
+  });
+  seqT.prototype.chain = seqT.prototype.flatMap;
+  return seqT;
+});
+export let proof = (function() {
+    const sumtype$5 = Object.create(null);
+  sumtype$5.prototype = { __sibilispType__: sumtype$5 };
+  sumtype$5.falsy = function falsy(errors) {
+    const self$15 = Object.create(sumtype$5.prototype);
+    const argCount$15 = ((arguments.size || arguments.length) || 0);
+    (function() {
+      if (!(argCount$15 === 1)) {
+        return (function() {
+          throw (new Error(("Tagged constructor " + proof + "." + falsy + "expects " + 1 + " arguments but got " + argCount$15)))
+        }).call(this);
+      }
+    }).call(this);
+    self$15.errors = errors;
+    self$15.constructor = falsy;
+    self$15.__sibilispCtor__ = "falsy";
+    self$15.__sibilispTags__ = [ "errors" ];
+    return self$15;
   };;
   sumtype$5.truthy = function truthy(value) {
-    const self$14 = Object.create(sumtype$5.prototype);
-    const argCount$14 = ((arguments.size || arguments.length) || 0);
+    const self$16 = Object.create(sumtype$5.prototype);
+    const argCount$16 = ((arguments.size || arguments.length) || 0);
     (function() {
-      if (!(argCount$14 === 1)) {
+      if (!(argCount$16 === 1)) {
         return (function() {
-          throw (new Error(("Tagged constructor " + proof + "." + truthy + "expects " + 1 + " arguments but got " + argCount$14)))
+          throw (new Error(("Tagged constructor " + proof + "." + truthy + "expects " + 1 + " arguments but got " + argCount$16)))
         }).call(this);
       }
     }).call(this);
-    self$14.value = value;
-    self$14.constructor = truthy;
-    self$14.__sibilispCtor__ = "truthy";
-    self$14.__sibilispTags__ = [ "value" ];
-    return self$14;
+    self$16.value = value;
+    self$16.constructor = truthy;
+    self$16.__sibilispCtor__ = "truthy";
+    self$16.__sibilispTags__ = [ "value" ];
+    return self$16;
   };;
   sumtype$5.prototype.match = (function(ctors) {
       
@@ -2762,24 +3076,24 @@ proof.prototype.alt = (function(tProof) {
 export let proofTransformer = (function(t) {
     let proofT = (function() {
       
-    function type$5(stack) {
-      const self$15 = Object.create(type$5.prototype);
-      const argCount$15 = ((arguments.size || arguments.length) || 0);
+    function type$7(stack) {
+      const self$17 = Object.create(type$7.prototype);
+      const argCount$17 = ((arguments.size || arguments.length) || 0);
       (function() {
-        if (!(argCount$15 === 1)) {
+        if (!(argCount$17 === 1)) {
           return (function() {
             throw (new Error(("proofT" + " received invalid number of arguments.")))
           }).call(this);
         }
       }).call(this);
-      self$15.stack = stack;
-      return self$15;
+      self$17.stack = stack;
+      return self$17;
     };
-    type$5.is = (function(x$5) {
+    type$7.is = (function(x$7) {
           
-      return x$5 instanceof type$5;
+      return x$7 instanceof type$7;
     });
-    return type$5;
+    return type$7;
   }).call(this);
   (function() {
     if (!(typeof t === "function")) {
@@ -2827,24 +3141,24 @@ export let proofTransformer = (function(t) {
   return proofT;
 });
 export let task = (function() {
-    function type$6(runTask) {
-    const self$16 = Object.create(type$6.prototype);
-    const argCount$16 = ((arguments.size || arguments.length) || 0);
+    function type$8(runTask) {
+    const self$18 = Object.create(type$8.prototype);
+    const argCount$18 = ((arguments.size || arguments.length) || 0);
     (function() {
-      if (!(argCount$16 === 1)) {
+      if (!(argCount$18 === 1)) {
         return (function() {
           throw (new Error(("task" + " received invalid number of arguments.")))
         }).call(this);
       }
     }).call(this);
-    self$16.runTask = runTask;
-    return self$16;
+    self$18.runTask = runTask;
+    return self$18;
   };
-  type$6.is = (function(x$6) {
+  type$8.is = (function(x$8) {
       
-    return x$6 instanceof type$6;
+    return x$8 instanceof type$8;
   });
-  return type$6;
+  return type$8;
 }).call(this);
 task.of = (function(value) {
     return task((function(fail, ok) {
