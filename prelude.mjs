@@ -1832,9 +1832,7 @@ maybe.lift = (function(value) {
 maybe.empty = (function() {
     return maybe.nothing();
 });
-maybe.zero = (function() {
-    return maybe.nothing();
-});
+maybe.zero = maybe.empty;
 maybe.prototype.toString = (function() {
     return this.match({
     nothing: (function() {

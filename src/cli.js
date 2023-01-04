@@ -2,6 +2,7 @@ const { compl } = require('./utils/lambda');
 const Async = require('./utils/async');
 const List = require('./utils/list');
 const transpile = require('./transpiler');
+const repl = require('./repl');
 const util = require('./helpers');
 
 
@@ -96,7 +97,9 @@ const main = () => {
 			: key === '--dest' || key === '-d'
 			? Object.assign(opts, { dest: value })
       : key === '--filetype' || key === '-f'
-      ? Object.assign(opts, { ftype: (value === 'mjs' || value === 'js' ? '.' + value : '.js' )})
+      ? Object.assign(opts, { ftype: (value === 'mjs' || value === 'js' ? '.' + value : '.js') })
+      : key === '--repl' || key === '-r'
+      ? Object.assign(opts, { repl: true })
 			: opts
 	)(
 		{ ftype: '.js' }
@@ -104,6 +107,10 @@ const main = () => {
 		util.optPairs(process.argv)
 	);
 
+  if (options.repl) {
+    return repl();
+  }
+  
 	if (!options.src) { throw new Error('Sibilisp CLI: Missing --src/-s argument.'); }
 	if (!options.dest) { throw new Error('Sibilisp CLI: Missing --dest/-d argument.'); }
 	

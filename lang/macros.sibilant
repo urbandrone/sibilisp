@@ -271,10 +271,15 @@
                                  (= (get x '**sibilisp-type**)
                                     @tself))))
            @tself)))
-
-(macro defmethod (tname mname args ...body)
+           
+(macro defmethod (tname mname static args ...body)
        ; method definition facility for types and sum types
-       `(set (get @tname 'prototype) (quote @mname) (lambda @args ...@body)))
+       (if (= static.token 'static)
+           `(set @tname (quote @mname) (lambda @args ...@body))
+           (do
+             (assign body (.concat (list args) body))
+             (assign args static)
+             `(set (get @tname 'prototype) (quote @mname) (lambda @args ...@body)))))
 
 (macro method? (tname mname)
        ; tests for method availability
