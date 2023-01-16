@@ -5,6 +5,7 @@ const transpile = require('./transpiler');
 
 
 const MSG_PROMPT = 'sibilisp> ';
+const MSG_GREETING = 'Welcome to the Sibilisp REPL!';
 const MSG_GOODBYE = 'Bye!';
 
 
@@ -47,6 +48,8 @@ const main = () => {
     console.log(`\n${MSG_GOODBYE}\n`);
     process.exitCode = 0;
   });
+
+  return MSG_GREETING;
 }
 
 module.exports = main;

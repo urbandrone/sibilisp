@@ -108,21 +108,27 @@ const main = () => {
 	);
 
   if (options.repl) {
-    return repl();
+    return {
+      type: 'repl',
+      cmd: () => Async.lift((_, res) => res(repl()))
+    }
   }
-  
+
 	if (!options.src) { throw new Error('Sibilisp CLI: Missing --src/-s argument.'); }
 	if (!options.dest) { throw new Error('Sibilisp CLI: Missing --dest/-d argument.'); }
 	
 	const src = util.pjoin(util.getCwd(), options.src);
 	const dest = util.pjoin(util.getCwd(), options.dest);
 	
-	return util.emptyDir(dest).then(_ => compl(
-		findFilesInSrc,
-		Async.chain(handleFilesInSrc),
-		Async.chain(copyFilesToDest(src, dest, options.ftype)),
-		Async.map(() => 'done!')
-	)(src));
+  return {
+    type: 'compile',
+    cmd: () => util.emptyDir(dest).then(_ => compl(
+      findFilesInSrc,
+      Async.chain(handleFilesInSrc),
+      Async.chain(copyFilesToDest(src, dest, options.ftype)),
+      Async.map(() => 'done!')
+    )(src))
+  }
 };
 
 
