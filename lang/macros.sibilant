@@ -209,7 +209,7 @@
                             (var self (gensym "self")
                                  arit (gensym "argCount")
                                  type (transpile (first vartype.contents))
-                                 cname (list "\"" (get (get type 'source) 'token) "\"")
+                                 cname (list "\"" (first (get type 'contents)) "\"")
                                  pkeys undefined
                                  alen 0
                                  args "")

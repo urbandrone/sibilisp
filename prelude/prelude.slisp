@@ -1515,6 +1515,9 @@
 (defmethod seq to-string ()
   (+ "(seq " (show (getf this 'ls)) ")"))
 
+(defmethod seq to-list ()
+  (.slice (getf this 'ls)))
+
 (defmethod seq length ()
   (getf this 'ls 'length))
 
@@ -1564,8 +1567,8 @@
   (cond ((not (function? lift-map))
          (error! "(seq.fold-map)" *e-arg-1* "function, got " (show lift-map)))
         :else (.reduce (getf this 'ls)
-                       (lambda (a x)
-                        (ternary (nil? a)
+                       (lambda (a x i)
+                        (ternary (< i 1)
                                  (lift-map x)
                                  (.concat a (lift-map x))))
                        (nil))))
@@ -1574,8 +1577,8 @@
   (cond ((not (function? lift))
          (error! "(seq.fold)" *e-arg-1* "function, got" (show lift)))
         :else (.reduce (getf this 'ls)
-                       (lambda (a x)
-                        (ternary (nil? a)
+                       (lambda (a x i)
+                        (ternary (< i 1)
                                  (lift x)
                                  (.concat a (lift x))))
                        (nil))))
