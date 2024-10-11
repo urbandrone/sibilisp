@@ -2533,6 +2533,9 @@ seq.zero = seq.empty;
 seq.prototype.toString = (function() {
     return ("(seq " + show(this.ls) + ")");
 });
+seq.prototype.toList = (function() {
+    return this.ls.slice();
+});
 seq.prototype.length = (function() {
     return this.ls.length;
 });
@@ -2597,9 +2600,9 @@ seq.prototype.foldMap = (function(liftMap) {
     ? (function() {
     throw (new Error(("(seq.fold-map)" + _eArg1_ + "function, got " + show(liftMap))))
   }).call(this)
-    : this.ls.reduce((function(a, x) {
+    : this.ls.reduce((function(a, x, i) {
       
-    return (a === null) ? liftMap(x) : a.concat(liftMap(x));
+    return (i < 1) ? liftMap(x) : a.concat(liftMap(x));
   }), null));
 });
 seq.prototype.fold = (function(lift) {
@@ -2607,9 +2610,9 @@ seq.prototype.fold = (function(lift) {
     ? (function() {
     throw (new Error(("(seq.fold)" + _eArg1_ + "function, got" + show(lift))))
   }).call(this)
-    : this.ls.reduce((function(a, x) {
+    : this.ls.reduce((function(a, x, i) {
       
-    return (a === null) ? lift(x) : a.concat(lift(x));
+    return (i < 1) ? lift(x) : a.concat(lift(x));
   }), null));
 });
 seq.prototype.traverse = (function(lift, transformer) {
