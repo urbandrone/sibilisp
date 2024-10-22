@@ -596,6 +596,7 @@
        `(and ...@(map values (lambda (v)
                                `(.isNaN Number @v)))))
 
+
 (delete-macro exists?)
 (macro exists? (...values)
        ; core sibilant exists? macro is a bit verbose in it's output
@@ -631,6 +632,15 @@
        `(and ...@(map values (lambda (v)
                                `(and (eql? (typeof @v) "number")
                                      (not (nan? @v)))))))
+
+
+
+(macro as-bigint (value)
+       `(BigInt @value))
+
+(macro bigint? (...values)
+       `(and ...@(map values (lambda (v)
+                               `(eql? (typeof @v) "bigint")))))
 
 
 
@@ -897,39 +907,27 @@
 
 
 ;; ====== RECURSION ======
-(macro trampoline-fn (name args ...body) ; used internally
-       ["function " name
-        "(" (interleave ", " args.contents)  ") {"
-        (indent (apply ^do body))
-        "}"])
-
-(macro trampoline-is (a) ; used internally
-       `(and (function? @a)
-             (get @a '**sibilisp-recur**)))
-
-(macro recur (...args)
-       ; creates a new jump point if the fixpoint is not reached
-       (var jump (gensym "jump"))
-       `(scoped
-         (defun @jump () (call looprec-step ...@args))
-         (defprop @jump '**sibilisp-recur** true)))
-
+; (defun fact (x)
+;   (loop ((n 1) (m x))
+;     (ternary (<= m 1) 
+;       n 
+;       (recur (* n m) (- m 1)))))
 (macro loop (variables ...body)
-       ; allows to use single and multiple direct recursion
-       ; through trampolining. performance is generally ok
-       ; up to 7500 iterations, which should be good enough 
-       ; for most use cases.
-       (var retv (gensym "looprecReturn")
-            vars (map variables.contents
-                      (lambda (pair) (first pair.contents)))
-            vals (map variables.contents
-                      (lambda (pair) (last pair.contents))))
-       `(scoped
-         (call
-          (lambda (step ...args)
-            (var @retv (.apply step (nil) args))
-            (while* (trampoline-is @retv)
-              (assign @retv (call @retv)))
-            @retv)
-          (trampoline-fn looprec-step (...@vars) ...@body)
-          ...@vals)))
+  (var 
+    vars (map variables.contents (lambda (pair) (first pair.contents)))
+    vals (map variables.contents (lambda (pair) (last pair.contents))))
+  (with-gensyms (step tcall value id)
+    `(scoped
+      (var @id (Symbol "loopId"))
+      (call
+        (lambda (@step @tcall ...**sibilispLoopArgs**)
+          (var @value (.apply @step null (.concat (list @tcall) **sibilispLoopArgs**)))
+          (while* (and (exists? @value) (getf @value @id))
+            (assign @value (.apply @step null (.concat (list @tcall) (getf @value 'value)))))
+          @value)
+        (lambda (**sibilispLoopRecur** ...@vars) ...@body)
+        (lambda (...value) (hash [@id] true 'value value))
+        ...@vals))))
+      
+(macro recur (...body)
+  `(**sibilispLoopRecur** ...@body))

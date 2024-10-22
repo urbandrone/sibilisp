@@ -2,21 +2,31 @@
 
 ![GitHub license](https://img.shields.io/npm/l/sibilisp?color=527A8F) ![NPM version](https://img.shields.io/npm/v/sibilisp?color=4f6376) ![Github stars](https://img.shields.io/github/stars/urbandrone/sibilisp?color=393545) ![NPM downloads](https://img.shields.io/npm/dm/sibilisp?color=335A70)
 
-A multi-paradigm, functional programming oriented, [Sibilant](https://sibilant.org/) based language dialect that transpiles to JavaScript. 👽
+A multi-paradigm, functional programming oriented, [Sibilant](https://sibilant.org/) based language dialect that transpiles to JavaScript. If you think that this sounds 👽, maybe you'd like to see some example code! The following function checks if a given `String` contains a palindrome by recursively comparing the characters at the `start` and `end` positions:
 
 ```lisp
-(defun palindrome? (input)
-  ;; predicate thats check if the given input string is a palindrome
-  (loop ((start-pos 0)
-         (end-pos (- (length input) 1)))
-    (cond ((not (eql? (getf input start-pos) (getf input end-pos)))
-           false)
-          ((>= start-pos end-pos)
-           true)
-          :else (recur (+ start-pos 1) (- end-pos 1)))))
+(defun string-is-palindrome? (s)
+  (let ((low-s (.to-lower-case s)))
+    (loop ((start 0)
+          (end (decf (length s))))
+      (cond ((not (eql? (getf low-s start) (getf low-s end))) false)
+            ((>= start end) true)
+            :else (recur (incf start) (decf end))))))
 
-(palindrome? "kayak")  ; => true
-(palindrome? "baobab") ; => false
+(string-is-palindrome? "kayak")  ; => true
+(string-is-palindrome? "baobab") ; => false
+```
+
+And don't worry about "too much `(` and `)`" - they are what enables a powerful macro system that you have right at your fingertips to meld the basic language into a real Domain Specific Language that reads almost as if it where a instructional book:
+
+```lisp
+(include)
+
+(defun find-products-in-category (hashtag)
+  (|> hashtag
+      (escape-category-hash)
+      (products-find-category-id :by-hashtag :with-async-load)
+      ()))
 ```
 
 
@@ -24,7 +34,7 @@ A multi-paradigm, functional programming oriented, [Sibilant](https://sibilant.o
 
 Sibilisp ...  
 
-* brings the ES2015+ module system to Sibilant, as well as macros for ES2015+ promises, default function arguments, generator functions, yielding...
+* brings the ES2015+ module system to Sibilant, as well as several new macros for ES2015+ promises, default function arguments, generator functions, yielding...
 * enables tail recursive programming via it's `loop` and `recur` construct.
 * is tailored towards functional programming concepts, but remains being a multi-paradigm language.
 * has build-in facilities for creating tagged type and sum type constructors.
