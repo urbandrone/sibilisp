@@ -20,13 +20,29 @@ A multi-paradigm, functional programming oriented, [Sibilant](https://sibilant.o
 And don't worry about "too much `(` and `)`" - they are what enables a powerful macro system that you have right at your fingertips to meld the basic language into a real Domain Specific Language that reads almost as if it where a instructional book:
 
 ```lisp
-(include)
+(include "./src/macros/categories")
+(include "./src/macros/products")
+(include "./src/macros/dom")
 
-(defun find-products-in-category (hashtag)
+(defun find-products-by-hashtag (hashtag)
   (|> hashtag
-      (escape-category-hash)
-      (products-find-category-id :by-hashtag :with-async-load)
-      ()))
+      (escape-hashtag)
+      (categories-find-id :by-hashtag)
+      (products-query 
+        :by-type 'category
+        :sort-by ('popular 'descending)
+        :per-page 50)
+      ($render-html-template
+        :render-async true
+        :into-node "#products"
+        :template "../templates/productpage.tpl"
+        :vars (:pagination true
+               :pagination-pagesize 10
+               :viewtype 'grid
+               :sort-types ('popular 'newest 'best-rated)
+               :sort-by 'popular
+               :sort-direction 'descending
+               :recommendations true))))
 ```
 
 

@@ -171,6 +171,21 @@
        ; fix broken instance-of macro
        [(transpile item) " instanceof " (transpile type)])
 
+
+; (defclass Rect (RenderObject Shape) 
+;   (:origin (list 0 0) :private)
+;   (:fill "hsla(0,0%,0%,0)")
+;   (:width 300)
+;   (:height 60))
+; -----------------------------------
+; let Rect = (function (...base-classes$1) {
+;   return (function () {
+;   
+;   })()
+; })(RenderObject, Shape);
+
+;(macro defclass (cname bases ...slots))
+
 (macro deftype (tname pkeys)
        ; tagged type constructor creation facility
        (var self (gensym "self")
